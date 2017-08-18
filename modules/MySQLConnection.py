@@ -1,4 +1,5 @@
 # -*- encoding: UTF-8 -*-
+# Realize SQL connection by pymysql based on MySQL
 # --------------------------
 import pymysql.cursors
 # --------------------------

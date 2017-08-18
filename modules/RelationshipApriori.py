@@ -9,13 +9,11 @@ class Apriori(object):
                  min_support=0.5,
                  min_confidence=0.5,
                  depth=sys.maxsize):
-        # setting parameters
-        self.min_support = min_support
+        self.min_support = min_support  # setting parameters
         self.min_confidence = min_confidence
         self.depth = min(max(len(var) for var in data_sets), depth)
         transaction_sets = [set(var) for var in data_sets]
-        # starting apriori
-        freq_set_level = 1
+        freq_set_level = 1  # starting apriori
         self.frequent_sets = {}
         self.frequent_sets_support = {}
         # collecting frequent set which contains one element

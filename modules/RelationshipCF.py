@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # ---------------------------------import------------------------------------
 import random
-from modules.basic_data_setting import *
-from modules.data_processing import load_data
+from modules.BasicDataSetting import *
+from modules.DataProcessing import load_data
 # ---------------------------------------------------------------------------
 
 

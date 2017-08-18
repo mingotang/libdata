@@ -7,8 +7,8 @@ import csv
 import re
 import copy
 import random
-from modules.basic_data_setting import *
-from modules.data_isbn import ISBNGen
+from modules.BasicDataSetting import *
+from modules.ISBN import ISBNGen
 # --------------------------
 
 

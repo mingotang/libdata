@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import copy
-from modules.basic_data_setting import *
+from modules.BasicDataSetting import *
 # --------------------------------------------------------
 # checking isbn
 def isISBN10(isbn):

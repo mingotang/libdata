@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 # ---------------------------------import------------------------------------
 import os
-from modules.basic_data_setting import *
-from modules.data_processing import load_data, save_csv_2d
-from modules.collaborative_filtering import CollaborativeFiltering
+from modules.BasicDataSetting import *
+from modules.DataProcessing import load_data, save_csv_2d
+from modules.RelationshipCF import CollaborativeFiltering
 # ---------------------------------------------------------------------------
 
 
 # -------------------------------------------------------- CF preparing
-from modules.data_processing import derive_tag_A_to_tag_B_dict
-from modules.data_processing import derive_tag_A_to_object_B_dict
+from modules.DataProcessing import derive_tag_A_to_tag_B_dict
+from modules.DataProcessing import derive_tag_A_to_object_B_dict
 
 
 def prepare_for_colla_filtering(raw_file):
