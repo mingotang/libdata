@@ -16,8 +16,7 @@ class Apriori(object):
         freq_set_level = 1  # starting apriori
         self.frequent_sets = {}
         self.frequent_sets_support = {}
-        # collecting frequent set which contains one element
-        freq_sets_k = self.__find_primary_goods__(transaction_sets)
+        freq_sets_k = self.__find_primary_goods__(transaction_sets)         # collecting frequent set
         freq_sets_k, freq_sets_support = self.__collect_freq_support__(freq_sets_k, transaction_sets)
         self.frequent_sets[str(freq_set_level)] = freq_sets_k
         self.frequent_sets_support.update(freq_sets_support)
@@ -38,7 +37,8 @@ class Apriori(object):
         del freq_sets_support
         del freq_set_level
 
-    def __find_primary_goods__(self, datasets):
+    @staticmethod
+    def __find_primary_goods__(datasets):
         l1 = []
         for transaction in datasets:
             for __item__ in transaction:

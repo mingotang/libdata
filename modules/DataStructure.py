@@ -1,10 +1,38 @@
 # -*- encoding: UTF-8 -*-
 # --------------------------------------------------------
-# --------------------------------------------------------
 
 
 # --------------------------------------------------------
+class DataObject(object):
+    def __init__(self):
+        self.data = dict()  # defining basic data part
+
+    def __repr__(self):
+        return repr(self.data)
+
+    def keys(self):
+        return self.data.keys()
+
+    def set(self, key: str, element):
+        self.data[key] = element
+
+    def get(self, key: str):
+        if key not in self.data:
+            raise KeyError('{0} not in data object'.format(key))
+        else:
+            return self.data[key]
+
+
 # --------------------------------------------------------
+class Reader(object):
+    def __init__(self):
+        pass
+
+
+# --------------------------------------------------------
+class Book(object):
+    def __init__(self):
+        pass
 
 
 # --------------------------------------------------------
@@ -46,6 +74,8 @@ class CountingDict(object):
             return inverse_list
         else:
             return stored_list
+
+
 # --------------------------------------------------------
 
 

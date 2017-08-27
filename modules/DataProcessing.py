@@ -1,33 +1,190 @@
 # -*- coding: utf-8 -*-
 # In this document text file is prepared for the project
 # --------------------------
+import os
 import jieba
-import pickle
 import csv
 import re
 import copy
-import random
 from modules.BasicDataSetting import *
 from modules.ISBN import ISBNGen
-# --------------------------
 
 
-def get_headers():
-    """return the header names in a list"""
-    data_headers = ['系统号',  # 0
-                    '索书号',  # 1
-                    '书名',   # 2
-                    'isbn号',  # 3
-                    '作者',   # 4
-                    '出版年',  # 5
-                    '出版社',  # 6
-                    '学工号',  # 7
-                    '借书（还书、续借）发生日期',  # 8
-                    '事件类型（借书、还书、续借）',  # 9
-                    '读者身份类别',  # 10
-                    '学院代码'  # 11
-                    ]
-    return data_headers
+class RawDataProcessor(object):
+    def __init__(self, folder_path: str):
+        self.folder_path = folder_path
+        self.match_dict = {
+            'sysID': 0,
+            'libIndexID': 1,
+            'bookname': 2,
+            'isbn': 3,
+            'author': 4,
+            'publish_year': 5,
+            'publisher': 6,
+            'userID': 7,
+            'event_date': 8,
+            'event_type': 9,
+            'user_type': 10,
+            'collegeID': 11,
+        }
+        self.head_dict = {
+            'sysID': '系统号',
+            'libIndexID': '索书号',
+            'bookname': '书名',
+            'isbn': 'isbn号',
+            'author': '作者',
+            'publish_year': '出版年',
+            'publisher': '出版社',
+            'userID': '学工号',
+            'event_date': '借书（还书、续借）发生日期',
+            'event_type': '事件类型（借书、还书、续借）',
+            'user_type': '读者身份类别',
+            'collegeID': '学院代码',
+        }
+        self.event_type_dict = {
+            '50': '借书',
+            '61': '还书',
+            '62': '续借',
+            '63': '续借2'
+        }
+        self.reader_type_dict = {
+            '11': '教授、副教授及各系列高级职称',
+            '12': '教师、各系列中级职称',
+            '13': '教职工、各系列初级职称',
+            '14': '访问学者',
+            '15': '离、退休职工',
+            '21': '博士生',
+            '22': '硕博连读生',
+            '23': '硕士生',
+            '24': '八年制本硕博连读生博士阶段',
+            '25': '八年制本硕博连读生硕士阶段',
+            '26': '七年制本硕连读生硕士阶段',
+            '27': '六年制本硕连读生硕士阶段',
+            '31': '四年制本科生',
+            '32': '五年制本科生',
+            '33': '六年制本硕连读生本科阶段',
+            '34': '七年制本硕连读生本科阶段',
+            '35': '八年制本硕博连读生本科阶段',
+            '41': '校友卡读者',
+            '42': '高职',
+            '43': '二级学院及其他',
+            '44': '校外普通读者',
+            '45': '校外特殊读者',
+            '51': '馆际互借',
+            '52': '团体读者',
+            '61': '研究生VIP1',
+            '62': '研究生VIP2',
+            '63': '研究生VIP3',
+        }
+
+    def derive_raw_data(self, text_encoding='gb18030',
+                        raw_file_list=('2016-11-16-guanyuan2013.txt',
+                                       '2016-11-16-guanyuan2014.txt',
+                                       '2016-11-16-guanyuan2015.txt',
+                                       )
+                        ):
+        source_file_dict = dict()
+        for file_name in raw_file_list:
+            source_file_dict[file_name] = open(os.path.join(self.folder_path, file_name),
+                                               'r', encoding=text_encoding)
+
+    class RawDataReader(object):
+        def __init__(self, filenamelist):
+            self.sourcefiledict = {}
+            for file in filenamelist:
+                self.sourcefiledict[file] = open(file, 'r', encoding="gb18030")
+            self.headlist = get_headlist()
+
+        def readnextline(self):
+            try:
+                __content__ = next(self.__readrecordlineiteration__())
+                return __content__
+            except StopIteration:
+                return None
+
+        def __readrecordlineiteration__(self):
+            for file in self.sourcefiledict:
+                textline = self.sourcefiledict[file].readline()
+                while textline:
+                    line_content = textline.split('@')
+                    line_content.pop()
+                    line_content = self.__data_processing__(line_content)
+                    if line_content is not None:
+                        if len(line_content) != 12:
+                            print("On read: unqualified data : ", textline, '  Splitted as: ', line_content)
+                            yield None
+                        else:
+                            line_content = dict(zip(self.headlist, line_content))
+                            for item in line_content:
+                                if line_content[item] == '':
+                                    line_content[item] = None
+                            # print(list(line_content))
+                            yield line_content
+                    else:
+                        yield None
+                    textline = self.sourcefiledict[file].readline()
+
+        def __data_processing__(self, __content__):
+            """modify the line readed in raw data and fix it into the sequence we want"""
+            if len(__content__) < 12:
+                return None
+            else:
+                if __content__[9] in self.eventlist:
+                    return __content__
+                elif __content__[10] in self.eventlist:
+                    if len(__content__[4]) == 17:
+                        __content__[2] = __content__[2] + __content__[3]
+                        del __content__[3]
+                        return __content__
+                        # print(content)
+                    elif len(__content__[3]) == 17:
+                        __content__[4] = __content__[4] + __content__[5]
+                        del __content__[5]
+                        return __content__
+                        # print(content)
+                    else:
+                        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~', __content__)
+                        return None
+                else:
+                    print("data_cleaning. unqualified data : ", __content__)
+                    return None
+
+    def load_csv_2d(self, filename: str, encode='utf-8'):
+        """
+        load a list which is of two dimension
+        with lines in list and columns in sub_lists
+        """
+        csv_file = open(os.path.join(self.folder_path, filename), 'r', newline='', encoding=encode)
+        __content__ = list()
+        spam_reader = csv.reader(csv_file,
+                                 delimiter=',',
+                                 quotechar='"'
+                                 )
+        for __line__ in spam_reader:
+            __content__.append(__line__)
+        print('load_csv_2d. File {0:s} is loaded !'.format(filename))
+        return list
+
+    def save_csv_2d(self, filename: str, content: list, encode='utf-8'):
+        """
+        save a list which is of two dimension to the file
+        with lines in list and columns in sub_lists
+        """
+        if filename[-4:] != '.csv':
+            file_name = filename + '.csv'
+        else:
+            file_name = filename
+        csv_file = open(os.path.join(self.folder_path, file_name), 'w', newline='', encoding=encode)
+        spam_writer = csv.writer(csv_file,
+                                 delimiter=',',
+                                 quotechar='"',
+                                 quoting=csv.QUOTE_MINIMAL
+                                 )
+        spam_writer.writerows(content)
+        csv_file.close()
+        print('save_csv_2d. File {0:s} is saved ! '.format(file_name))
+
+
 
 
 def get_headlist():
@@ -45,77 +202,6 @@ def get_headlist():
     line.append(tag_reader_type)  # 10
     line.append(tag_reader_college)  # 11
     return line
-
-
-def get_event_type():
-    """return the event type names in a dictionary"""
-    event_type = {
-        '借书': '50',
-        '还书': '61',
-        '续借': '62',
-        '续借2': '63'
-    }
-    return event_type
-
-
-def get_reader_type():
-    """return the identity of readears in a dictionary"""
-    reader_type = dict()
-    reader_type['11'] = '教授、副教授及各系列高级职称'
-    reader_type['12'] = '教师、各系列中级职称'
-    reader_type['13'] = '教职工、各系列初级职称'
-    reader_type['14'] = '访问学者'
-    reader_type['15'] = '离、退休职工'
-    reader_type['21'] = '博士生'
-    reader_type['22'] = '硕博连读生'
-    reader_type['23'] = '硕士生'
-    reader_type['24'] = '八年制本硕博连读生博士阶段'
-    reader_type['25'] = '八年制本硕博连读生硕士阶段'
-    reader_type['26'] = '七年制本硕连读生硕士阶段'
-    reader_type['27'] = '六年制本硕连读生硕士阶段'
-    reader_type['31'] = '四年制本科生'
-    reader_type['32'] = '五年制本科生'
-    reader_type['33'] = '六年制本硕连读生本科阶段'
-    reader_type['34'] = '七年制本硕连读生本科阶段'
-    reader_type['35'] = '八年制本硕博连读生本科阶段'
-    reader_type['41'] = '校友卡读者'
-    reader_type['42'] = '高职'
-    reader_type['43'] = '二级学院及其他'
-    reader_type['44'] = '校外普通读者'
-    reader_type['45'] = '校外特殊读者'
-    reader_type['51'] = '馆际互借'
-    reader_type['52'] = '团体读者'
-    reader_type['61'] = '研究生VIP1'
-    reader_type['62'] = '研究生VIP2'
-    reader_type['63'] = '研究生VIP3'
-    return reader_type
-
-
-# --------------------------------------------------------
-# load and save data by pickle
-def load_data(filename):
-    """load the data stored in file by Pickle"""
-    inputfile = open(filename, 'rb')
-    content = pickle.load(inputfile)
-    return content
-
-
-def save_data(filename, content):
-    """save the data in a file by Pickle"""
-    outputfile = open(filename, 'wb')
-    pickle.dump(content, outputfile, True)
-    outputfile.close()
-    return None
-
-
-def make_sample_data(filename, data, number):
-    """save sample data to bookdata/sampledata_byPickle and make"""
-    outputfile = open(filename, 'wb')
-    pickle.dump(random.sample(data, number), outputfile, True)
-    outputfile.close()
-    print("sample data saved! ")
-    return 1
-# --------------------------------------------------------
 
 
 # --------------------------------------------------------
@@ -155,73 +241,7 @@ def save_csv_2d(filename, content, encode='utf-8'):
 
 
 # --------------------------------------------------------
-class RawDataReader(object):
-    def __init__(self, filenamelist):
-        self.sourcefiledict = {}
-        for file in filenamelist:
-            self.sourcefiledict[file] = open(file, 'r', encoding="gb18030")
-        # self.sourcefile = open(filename, 'r', encoding="gb18030")
-        self.eventlist = ['50', '61', '62', '63']
-        self.headlist = get_headlist()
 
-    def readnextline(self):
-        try:
-            __content__ = next(self.__readrecordlineiteration__())
-            return __content__
-        except StopIteration:
-            return None
-
-    def __readrecordlineiteration__(self):
-        for file in self.sourcefiledict:
-            textline = self.sourcefiledict[file].readline()
-            while textline:
-                line_content = textline.split('@')
-                line_content.pop()
-                line_content = self.__data_processing__(line_content)
-                if line_content is not None:
-                    if len(line_content) != 12:
-                        print("On read: unqualified data : ", textline, '  Splitted as: ', line_content)
-                        yield None
-                    else:
-                        line_content = dict(zip(self.headlist, line_content))
-                        for item in line_content:
-                            if line_content[item] == '':
-                                line_content[item] = None
-                        # print(list(line_content))
-                        yield line_content
-                else:
-                    yield None
-                textline = self.sourcefiledict[file].readline()
-
-    def refresh(self):
-        for file in self.sourcefiledict:
-            self.sourcefiledict[file].seek(0, 0)
-        # self.sourcefile.seek(0, 0)
-
-    def __data_processing__(self, __content__):
-        """modify the line readed in raw data and fix it into the sequence we want"""
-        if len(__content__) < 12:
-            return None
-        else:
-            if __content__[9] in self.eventlist:
-                return __content__
-            elif __content__[10] in self.eventlist:
-                if len(__content__[4]) == 17:
-                    __content__[2] = __content__[2] + __content__[3]
-                    del __content__[3]
-                    return __content__
-                    # print(content)
-                elif len(__content__[3]) == 17:
-                    __content__[4] = __content__[4] + __content__[5]
-                    del __content__[5]
-                    return __content__
-                    # print(content)
-                else:
-                    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~', __content__)
-                    return None
-            else:
-                print("data_cleaning. unqualified data : ", __content__)
-                return None
 # --------------------------------------------------------
 
 
