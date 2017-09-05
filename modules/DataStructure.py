@@ -3,63 +3,94 @@
 
 
 # --------------------------------------------------------
-class DataObject(object):
+class GeneralDict(object):
     def __init__(self):
-        self.data = dict()  # defining basic data part
+        self.stored_dict = dict()
+        self.__list_for_iter__ = list()
 
     def __repr__(self):
-        return repr(self.data)
+        return str(self.stored_dict)
 
-    def keys(self):
-        return self.data.keys()
-
-    def set(self, key: str, element):
-        self.data[key] = element
-
-    def get(self, key: str):
-        if key not in self.data:
-            raise KeyError('{0} not in data object'.format(key))
+    def __getitem__(self, key: str):
+        if key not in self.stored_dict:
+            raise IndexError('{0:s}.__getitem__: index {1:s} not in dict'.format(self.__class__.__name__, key))
         else:
-            return self.data[key]
+            return self.stored_dict[key]
+
+    def __setitem__(self, key: str, value):
+        self.stored_dict[key] = value
+
+    def __contains__(self, key: str):
+        if key in self.stored_dict:
+            return True
+        else:
+            return False
+
+    def __iter__(self):
+        self.__list_for_iter__ = list(self.stored_dict)
+        self.__list_for_iter__.reverse()
+        return self
+
+    def __next__(self):
+        if len(self.__list_for_iter__) == 0:
+            raise StopIteration()
+        return self.__list_for_iter__.pop()
+
+    def __eq__(self, other):
+        raise NameError('Method {0:s}.__eq__ is not defined'.format(self.__class__.__name__))
+
+
+# --------------------------------------------------------
+class DataObject(GeneralDict):
+    def keys(self):
+        return self.stored_dict.keys()
+
+
+# --------------------------------------------------------
+class EventAction(object):
+    def __init__(self, event_type: str,
+                 event_year: str, event_month: str, event_day: str):
+        self.event_type = event_type
+        self.year = event_year
+        self.month = event_month
+        self.day = event_day
 
 
 # --------------------------------------------------------
 class Reader(object):
-    def __init__(self):
-        pass
+    def __init__(self, user_id: str,
+                 user_type='', college=''):
+        self.id = user_id
+        self.type = user_type
+        self.college = college
 
 
 # --------------------------------------------------------
 class Book(object):
-    def __init__(self):
-        pass
+    def __init__(self, book_id: str,
+                 book_lib_index='', book_name='', author='', year='', publisher='', isbn=''):
+        self.id = book_id
+        self.lib_index = book_lib_index
+        self.name = book_name
+        self.isbn = isbn
+        self.author = author
+        self.year = year
+        self.publisher = publisher
 
 
 # --------------------------------------------------------
-class CountingDict(object):
-    def __init__(self):
-        self.stored_dict = dict()
+class CountingDict(GeneralDict):
+    # def __init__(self):
+    #     GeneralDict.__init__(self)
 
-    def count(self, element):
+    def count(self, element: str, step=1):
         if element in self.stored_dict:
-            self.stored_dict[element] += 1
+            self.stored_dict[element] += step
         else:
-            self.stored_dict[element] = 1
-
-    def get(self, tag: str):
-        if tag not in self.stored_dict:
-            raise IndexError('CountingDict.get tag {0} not in dict'.format(tag))
-        else:
-            return self.stored_dict[tag]
-
-    def set(self, tag: str, element):
-        self.stored_dict[tag] = element
+            self.stored_dict[element] = step
 
     def keys(self):
         return self.stored_dict.keys()
-
-    def results(self):
-        return self.stored_dict
 
     def sort_by_weights(self, inverse=False):
         stored_list = list(self.stored_dict)
@@ -68,10 +99,7 @@ class CountingDict(object):
                 if self.stored_dict[stored_list[index_x]] > self.stored_dict[stored_list[index_y]]:
                     stored_list[index_x], stored_list[index_y] = stored_list[index_y], stored_list[index_x]
         if inverse is True:
-            inverse_list = list()
-            for index in range(len(stored_list)):
-                inverse_list.append(stored_list[index])
-            return inverse_list
+            return stored_list.reverse()
         else:
             return stored_list
 
@@ -84,6 +112,11 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------
+    l = CountingDict()
+    print(l.__class__.__name__, type(l.__class__.__name__))
+    print(l.__module__)
+    print(l.__dict__)
+    print(l.__getattribute__('stored_dict'))
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time
