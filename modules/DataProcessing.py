@@ -2,6 +2,7 @@
 # In this document text file is prepared for the project
 # --------------------------
 import os
+import re
 
 from modules.DataStructure import DataObject
 
@@ -73,8 +74,10 @@ class RawDataProcessor(object):
             '62': '研究生VIP2',
             '63': '研究生VIP3',
         }
+        self.__temp_list__ = list()
 
-    def derive_raw_data(self, text_encoding='gb18030',
+    def derive_raw_data(self,
+                        text_encoding='gb18030',
                         raw_file_list=('2016-11-16-guanyuan2013.txt',
                                        '2016-11-16-guanyuan2014.txt',
                                        '2016-11-16-guanyuan2015.txt',
@@ -88,20 +91,44 @@ class RawDataProcessor(object):
                 line_content = text_line.split('@')
                 line_content.pop()
                 line_content = self.__raw_data_line_clean__(line_content)
-                if len(line_content) == len(self.match_index_dict):
+                if self.check_data_line(line_content):
                     data_object = DataObject()
                     for tag in self.match_index_dict:
                         data_object.set(key=tag, element=line_content[self.match_index_dict[tag]])
                     data_list.append(data_object)
+                elif len(line_content) == 0:
+                    pass
+                else:
+                    print("{0:s}: Unqualified data :  ".format(self.__class__.__name__), line_content)
                 text_line = data_file.readline()
         return data_list
+
+    def check_data_line(self, content: list):
+        if len(content) != len(self.match_index_dict):
+            return False
+        if not re.search(r'[12][890123]\d\d[01]\d[0123]\d', content[8]):
+            return False
+        if content[9] not in self.event_type_dict:
+            return False
+        return True
 
     def __raw_data_line_clean__(self, content: list):
         warning_info = "{0:s}.__raw_data_line_clean__: Unqualified data :  ".format(self.__class__.__name__)
         warning_info += str(content)
         if len(content) < 12:
-            print(warning_info)
-            return list()
+            if len(self.__temp_list__) > 0:
+                self.__temp_list__.extend(content)
+                temp_list = self.__raw_data_line_clean__(self.__temp_list__)
+                if len(temp_list) > 0:
+                    self.__temp_list__ = list()
+                    return temp_list
+                else:
+                    self.__temp_list__ = list()
+                    print(warning_info)
+                    return list()
+            else:
+                self.__temp_list__.extend(content)
+                return list()
         else:
             if content[9] in self.event_type_dict:
                 return content
@@ -274,6 +301,8 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------ cleaning records
+    raw_data = RawDataProcessor(folder_path=os.path.join('..', 'data'))
+    data = raw_data.derive_raw_data()
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time

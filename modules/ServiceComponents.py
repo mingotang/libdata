@@ -9,31 +9,68 @@ from modules.DataStructure import DataObject
 # --------------------------------------------------------
 class EventAction(object):
     def __init__(self, data_object=DataObject(), **kwargs):
-        self.__attr_tag_list__ = ('event_type', 'event_date')
-        self.event_type = str()
-        self.year = str()
-        self.month = str()
-        self.day = str()
+        self.__attr_tag_list__ = ('event_type', 'event_date', 'userID', 'sysID')
+        if len(data_object) > 0:
+            user_id = data_object['userID']
+            book_id = data_object['sysID']
+            event_type = data_object['event_type']
+            event_date = data_object['event_date']
+        else:
+            user_id = kwargs['userID']
+            book_id = kwargs['sysID']
+            event_type = kwargs['event_type']
+            event_date = kwargs['event_date']
+        self.event_type = event_type
+        self.year = event_date[0:4]
+        self.month = event_date[4:6]
+        self.day = event_date[6:8]
+        self.book_id = book_id
+        self.reader_id = user_id
 
 
 # --------------------------------------------------------
 class Reader(object):
     def __init__(self, data_object=DataObject(), **kwargs):
-        self.id = str()
-        self.type = str()
-        self.college = str()
+        self.__attr_tag_list__ = ('userID', 'user_type', 'collegeID')
+        if len(data_object) > 0:
+            user_id = data_object['userID']
+            user_type = data_object['user_type']
+            college = data_object['collegeID']
+        else:
+            user_id = kwargs['userID']
+            user_type = kwargs['user_type']
+            college = kwargs['collegeID']
+        self.id = user_id
+        self.type = user_type
+        self.college = college
 
 
 # --------------------------------------------------------
 class Book(object):
     def __init__(self, data_object=DataObject(), **kwargs):
-        self.id = str()
-        self.lib_index = str()
-        self.name = str()
-        self.isbn = str()
-        self.author = str()
-        self.year = str()
-        self.publisher = str()
+        if len(data_object) > 0:
+            book_id = data_object['sysID']
+            book_lib = data_object['libIndexID']
+            book_name = data_object['bookname']
+            book_isbn = data_object['isbn']
+            book_author = data_object['author']
+            book_year = data_object['publish_year']
+            book_publisher = data_object['publisher']
+        else:
+            book_id = kwargs['sysID']
+            book_lib = kwargs['libIndexID']
+            book_name = kwargs['bookname']
+            book_isbn = kwargs['isbn']
+            book_author = kwargs['author']
+            book_year = kwargs['publish_year']
+            book_publisher = kwargs['publisher']
+        self.id = book_id
+        self.lib_index = book_lib
+        self.name = book_name
+        self.isbn = book_isbn
+        self.author = book_author
+        self.year = book_year
+        self.publisher = book_publisher
 
 
 # --------------------------------------------------------

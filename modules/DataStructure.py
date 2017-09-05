@@ -85,11 +85,6 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------
-    l = CountingDict()
-    print(l.__class__.__name__, type(l.__class__.__name__))
-    print(l.__module__)
-    print(l.__dict__)
-    print(l.__getattribute__('stored_dict'))
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time
