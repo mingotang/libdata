@@ -11,6 +11,9 @@ class GeneralDict(object):
     def __repr__(self):
         return str(self.stored_dict)
 
+    def __len__(self):
+        return len(self.stored_dict)
+
     def __getitem__(self, key: str):
         if key not in self.stored_dict:
             raise IndexError('{0:s}.__getitem__: index {1:s} not in dict'.format(self.__class__.__name__, key))
@@ -45,38 +48,8 @@ class DataObject(GeneralDict):
     def keys(self):
         return self.stored_dict.keys()
 
-
-# --------------------------------------------------------
-class EventAction(object):
-    def __init__(self, event_type: str,
-                 event_year: str, event_month: str, event_day: str):
-        self.event_type = event_type
-        self.year = event_year
-        self.month = event_month
-        self.day = event_day
-
-
-# --------------------------------------------------------
-class Reader(object):
-    def __init__(self, user_id: str,
-                 user_type='', college=''):
-        self.id = user_id
-        self.type = user_type
-        self.college = college
-
-
-# --------------------------------------------------------
-class Book(object):
-    def __init__(self, book_id: str,
-                 book_lib_index='', book_name='', author='', year='', publisher='', isbn=''):
-        self.id = book_id
-        self.lib_index = book_lib_index
-        self.name = book_name
-        self.isbn = isbn
-        self.author = author
-        self.year = year
-        self.publisher = publisher
-
+    def set(self, key: str, element):
+        self.__setitem__(key, element)
 
 # --------------------------------------------------------
 class CountingDict(GeneralDict):

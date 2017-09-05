@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # In this document text file is prepared for the project
 # --------------------------
-import csv
 import os
 
 from modules.DataStructure import DataObject
@@ -98,7 +97,10 @@ class RawDataProcessor(object):
         return data_list
 
     def __raw_data_line_clean__(self, content: list):
+        warning_info = "{0:s}.__raw_data_line_clean__: Unqualified data :  ".format(self.__class__.__name__)
+        warning_info += str(content)
         if len(content) < 12:
+            print(warning_info)
             return list()
         else:
             if content[9] in self.event_type_dict:
@@ -115,49 +117,11 @@ class RawDataProcessor(object):
                     return content
                     # print(content)
                 else:
-                    print("data_cleaning. unqualified data : ", content)
+                    print(warning_info)
                     return list()
             else:
-                print("data_cleaning. unqualified data : ", content)
+                print(warning_info)
                 return list()
-
-    def load_csv_2d(self, filename: str, encode='utf-8'):
-        """
-        load a list which is of two dimension
-        with lines in list and columns in sub_lists
-        """
-        csv_file = open(os.path.join(self.folder_path, filename), 'r', newline='', encoding=encode)
-        __content__ = list()
-        spam_reader = csv.reader(csv_file,
-                                 delimiter=',',
-                                 quotechar='"'
-                                 )
-        for __line__ in spam_reader:
-            __content__.append(__line__)
-        print('load_csv_2d. File {0:s} is loaded !'.format(filename))
-        return __content__
-
-    def save_csv_2d(self, filename: str, content: list, encode='utf-8'):
-        """
-        save a list which is of two dimension to the file
-        with lines in list and columns in sub_lists
-        """
-        if filename[-4:] != '.csv':
-            file_name = filename + '.csv'
-        else:
-            file_name = filename
-        csv_file = open(os.path.join(self.folder_path, file_name), 'w', newline='', encoding=encode)
-        spam_writer = csv.writer(csv_file,
-                                 delimiter=',',
-                                 quotechar='"',
-                                 quoting=csv.QUOTE_MINIMAL
-                                 )
-        spam_writer.writerows(content)
-        csv_file.close()
-        print('save_csv_2d. File {0:s} is saved ! '.format(file_name))
-
-
-# --------------------------------------------------------
 
 
 # --------------------------------------------------------

@@ -1,8 +1,7 @@
 # -*- encoding: UTF-8 -*-
 # --------------------------------------------------------
 import pickle
-from modules.DataStructure import GeneralDict
-from modules.DataStructure import Reader, Book, EventAction
+from modules.DataStructure import GeneralDict, DataObject
 # --------------------------------------------------------
 
 
