@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-# In this document text file is prepared for the project
-# --------------------------
+# -*- encoding: UTF-8 -*-
+# ---------------------------------import------------------------------------
 import os
 import re
 
@@ -159,11 +158,6 @@ class RecordOperator(object):
     def __init__(self):
         pass
 
-# class CleanRecord(object):
-#     def __init__(self, library_classi, publish_isbn):
-#         self.isbn_gen = ISBNGen(library_classi, publish_isbn)
-#
-#
 #     def derive_biblio(self, recordline):
 #         """return biblio information in a list"""
 #         text = copy.copy(recordline[tag_biblio])

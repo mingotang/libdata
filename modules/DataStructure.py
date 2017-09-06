@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-# --------------------------------------------------------
+# ---------------------------------import------------------------------------
 
 
 # --------------------------------------------------------
@@ -44,12 +44,18 @@ class GeneralDict(object):
 
 
 # --------------------------------------------------------
+class GeneralList(list):
+    pass
+
+
+# --------------------------------------------------------
 class DataObject(GeneralDict):
     def keys(self):
         return self.stored_dict.keys()
 
     def set(self, key: str, element):
         self.__setitem__(key, element)
+
 
 # --------------------------------------------------------
 class CountingDict(GeneralDict):

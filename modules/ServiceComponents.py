@@ -1,15 +1,18 @@
 # -*- encoding: UTF-8 -*-
-# --------------------------------------------------------
+# ---------------------------------import------------------------------------
 import os
 import csv
 from modules.DataStructure import DataObject
-# --------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 # --------------------------------------------------------
 class EventAction(object):
     def __init__(self, data_object=DataObject(), **kwargs):
-        self.__attr_tag_list__ = ('event_type', 'event_date', 'userID', 'sysID')
+        """
+        :param data_object: DataObject
+        :param kwargs: key: 'event_type', 'event_date', 'userID', 'sysID'
+        """
         if len(data_object) > 0:
             user_id = data_object['userID']
             book_id = data_object['sysID']
@@ -27,11 +30,112 @@ class EventAction(object):
         self.book_id = book_id
         self.reader_id = user_id
 
+    def __repr__(self):
+        return ' '.join(['event_date:', self.year + self.month + self.day,
+                         'event_type:', self.event_type,
+                         'userID:', self.reader_id, 'sysID', self.book_id])
+
+    def __eq__(self, other):
+        if self.day == other.day and self.month == other.month and self.year == other.year:
+            if self.book_id == other.book_id and self.reader_id == other.reader_id:
+                if self.event_type == other.event_type:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+    def __ne__(self, other):
+        if self.__eq__(other) is True:
+            return False
+        else:
+            return True
+
+    def earlier_than(self, other):
+        if self.year < other.year:
+            return True
+        elif self.year == other.year:
+            if self.month < other.month:
+                return True
+            elif self.month == other.month:
+                if self.day < other.day:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+    def later_than(self, other):
+        if self.year > other.year:
+            return True
+        elif self.year == other.year:
+            if self.month > other.month:
+                return True
+            elif self.month == other.month:
+                if self.day > other.day:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+
+# --------------------------------------------------------
+class EventActionList(object):
+    def __init__(self):
+        self.stored_list = list()
+        self.__index_for_iter__ = int()
+
+    def __repr__(self):
+        return '\n'.join(self.stored_list)
+
+    def __len__(self):
+        return len(self.stored_list)
+
+    def __getitem__(self, index: int):
+        return self.stored_list[index]
+
+    def __setitem__(self, index: int, value: EventAction):
+        self.stored_list[index] = value
+
+    def __contains__(self, element: EventAction):
+        if element in self.stored_list:
+            return True
+        else:
+            return False
+
+    def __iter__(self):
+        self.__index_for_iter__ = 0
+        return self
+
+    def __next__(self):
+        if self.__index_for_iter__ >= len(self.stored_list):
+            raise StopIteration
+        return self.stored_list[self.__index_for_iter__]
+
+    def add(self, element: EventAction):
+        for index in range(len(self.stored_list)):
+            if element.earlier_than(self.stored_list[index]):
+                self.stored_list.insert(index, element)
+                return None
+        self.stored_list.append(element)
+        return None
+
 
 # --------------------------------------------------------
 class Reader(object):
     def __init__(self, data_object=DataObject(), **kwargs):
-        self.__attr_tag_list__ = ('userID', 'user_type', 'collegeID')
+        """
+        Data structure for readers
+        :param data_object: DataObject
+        :param kwargs: key: 'userID', 'user_type', 'collegeID'
+        """
         if len(data_object) > 0:
             user_id = data_object['userID']
             user_type = data_object['user_type']
@@ -44,10 +148,19 @@ class Reader(object):
         self.type = user_type
         self.college = college
 
+    def __repr__(self):
+        return ' '.join(['readerID:', self.id, 'reader_type:', self.type,
+                         'college:', self.college])
+
 
 # --------------------------------------------------------
 class Book(object):
     def __init__(self, data_object=DataObject(), **kwargs):
+        """
+        Data structure for books
+        :param data_object: DataObject
+        :param kwargs: key: 'sysID', 'libIndexID', 'bookname', 'isbn', 'author', 'publish_year', 'publisher'
+        """
         if len(data_object) > 0:
             book_id = data_object['sysID']
             book_lib = data_object['libIndexID']
@@ -72,16 +185,25 @@ class Book(object):
         self.year = book_year
         self.publisher = book_publisher
 
+    def __repr__(self):
+        return ' '.join(['BookID:', self.id, 'BookLibIndex:', self.lib_index,
+                         'BookName:', self.name, 'ISBN:', self.isbn, 'author:', self.author,
+                         'publish_year:', self.year, 'publisher:', self.publisher])
+
 
 # --------------------------------------------------------
 class FileIO(object):
     @staticmethod
-    def load_csv_2d(folder_path: str, filename: str, encode='utf-8'):
+    def load_csv(file_path: str, encode='utf-8'):
         """
         load a list which is of two dimension
         with lines in list and columns in sub_lists
         """
-        csv_file = open(os.path.join(folder_path, filename), 'r', newline='', encoding=encode)
+        if file_path[-4:] != '.csv':
+            file_name = file_path + '.csv'
+        else:
+            file_name = file_path
+        csv_file = open(file_name, 'r', newline='', encoding=encode)
         __content__ = list()
         spam_reader = csv.reader(csv_file,
                                  delimiter=',',
@@ -89,20 +211,20 @@ class FileIO(object):
                                  )
         for __line__ in spam_reader:
             __content__.append(__line__)
-        print('load_csv_2d. File {0:s} is loaded !'.format(filename))
+        print('load_csv_2d. File {0:s} is loaded !'.format(file_name))
         return __content__
 
     @staticmethod
-    def save_csv_2d(folder_path: str, filename: str, content: list, encode='utf-8'):
+    def save_csv(file_path: str, content: list, encode='utf-8'):
         """
         save a list which is of two dimension to the file
         with lines in list and columns in sub_lists
         """
-        if filename[-4:] != '.csv':
-            file_name = filename + '.csv'
+        if file_path[-4:] != '.csv':
+            file_name = file_path + '.csv'
         else:
-            file_name = filename
-        csv_file = open(os.path.join(folder_path, file_name), 'w', newline='', encoding=encode)
+            file_name = file_path
+        csv_file = open(file_name, 'w', newline='', encoding=encode)
         spam_writer = csv.writer(csv_file,
                                  delimiter=',',
                                  quotechar='"',
@@ -110,7 +232,7 @@ class FileIO(object):
                                  )
         spam_writer.writerows(content)
         csv_file.close()
-        print('save_csv_2d. File {0:s} is saved ! '.format(file_name))
+        print('FileIO.save_csv_2d: File {0:s} is saved ! '.format(file_name))
 # --------------------------------------------------------
 
 
