@@ -8,9 +8,9 @@ from modules.DataStructure import DataObject
 
 # --------------------------------------------------------
 class RawDataProcessor(object):
-    def __init__(self, folder_path: str):
-        self.folder_path = folder_path
-        self.match_index_dict = {
+    @staticmethod
+    def get_data_match_dict():
+        match_index_dict = {
             'sysID': 0,
             'libIndexID': 1,
             'bookname': 2,
@@ -24,7 +24,16 @@ class RawDataProcessor(object):
             'user_type': 10,
             'collegeID': 11,
         }
-        self.head_dict = {
+        return match_index_dict
+
+    @staticmethod
+    def match_raw_data_index(inner_tag: str):
+        index_dict = RawDataProcessor.get_data_match_dict()
+        return index_dict[inner_tag]
+
+    @staticmethod
+    def get_column_name(inner_tag: str):
+        head_dict = {
             'sysID': '系统号',
             'libIndexID': '索书号',
             'bookname': '书名',
@@ -38,13 +47,25 @@ class RawDataProcessor(object):
             'user_type': '读者身份类别',
             'collegeID': '学院代码',
         }
-        self.event_type_dict = {
+        return head_dict[inner_tag]
+
+    @staticmethod
+    def get_event_type_dict():
+        event_type_dict = {
             '50': '借书',
             '61': '还书',
             '62': '续借',
             '63': '续借2'
         }
-        self.reader_type_dict = {
+        return event_type_dict
+
+    @staticmethod
+    def get_event_type(event_type_tag: str):
+        return RawDataProcessor.get_event_type_dict()[event_type_tag]
+
+    @staticmethod
+    def get_reader_type(reader_type_tag: str):
+        reader_type_dict = {
             '11': '教授、副教授及各系列高级职称',
             '12': '教师、各系列中级职称',
             '13': '教职工、各系列初级职称',
@@ -73,9 +94,10 @@ class RawDataProcessor(object):
             '62': '研究生VIP2',
             '63': '研究生VIP3',
         }
-        self.__temp_list__ = list()
+        return reader_type_dict[reader_type_tag]
 
-    def derive_raw_data(self,
+    @staticmethod
+    def derive_raw_data(folder_path: str,
                         text_encoding='gb18030',
                         raw_file_list=('2016-11-16-guanyuan2013.txt',
                                        '2016-11-16-guanyuan2014.txt',
@@ -83,64 +105,71 @@ class RawDataProcessor(object):
                                        )
                         ):
         data_list = list()
+        __temp_list__ = list()
+        data_match_dict = RawDataProcessor.get_data_match_dict()
         for file_name in raw_file_list:
-            data_file = open(os.path.join(self.folder_path, file_name), 'r', encoding=text_encoding)
+            data_file = open(os.path.join(folder_path, file_name), 'r', encoding=text_encoding)
             text_line = data_file.readline()
             while text_line:
                 line_content = text_line.split('@')
                 line_content.pop()
-                line_content = self.__raw_data_line_clean__(line_content)
-                if self.check_data_line(line_content):
+                line_content = RawDataProcessor.__raw_data_line_clean__(line_content, __temp_list__)
+                if RawDataProcessor.check_data_line(line_content):
                     data_object = DataObject()
-                    for tag in self.match_index_dict:
-                        data_object.set(key=tag, element=line_content[self.match_index_dict[tag]])
+                    for tag in data_match_dict:
+                        data_object.set(key=tag, element=line_content[RawDataProcessor.match_raw_data_index(tag)])
                     data_list.append(data_object)
                 elif len(line_content) == 0:
                     pass
                 else:
-                    print("{0:s}: Unqualified data :  ".format(self.__class__.__name__), line_content)
+                    print("{0:s}: Unqualified data :  ".format(RawDataProcessor.__class__.__name__), line_content)
                 text_line = data_file.readline()
         return data_list
 
-    def check_data_line(self, content: list):
-        if len(content) != len(self.match_index_dict):
+    @staticmethod
+    def check_data_line(content: list):
+        if len(content) != len(RawDataProcessor.get_data_match_dict()):
             return False
         if not re.search(r'[12][890123]\d\d[01]\d[0123]\d', content[8]):
             return False
-        if content[9] not in self.event_type_dict:
+        if content[9] not in RawDataProcessor.get_event_type_dict():
             return False
         return True
 
-    def __raw_data_line_clean__(self, content: list):
-        warning_info = "{0:s}.__raw_data_line_clean__: Unqualified data :  ".format(self.__class__.__name__)
+    @staticmethod
+    def __raw_data_line_clean__(content: list, __temp_list__: list):
+        warning_info = "{0:s}.__raw_data_line_clean__: Unqualified data :  ".format(RawDataProcessor.__class__.__name__)
         warning_info += str(content)
         if len(content) < 12:
-            if len(self.__temp_list__) > 0:
-                self.__temp_list__.extend(content)
-                temp_list = self.__raw_data_line_clean__(self.__temp_list__)
+            if len(__temp_list__) > 0:
+                __temp_list__.extend(content)
+                temp_list = RawDataProcessor.__raw_data_line_clean__(__temp_list__, __temp_list__)
                 if len(temp_list) > 0:
-                    self.__temp_list__ = list()
+                    __temp_list__.clear()
                     return temp_list
                 else:
-                    self.__temp_list__ = list()
+                    __temp_list__.clear()
                     print(warning_info)
                     return list()
             else:
-                self.__temp_list__.extend(content)
+                __temp_list__.extend(content)
                 return list()
         else:
-            if content[9] in self.event_type_dict:
-                return content
-            elif content[10] in self.event_type_dict:
-                if len(content[4]) == 17:
-                    content[2] = content[2] + content[3]
-                    del content[3]
-                    return content
+            cont = list()
+            cont.extend(content)
+            __temp_list__.clear()
+            if cont[9] in RawDataProcessor.get_event_type_dict():
+                return cont
+            elif cont[10] in RawDataProcessor.get_event_type_dict():
+                if len(cont[4]) == 17:
+                    cont[2] = cont[2] + cont[3]
+                    del cont[3]
+                    return cont
                     # print(content)
-                elif len(content[3]) == 17:
-                    content[4] = content[4] + content[5]
-                    del content[5]
-                    return content
+                elif len(cont[3]) == 17:
+                    cont[4] = cont[4] + cont[5]
+                    del cont[5]
+                    return cont
                     # print(content)
                 else:
                     print(warning_info)
@@ -295,8 +324,8 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------ cleaning records
-    raw_data = RawDataProcessor(folder_path=os.path.join('..', 'data'))
-    data = raw_data.derive_raw_data()
+    data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', 'data'))
+    print(data)
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time
