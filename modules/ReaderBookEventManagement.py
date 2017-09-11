@@ -4,11 +4,11 @@ import os
 import pickle
 from modules.DataStructure import GeneralDict
 from modules.ServiceComponents import Book, Reader, EventAction, EventActionList
-# ---------------------------------------------------------------------------
 
 
 # --------------------------------------------------------
 class GeneralManager(GeneralDict):
+    global_info = 'Test'
     def __init__(self, folder_path: str, data_postfix='.libdata', loading_name='GeneralData'):
         """
         General class for libdata info management
@@ -24,7 +24,8 @@ class GeneralManager(GeneralDict):
         try:
             self.load(file_name=loading_name)
         except FileNotFoundError:
-            pass
+            self.save(file_name=loading_name)
+            self.__saved_or_not__ = False
 
     def __repr__(self):
         text = '{0:s}\'s content: \n'.format(self.__class__.__name__)
@@ -36,11 +37,6 @@ class GeneralManager(GeneralDict):
         else:
             text += 'None.'
         return text
-
-    def __del__(self):
-        if self.__saved_or_not__ is False:
-            self.save()
-            print('warning: object {0:s} is saved automatically.'.format(self.__class__.__name__))
 
     def __check_file_name__(self, file_name: str):
         if file_name != '':
@@ -67,14 +63,30 @@ class GeneralManager(GeneralDict):
         self.loads(content=data_dict)
 
     def saves(self):
-        self.__saved_or_not__ = True
         return self.stored_dict
 
     def save(self, file_name=''):
         data_file_name = self.__check_file_name__(file_name)
         content = self.saves()
         pickle.dump(content, open(os.path.join(self.folder_path, data_file_name), 'wb'))
-# --------------------------------------------------------
+        self.__saved_or_not__ = True
+
+    def include(self, key: str, value):
+        self.__saved_or_not__ = False
+        if key in self.stored_dict:
+            self.update_member(key, value)
+        else:
+            self.__setitem__(key, value)
+
+    def extend(self, key: str, value_list: list):
+        for item in value_list:
+            self.include(key, item)
+        self.save()
+        self.__saved_or_not__ = True
+
+    def update_member(self, key: str, value):
+        self.__saved_or_not__ = False
+        raise NameError('Method {0:s}.update_member is not defined'.format(self.__class__.__name__))
 
 
 # --------------------------------------------------------
@@ -85,7 +97,12 @@ class BookManager(GeneralManager):
 
     def __setitem__(self, key: str, value: Book):
         self.stored_dict[key] = value
-# --------------------------------------------------------
+
+    def update_member(self, key: str, value: Book):
+        if value == self.stored_dict[key]:
+            return None
+        else:   # TODO: finish update member
+            pass
 
 
 # --------------------------------------------------------
@@ -96,7 +113,6 @@ class ReaderManager(GeneralManager):
 
     def __setitem__(self, key: str, value: Reader):
         self.stored_dict[key] = value
-# --------------------------------------------------------
 
 
 # --------------------------------------------------------
@@ -112,10 +128,8 @@ class ReadersEventManager(GeneralManager):
         if reader_id not in self.stored_dict:
             self.stored_dict[reader_id] = EventActionList()
         self.stored_dict[reader_id].add(action_event)
-# --------------------------------------------------------
 
 
-# --------------------------------------------------------
 # --------------------------------------------------------
 
 
@@ -124,10 +138,12 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------
+    print(ReaderManager.global_info)
     manager = ReaderManager(folder_path=os.path.join('..', 'data'))
     print(manager)
-    manager.save()
-    del manager
+    print(manager.global_info)
+    # manager.save()
+    # del manager
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time

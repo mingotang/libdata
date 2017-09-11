@@ -48,10 +48,10 @@ class EventAction(object):
             return False
 
     def __ne__(self, other):
-        if self.__eq__(other) is True:
-            return False
-        else:
-            return True
+        return not self.__eq__(other)
+
+    def is_one_event(self, other):
+        return self.__eq__(other)
 
     def earlier_than(self, other):
         if self.year < other.year:
@@ -69,6 +69,12 @@ class EventAction(object):
         else:
             return False
 
+    def same_time(self, other):
+        if self.year == other.year and self.month == other.month and self.day == other.day:
+            return True
+        else:
+            return False
+
     def later_than(self, other):
         if self.year > other.year:
             return True
@@ -82,6 +88,18 @@ class EventAction(object):
                     return False
             else:
                 return False
+        else:
+            return False
+
+    def not_earlier_than(self, other):
+        if self.same_time(other) and self.later_than(other):
+            return True
+        else:
+            return False
+
+    def not_later_than(self, other):
+        if self.same_time(other) and self.earlier_than(other):
+            return True
         else:
             return False
 
@@ -121,11 +139,10 @@ class EventActionList(object):
 
     def add(self, element: EventAction):
         for index in range(len(self.stored_list)):
-            if element.earlier_than(self.stored_list[index]):
+            if element.not_later_than(self.stored_list[index]) and element != self.stored_list[index]:
                 self.stored_list.insert(index, element)
-                return None
+                return
         self.stored_list.append(element)
-        return None
 
 
 # --------------------------------------------------------
@@ -151,6 +168,21 @@ class Reader(object):
     def __repr__(self):
         return ' '.join(['readerID:', self.id, 'reader_type:', self.type,
                          'college:', self.college])
+
+    def __eq__(self, other):
+        if self.id == other.id and self.type == other.type and self.college == other.college:
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def is_one_reader(self, other):
+        if self.id == other.id:
+            return True
+        else:
+            return False
 
 
 # --------------------------------------------------------
@@ -190,6 +222,27 @@ class Book(object):
                          'BookName:', self.name, 'ISBN:', self.isbn, 'author:', self.author,
                          'publish_year:', self.year, 'publisher:', self.publisher])
 
+    def __eq__(self, other):
+        if self.id == other.id:
+            if self.author == other.author and self.isbn == other.isbn and self.name == other.name:
+                if self.lib_index == other.lib_index and self.year == other.year and self.publisher == other.publisher:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def is_one_book(self, other):
+        if self.id == other.id:
+            return True
+        else:
+            return False
+
 
 # --------------------------------------------------------
 class FileIO(object):
@@ -211,7 +264,7 @@ class FileIO(object):
                                  )
         for __line__ in spam_reader:
             __content__.append(__line__)
-        print('load_csv_2d. File {0:s} is loaded !'.format(file_name))
+        # print('load_csv_2d. File {0:s} is loaded !'.format(file_name))
         return __content__
 
     @staticmethod
@@ -232,11 +285,9 @@ class FileIO(object):
                                  )
         spam_writer.writerows(content)
         csv_file.close()
-        print('FileIO.save_csv_2d: File {0:s} is saved ! '.format(file_name))
-# --------------------------------------------------------
+        # print('FileIO.save_csv_2d: File {0:s} is saved ! '.format(file_name))
 
 
-# --------------------------------------------------------
 # --------------------------------------------------------
 
 
