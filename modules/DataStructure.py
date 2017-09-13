@@ -44,11 +44,6 @@ class GeneralDict(object):
 
 
 # --------------------------------------------------------
-class GeneralList(list):
-    pass
-
-
-# --------------------------------------------------------
 class DataObject(GeneralDict):
     def keys(self):
         return self.stored_dict.keys()
@@ -81,6 +76,16 @@ class CountingDict(GeneralDict):
             return stored_list.reverse()
         else:
             return stored_list
+
+    def total_weights(self, tag_list=tuple()):
+        total_num = 0
+        if len(tag_list) > 0:
+            for tag in tag_list:
+                total_num += self.stored_dict[tag]
+        else:
+            for tag in self.stored_dict:
+                total_num += self.stored_dict[tag]
+        return total_num
 
 
 # --------------------------------------------------------

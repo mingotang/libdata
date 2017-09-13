@@ -2,6 +2,7 @@
 # ---------------------------------import------------------------------------
 import os
 import pickle
+
 from modules.DataStructure import GeneralDict
 from modules.ServiceComponents import Book, Reader, EventAction, EventActionList
 
@@ -88,6 +89,13 @@ class GeneralManager(GeneralDict):
         self.__saved_or_not__ = False
         raise NameError('Method {0:s}.update_member is not defined'.format(self.__class__.__name__))
 
+    def collect_baskets_for_apriori(self):
+        """
+        get baskets for apriori
+        :return: pandas.DataFrame
+        """
+        raise NameError('Method {0:s}.collect_baskets_for_apriori is not defined'.format(self.__class__.__name__))
+
 
 # --------------------------------------------------------
 class BookManager(GeneralManager):
@@ -100,9 +108,26 @@ class BookManager(GeneralManager):
 
     def update_member(self, key: str, value: Book):
         if value == self.stored_dict[key]:
-            return None
-        else:   # TODO: finish update member
-            pass
+            return
+        else:
+            if value.is_one_book(self.stored_dict[key]):  # TODO: finish update member
+                pass
+            else:
+                print('Conflict info - BookManager:')
+                print('\t', value)
+                print('\t', self.stored_dict[key])
+                store_path = os.path.join(self.folder_path, 'BookManager - conflict book info.pickle')
+                try:
+                    input_file = open(store_path, 'rb')
+                    conf_info = pickle.load(input_file)
+                    input_file.close()
+                    os.remove(store_path)
+                except FileNotFoundError:
+                    conf_info = list()
+                conf_info.append([value, self.stored_dict[key]])
+                output_file = open(store_path, 'wb')
+                pickle.dump(conf_info, output_file)
+                output_file.close()
 
 
 # --------------------------------------------------------
@@ -114,6 +139,28 @@ class ReaderManager(GeneralManager):
     def __setitem__(self, key: str, value: Reader):
         self.stored_dict[key] = value
 
+    def update_member(self, key: str, value: Reader):
+        if value == self.stored_dict[key]:
+            return
+        else:
+            if value.is_one_reader(self.stored_dict[key]):
+                pass
+            else:
+                print('Conflict info - ReaderManager:')
+                print('\t', value)
+                print('\t', self.stored_dict[key])
+                store_path = os.path.join(self.folder_path, 'ReaderManager - conflict book info.pickle')
+                try:
+                    input_file = open(store_path, 'rb')
+                    conf_info = pickle.load(input_file)
+                    input_file.close()
+                    os.remove(store_path)
+                except FileNotFoundError:
+                    conf_info = list()
+                conf_info.append([value, self.stored_dict[key]])
+                output_file = open(store_path, 'wb')
+                pickle.dump(conf_info, output_file)
+                output_file.close()
 
 # --------------------------------------------------------
 class ReadersEventManager(GeneralManager):
@@ -124,10 +171,16 @@ class ReadersEventManager(GeneralManager):
     def __setitem__(self, key: str, value: EventActionList):
         self.stored_dict[key] = value
 
-    def add_action(self, reader_id: str, action_event: EventAction):
-        if reader_id not in self.stored_dict:
-            self.stored_dict[reader_id] = EventActionList()
-        self.stored_dict[reader_id].add(action_event)
+    def include(self, key: str, value: EventAction):
+        """
+
+        :param key: reader_id, str
+        :param value:
+        :return: None
+        """
+        if key not in self.stored_dict:
+            self.stored_dict[key] = EventActionList()
+        self.stored_dict[key].add(value)
 
 
 # --------------------------------------------------------

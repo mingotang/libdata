@@ -1,0 +1,58 @@
+# -*- encoding: UTF-8 -*-
+# ---------------------------------import------------------------------------
+import pandas as pd
+
+from mlxtend.frequent_patterns import apriori
+from mlxtend.frequent_patterns import association_rules
+
+
+# --------------------------------------------------------
+class LibAssociationRulesGeneration(object):
+
+    @staticmethod
+    def apriori():
+        pd.DataFrame
+
+
+
+# --------------------------------------------------------
+
+
+if __name__ == '__main__':
+    import time
+    start_time = time.time()
+    # ------------------------------
+    import pandas as pd
+    from mlxtend.frequent_patterns import apriori
+    from mlxtend.frequent_patterns import association_rules
+
+    df = pd.read_excel('http://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx')
+    # print(df.head())
+    df['Description'] = df['Description'].str.strip()
+    df.dropna(axis=0, subset=['InvoiceNo'], inplace=True)
+    df['InvoiceNo'] = df['InvoiceNo'].astype('str')
+    df = df[~df['InvoiceNo'].str.contains('C')]
+    basket = (df[df['Country'] == "France"]
+              .groupby(['InvoiceNo', 'Description'])['Quantity']
+              .sum().unstack().reset_index().fillna(0)
+              .set_index('InvoiceNo'))
+    print(basket)
+    def encode_units(x):
+        if x <= 0:
+            return 0
+        if x >= 1:
+            return 1
+    basket_sets = basket.applymap(encode_units)
+    basket_sets.drop('POSTAGE', inplace=True, axis=1)
+    frequent_itemsets = apriori(basket_sets, min_support=0.07, use_colnames=True)
+    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+    # print(rules.head())
+    # rules[(rules['lift'] >= 6) & (rules['confidence'] >= 0.8)]
+
+    # ------------------------------
+    end_time = time.time()
+    duration = end_time - start_time
+    hour = int(duration)//3600
+    minutes = int(duration) // 60 - 60 * hour
+    seconds = duration % 60
+    print('\nRunning time: {0:d} h {1:d} m {2:.2f} s'.format(hour, minutes, seconds))

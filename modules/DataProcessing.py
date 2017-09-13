@@ -175,10 +175,7 @@ class RawDataProcessor(object):
 
 
 # --------------------------------------------------------
-class RecordOperator(object):
-    def __init__(self):
-        pass
-
+# class RecordOperator(object):
 #     def derive_biblio(self, recordline):
 #         """return biblio information in a list"""
 #         text = copy.copy(recordline[tag_biblio])
@@ -266,51 +263,10 @@ class RecordOperator(object):
 #             return True
 #         else:
 #             return False
-# --------------------------------------------------------
 
 
 # --------------------------------------------------------
-# def derive_tag_A_to_tag_B_dict(tag_A, tag_B, raw_file_list, output=False, filename='default_filename',
-#                                watch_result=False):
-#     """return a dict: tag_A -> list(tag_B's)"""
-#     raw_data = RawDataReader(raw_file_list)
-#     __content__ = raw_data.readnextline()
-#     a2b_dict = dict()
-#     while __content__:
-#         if __content__[tag_A] in a2b_dict:
-#             a2b_dict[__content__[tag_A]].append(__content__[tag_B])
-#         else:
-#             a2b_dict[__content__[tag_A]] = list()
-#             a2b_dict[__content__[tag_A]].append(__content__[tag_B])
-#         __content__ = raw_data.readnextline()
-#     for __item__ in a2b_dict:
-#         a2b_dict[__item__] = list(set(a2b_dict[__item__]))
-#     if watch_result is True:
-#         for __item__ in a2b_dict:
-#             print('{', __item__, ':', a2b_dict[__item__], '}')
-#     if output is True:
-#         save_data(filename, a2b_dict)
-#
-#
-# def derive_tag_A_to_object_B_dict(tag_A, object_B_tag_list, raw_file_list,watch_result=False,
-#                                    output=False, filename='default'):
-#     """return a dict: tag_A -> dict{tag_B: tag_B_content}"""
-#     __raw_data__ = RawDataReader(raw_file_list)
-#     __content__ = __raw_data__.readnextline()
-#     a2b_dict = dict()
-#     while __content__:
-#         if __content__[tag_A] in a2b_dict:
-#             pass
-#         else:
-#             a2b_dict[__content__[tag_A]] = dict()
-#             for __item__ in object_B_tag_list:
-#                 a2b_dict[__content__[tag_A]][__item__] = __content__[__item__]
-#         __content__ = __raw_data__.readnextline()
-#     if watch_result is True:
-#         for __item__ in a2b_dict:
-#             print('{', __item__, ':', a2b_dict[__item__], '}')
-#     if output is True:
-#         save_data(filename, a2b_dict)
+
 
 if __name__ == '__main__':
     import time
