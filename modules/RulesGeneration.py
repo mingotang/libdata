@@ -10,9 +10,42 @@ from mlxtend.frequent_patterns import association_rules
 class LibAssociationRulesGeneration(object):
 
     @staticmethod
-    def apriori():
-        pd.DataFrame
+    def apriori(base: str, **kwargs):
+        if base == 'book_name':
+            if 'book_dict' in kwargs:
+                pass
+            else:
+                raise ValueError('LibAssociationRulesGeneration.apriori: missing param book_dict')
+        if base == 'book_classification':
+            if 'book_dict' in kwargs:
+                pass
+            else:
+                raise ValueError('LibAssociationRulesGeneration.apriori: missing param book_dict')
+        else:
+            raise ValueError(
+                'LibAssociationRulesGeneration.apriori: base {0:s} is not legal'.format(base)
+            )
 
+    @staticmethod
+    def collaborative_filtering(base: str, **kwargs):
+        if base == 'reader2reader':
+            if 'reader_events_dict' in kwargs:
+                pass
+            else:
+                raise ValueError(
+                    'LibAssociationRulesGeneration.collaborative_filtering: missing param reader_events_dict'
+                )
+        elif base == 'book2book':
+            if 'reader_events_dict' in kwargs:
+                pass
+            else:
+                raise ValueError(
+                    'LibAssociationRulesGeneration.collaborative_filtering: missing param reader_events_dict'
+                )
+        else:
+            raise ValueError(
+                'LibAssociationRulesGeneration.collaborative_filtering: base {0:s} is not legal'.format(base)
+            )
 
 
 # --------------------------------------------------------

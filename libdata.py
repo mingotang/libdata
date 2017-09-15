@@ -1,8 +1,24 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+import os
 
+from modules.DataProcessing import RawDataProcessor
+from modules.ReaderBookEventManagement import ReaderManager, BookManager, ReadersEventManager
 
 # --------------------------------------------------------
+data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('data'))
+manager_reader = ReaderManager(folder_path=os.path.join('data'))
+print(manager_reader)
+# manager_reader.extend(data)
+# manager_reader.save()
+manager_book = BookManager(folder_path=os.path.join('data'))
+# manager_book.extend(data)
+# manager_book.save()
+manager_events = ReadersEventManager(folder_path=os.path.join('data'))
+# manager_events.extend(data)
+# manager_events.save()
+
+
 # --------------------------------------------------------
 
 

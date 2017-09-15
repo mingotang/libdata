@@ -3,6 +3,8 @@
 import os
 import re
 
+from tqdm import tqdm
+
 from modules.DataStructure import DataObject
 
 
@@ -99,7 +101,7 @@ class RawDataProcessor(object):
         data_list = list()
         __temp_list__ = list()
         data_match_dict = RawDataProcessor.match_index_dict
-        for file_name in raw_file_list:
+        for file_name in tqdm(raw_file_list, desc='reading file'):
             data_file = open(os.path.join(folder_path, file_name), 'r', encoding=text_encoding)
             text_line = data_file.readline()
             while text_line:
@@ -275,6 +277,7 @@ if __name__ == '__main__':
     data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', 'data'))
     for data_item in data:
         print(data_item)
+        time.sleep(0.2)
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time

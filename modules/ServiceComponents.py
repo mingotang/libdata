@@ -136,9 +136,13 @@ class EventActionList(object):
             raise StopIteration
         return self.stored_list[self.__index_for_iter__]
 
-    def add(self, element: EventAction):
+    def add(self, element: EventAction, allow_duplicated_record=True):
+        if allow_duplicated_record is False:
+            for index in range(len(self.stored_list)):
+                if element == self.stored_list[index]:
+                    return
         for index in range(len(self.stored_list)):
-            if element.not_later_than(self.stored_list[index]) and element != self.stored_list[index]:
+            if element.not_later_than(self.stored_list[index]):
                 self.stored_list.insert(index, element)
                 return
         self.stored_list.append(element)
@@ -182,6 +186,12 @@ class Reader(object):
             return True
         else:
             return False
+
+    def update(self, other):
+        if len(self.type) > len(other.type):
+            self.type = other.type
+        if len(self.college)> len(other.college):
+            self.college = other.college
 
 
 # --------------------------------------------------------
@@ -241,6 +251,20 @@ class Book(object):
             return True
         else:
             return False
+
+    def update(self, other):
+        if len(self.author) != len(other.author):
+            self.author = other.author
+        if len(self.isbn) > other.isbn:
+            self.isbn = other.isbn
+        if len(self.name) > len(other.name):
+            self.name = other.name
+        if len(self.lib_index) > len(other.lib_index):
+            self.lib_index = other.lib_index
+        if len(self.year) > len(other.year):
+            self.year = other.year
+        if len(self.publisher) > len(other.publisher):
+            self.publisher = other.publisher
 
 
 # --------------------------------------------------------
