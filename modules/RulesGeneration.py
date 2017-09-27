@@ -55,10 +55,7 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------
-    import pandas as pd
-    from mlxtend.frequent_patterns import apriori
-    from mlxtend.frequent_patterns import association_rules
-
+    LibAssociationRulesGeneration.apriori(base='c')
     df = pd.read_excel('http://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx')
     # print(df.head())
     df['Description'] = df['Description'].str.strip()
