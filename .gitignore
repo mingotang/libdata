@@ -102,3 +102,9 @@ ENV/
 
 # pycharm
 .idea/
+
+# Mac OS
+.DS_Store
+
+# Project local data
+_data/
