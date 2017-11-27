@@ -6,8 +6,7 @@ import pickle
 
 from tqdm import tqdm
 
-from modules.DataStructure import GeneralDict
-from modules.ServiceComponents import Book, Reader, EventAction, EventActionList
+from modules.DataStructure import GeneralDict, Book, Reader, EventAction, EventActionList
 
 
 # --------------------------------------------------------
@@ -95,13 +94,6 @@ class GeneralManager(GeneralDict):
     def update_member(self, key: str, value):
         self.__saved_or_not__ = False
         raise NameError('Method {0:s}.update_member is not defined'.format(self.__class__.__name__))
-
-    def collect_baskets_for_apriori(self):
-        """
-        get baskets for apriori
-        :return: pandas.DataFrame
-        """
-        raise NameError('Method {0:s}.collect_baskets_for_apriori is not defined'.format(self.__class__.__name__))
 
 
 # --------------------------------------------------------

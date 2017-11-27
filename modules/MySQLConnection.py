@@ -1,7 +1,7 @@
 # -*- encoding: UTF-8 -*-
 # Realize SQL connection by pymysql based on MySQL
 # --------------------------
-import pymysql.cursors
+import pymysql
 # --------------------------
 # Example:
 # CREATE TABLE `users` (
@@ -31,34 +31,6 @@ import pymysql.cursors
 # COLLATE=utf8_general_ci ;
 
 
-def connect_database(host_ip, sql_user_name, sql_password, database,
-                 charset='utf8', cursorclass=pymysql.cursors.DictCursor):
-    return pymysql.connect(host=host_ip,
-                             user=sql_user_name,
-                             password=sql_password,
-                             db=database,
-                             charset=charset,
-                             cursorclass=cursorclass)
-
-
-def disconnect_database(connection):
-    connection.close()
-    return 0
-
-
-def execute_sql(connection, sql):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(sql)
-            connection.commit()
-            result = cursor.fetchone()
-            line = []
-            for item in result:
-                line.append(result[item])
-            return line
-    except:
-        print('execute_sql Warning! \t Wrong SQL !')
-        return None
 
 
 class SQL(object):
@@ -70,11 +42,11 @@ class SQL(object):
                  cursorclass=pymysql.cursors.DictCursor
                  ):
         self.connection = pymysql.connect(host=host_ip,
-                                 user=sql_user_name,
-                                 password=sql_password,
-                                 db=database,
-                                 charset=charset,
-                                 cursorclass=cursorclass
+                                          user=sql_user_name,
+                                          password=sql_password,
+                                          db=database,
+                                          charset=charset,
+                                          cursorclass=cursorclass,
                                           )
         self.pyname2sqlname = {}
         self.sqlname2pyname = {}

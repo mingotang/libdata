@@ -10,6 +10,11 @@ from modules.DataStructure import DataObject
 
 # --------------------------------------------------------
 class RawDataProcessor(object):
+    default_raw_file_list = [
+        '2016-11-16-guanyuan2013.txt',
+        '2016-11-16-guanyuan2014.txt',
+        '2016-11-16-guanyuan2015.txt',
+    ]
     match_index_dict = {
         'sysID': 0,
         'libIndexID': 1,
@@ -75,53 +80,41 @@ class RawDataProcessor(object):
     }
 
     @staticmethod
-    def match_raw_data_index(inner_tag: str):
-        return RawDataProcessor.match_index_dict[inner_tag]
-
-    @staticmethod
-    def get_column_name(inner_tag: str):
-        return RawDataProcessor.head_dict[inner_tag]
-
-    @staticmethod
-    def get_event_type(event_type_tag: str):
-        return RawDataProcessor.event_type_dict[event_type_tag]
-
-    @staticmethod
-    def get_reader_type(reader_type_tag: str):
-        return RawDataProcessor.reader_type_dict[reader_type_tag]
-
-    @staticmethod
     def derive_raw_data(folder_path: str,
+                        file_list: list,
+                        file_type='txt',
+                        splitter='@',
                         text_encoding='gb18030',
-                        raw_file_list=('2016-11-16-guanyuan2013.txt',
-                                       '2016-11-16-guanyuan2014.txt',
-                                       '2016-11-16-guanyuan2015.txt',
-                                       )
                         ):
+        if len(file_list) == 0:
+            file_list = RawDataProcessor.default_raw_file_list
         data_list = list()
-        __temp_list__ = list()
         data_match_dict = RawDataProcessor.match_index_dict
-        for file_name in tqdm(raw_file_list, desc='reading file'):
-            data_file = open(os.path.join(folder_path, file_name), 'r', encoding=text_encoding)
-            text_line = data_file.readline()
-            while text_line:
-                line_content = text_line.split('@')
-                line_content.pop()
-                line_content = RawDataProcessor.__raw_data_line_clean__(line_content, __temp_list__)
-                if RawDataProcessor.check_data_line(line_content):
-                    data_object = DataObject()
-                    for tag in data_match_dict:
-                        data_object.set(key=tag, element=line_content[RawDataProcessor.match_raw_data_index(tag)])
-                    data_list.append(data_object)
-                elif len(line_content) == 0:
-                    pass
-                else:
-                    print("{0:s}: Unqualified data :  ".format(RawDataProcessor.__class__.__name__), line_content)
+        for file_name in tqdm(file_list, desc='reading file'):
+            if file_type == 'txt':
+                data_file = open(os.path.join(folder_path, file_name), 'r', encoding=text_encoding)
                 text_line = data_file.readline()
+                __temp_list__ = list()
+                while text_line:
+                    line_content = text_line.split(splitter)
+                    line_content.pop()
+                    line_content = RawDataProcessor.__raw_data_line_clean__(line_content, __temp_list__)
+                    if RawDataProcessor.__check_data_line__(line_content):
+                        data_object = DataObject()
+                        for tag in data_match_dict:
+                            data_object.set(key=tag, element=line_content[data_match_dict[tag]])
+                        data_list.append(data_object)
+                    elif len(line_content) == 0:
+                        pass
+                    else:
+                        print("{0:s}: Unqualified data :  ".format(RawDataProcessor.__class__.__name__), line_content)
+                    text_line = data_file.readline()
+            else:
+                raise ValueError('RawDataProcessor.derive_raw_data file type {0:s} not legal'.format(file_type))
         return data_list
 
     @staticmethod
-    def check_data_line(content: list):
+    def __check_data_line__(content: list):
         if len(content) != len(RawDataProcessor.match_index_dict):
             return False
         if not re.search(r'[12][890123]\d\d[01]\d[0123]\d', content[8]):
@@ -177,104 +170,14 @@ class RawDataProcessor(object):
 
 
 # --------------------------------------------------------
-# class RecordOperator(object):
-#     def derive_biblio(self, recordline):
-#         """return biblio information in a list"""
-#         text = copy.copy(recordline[tag_biblio])
-#         if text is None:
-#             return None
-#         else:
-#             bilist = text.split('/')
-#             typelist = bilist[0].split('.')
-#             classifier = typelist[0]
-#             classifier = re.sub('\W', '', classifier)
-#             normclassi = re.match('[a-zA-Z]*\d', classifier)
-#             if normclassi:
-#                 if re.sub('\d', '', normclassi.group()) != '':
-#                     recordline[tag_biblio_simplified_to_category_plus_one_digit] = normclassi.group()
-#                     return True
-#                 else:
-#                     return None
-#             else:
-#                 normclassi = re.match('[a-zA-Z]*', classifier)
-#                 if normclassi:
-#                     if normclassi.group() != '':
-#                         return normclassi.group()
-#                     else:
-#                         return None
-#                 else:
-#                     return None
-#
-#     def derive_college(self, recordline):
-#         if len(recordline[tag_reader_college]) > 2:
-#             return True
-#         else:
-#             recordline[tag_reader_college] = None
-#             return None
-#
-#     def derive_date(self, record):
-#         """return event data in a dict { year(str), month(str), date(str)}"""
-#         text = copy.copy(record[tag_event_date])
-#         if text is not None:
-#             text = re.sub(r'\D', '', text)
-#             if len(text) == 8:
-#                 record[tag_event_date_year] = text[0:4]
-#                 record[tag_event_date_month] = text[4:6]
-#                 record[tag_event_date_date] = text[6:8]
-#                 return True
-#             else:
-#                 print('Warning derive_date:', record[tag_system_id], record[tag_event_date])
-#                 record[tag_event_date_year] = None
-#                 record[tag_event_date_month] = None
-#                 record[tag_event_date_date] = None
-#                 return None
-#         else:
-#             return None
-#
-#     def derive_bookname(self, recordline):
-#         "return the book name in a list [ bookname(str), splitted_name(list)]"
-#         bookname = copy.copy(recordline[tag_book_name])
-#         if bookname is not None:
-#             bookname = bookname.strip()
-#             clean_list = ['及', '与', '及其', '的', '之']
-#             namesplit = '/'.join(jieba.cut(bookname)).split('/')
-#             for i in range(len(namesplit)):
-#                 namesplit[i] = re.sub(r'\W', '', namesplit[i])
-#                 namesplit[i] = re.sub(r'\d', '', namesplit[i])
-#                 for item in clean_list:
-#                     namesplit[i] = namesplit[i].replace(item, '')
-#             while '' in namesplit:
-#                 namesplit.remove('')
-#             recordline[tag_book_name_keywords_list] = namesplit
-#             return True
-#         else:
-#             return None
-#
-#     def derive_isbn(self, record_line):
-#         record_line[tag_isbn_corrected] = self.isbn_gen.derive_isbn(record_line)
-#
-#     def __is_eng_char__(self, uchar):
-#         if (uchar >= u'\u0041' and uchar <= u'\u005a') or (uchar >= u'\u0061' and uchar <= u'\u007a'):
-#             return True
-#         else:
-#             return False
-#
-#     def __is_chi_char__(self, uchar):
-#         """判断一个unicode是否是汉字 utf-16:\u4e00-\u9fa5"""
-#         if u'\u4e00' <= uchar and uchar <= u'\u9fa5':
-#             return True
-#         else:
-#             return False
-
-
-# --------------------------------------------------------
 
 
 if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------ cleaning records
-    data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', 'data'))
+    data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', '_data'),
+                                            file_type='txt', file_list=[])
     for data_item in data:
         print(data_item)
         time.sleep(0.2)
