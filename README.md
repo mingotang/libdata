@@ -1,4 +1,4 @@
-# 图书推荐 `python` 实现
+# 图书推荐 `python` 实现及开发文档
 
 对图书馆借阅流水数据进行处理，做出书籍相关推荐。
 
@@ -8,7 +8,7 @@ BY： [Mingo Tang](mailto:mtang024@163.com)
 ## 目录
 
 - [部署要求](#running_requirements)
-- [数据结构](#data_structure)
+- [文件及对象](#file_and_objects)
 - [待实现功能](#unrealized_funcs)
 - [方法说明](#pyfile_comment)
 - [结果说明](#result_comment)
@@ -27,7 +27,11 @@ Package requirements：
 - [pymysql](https://github.com/PyMySQL/PyMySQL)：连接SQL数据库
 
 
-## 数据结构<a id='data_structure'></a>
+## 文件及对象<a id='file_and_objects'></a>
+
+数据相关文件
+
+modules.<u>`DataStructure`</u>
 
 
 

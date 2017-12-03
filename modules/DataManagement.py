@@ -106,14 +106,14 @@ class BookManager(GeneralManager):
         self.stored_dict[key] = value
 
     def extend(self, data_list: list):
-        for item in tqdm(data_list, desc='BookManager.extend'):
+        for item in tqdm(data_list, desc='BookManager.extending'):
             self.include(key=item['sysID'], value=Book(data_object=item))
 
     def update_member(self, key: str, value: Book):
         if value == self.stored_dict[key]:
             return
         else:
-            if value.is_one_book(self.stored_dict[key]):  # TODO: finish update member
+            if value.is_one_book(self.stored_dict[key]):
                 self.stored_dict[key].update(value)
             else:
                 print('Conflict info - BookManager:')
@@ -143,15 +143,15 @@ class ReaderManager(GeneralManager):
         self.stored_dict[key] = value
 
     def extend(self, data_list: list):
-        for item in tqdm(data_list, desc='ReaderManager.extend'):
+        for item in tqdm(data_list, desc='ReaderManager.extending'):
             self.include(key=item['userID'], value=Reader(data_object=item))
 
     def update_member(self, key: str, value: Reader):
         if value == self.stored_dict[key]:
             return
         else:
-            if value.is_one_reader(self.stored_dict[key]):  # TODO: finish update member
-                pass
+            if value.is_one_reader(self.stored_dict[key]):
+                self.stored_dict[key].update(value)
             else:
                 print('Conflict info - ReaderManager:')
                 print('\t', value)
@@ -175,7 +175,7 @@ class ReadersEventManager(GeneralManager):
     def __init__(self, folder_path: str, data_postfix='.libdata', loading_name='ReaderEventsData',
                  allow_duplicated_record=True):
         self.allow_duplicated_events = allow_duplicated_record
-        self.lock = bool
+        self.lock = None
         GeneralManager.__init__(self, folder_path, data_postfix=data_postfix,
                                 loading_name=loading_name)
         if self.__saved_or_not__ is True:
@@ -186,20 +186,18 @@ class ReadersEventManager(GeneralManager):
     def __setitem__(self, key: str, value: EventActionList):
         self.stored_dict[key] = value
 
-    def load(self, file_name=''):
+    def load(self, file_name='', read_only=True):
         data_dict = pickle.load(open(os.path.join(self.folder_path, file_name), 'rb'))
-        self.loads(content=data_dict)
+        self.loads(content=data_dict, read_only=read_only)
 
     def saves(self):
         content_for_save = list()
         content_for_save.append(self.stored_dict)
-        content_for_save.append(self.lock)
         content_for_save.append(self.allow_duplicated_events)
         return content_for_save
 
-    def loads(self, content: list):
+    def loads(self, content: list, read_only=True):
         self.allow_duplicated_events = content.pop()
-        self.lock = content.pop()
         self.stored_dict = content.pop()
 
     def __check_file_name__(self, file_name: str):
@@ -226,15 +224,28 @@ class ReadersEventManager(GeneralManager):
         :return: None
         """
         if self.lock:
-            raise NameError('ReadersEventManager loaded from file is locked! ')
+            print('Warning: ReadersEventManager loaded from file is locked! ')
+            return
         else:
             if key not in self.stored_dict:
                 self.stored_dict[key] = EventActionList()
             self.stored_dict[key].add(value, allow_duplicated_record=self.allow_duplicated_events)
 
     def extend(self, data_list: list):
-        for item in tqdm(data_list, desc='ReadersEventManager.extend'):
+        """
+        extend and save user action data
+        :param data_list:
+        :return:
+        """
+        for item in tqdm(data_list, desc='ReadersEventManager.extending'):
             self.include(key=item['userID'], value=EventAction(data_object=item))
+
+    def group_for(self, key: str):
+        """
+
+        :param key:
+        :return: dict{}
+        """
 
 
 # --------------------------------------------------------
@@ -243,12 +254,29 @@ class ReadersEventManager(GeneralManager):
 # --------------------------------------------------------
 if __name__ == '__main__':
     # import time
+    import glob
     start_time = time.time()
     # ------------------------------
+    from modules.ServiceComponents import RawDataProcessor
+    data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', '_data'),
+                                            file_type='txt', file_list=[])
+    book_data = BookManager(folder_path=os.path.join('..', '_data'))
+    book_data.extend(data)
+    print(type(book_data))
+    reader_data = ReaderManager(folder_path=os.path.join('..', '_data'))
+    reader_data.extend(data)
+    reader_event_data = ReadersEventManager(folder_path=os.path.join('..', '_data'))
+    reader_event_data.extend(data)
+    if False:
+        file_list = glob.glob(os.path.join('..', '_data', '*.libdata'))
+        print(file_list)
+        for file_object in file_list:
+            os.remove(file_object)
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time
     hour = int(duration) // 3600
     minutes = int(duration) // 60 - 60 * hour
     seconds = duration % 60
+    time.sleep(1)
     print('\nRunning time: {0:d} h {1:d} m {2:.2f} s'.format(hour, minutes, seconds))

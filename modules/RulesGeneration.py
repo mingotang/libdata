@@ -5,25 +5,25 @@ import pandas as pd
 from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import association_rules
 
+from modules.DataManagement import BookManager
+from modules.DataManagement import ReaderManager
+from modules.DataManagement import ReadersEventManager
+
 
 # --------------------------------------------------------
 class LibAssociationRulesGeneration(object):
 
     @staticmethod
-    def apriori(base: str, **kwargs):
-        if base == 'book_name':
-            if 'book_dict' in kwargs:
-                pass
-            else:
-                raise ValueError('LibAssociationRulesGeneration.apriori: missing param book_dict')
-        if base == 'book_classification':
-            if 'book_dict' in kwargs:
-                pass
-            else:
-                raise ValueError('LibAssociationRulesGeneration.apriori: missing param book_dict')
+    def apriori(manager, basket: str, item: str):
+        if type(manager) == BookManager:
+            pass
+        elif type(manager) == ReaderManager:
+            pass
+        elif type(manager) == ReadersEventManager:
+            pass
         else:
             raise ValueError(
-                'LibAssociationRulesGeneration.apriori: base {0:s} is not legal'.format(base)
+                'LibAssociationRulesGeneration.apriori: manager is not legal'
             )
 
     @staticmethod

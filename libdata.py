@@ -3,7 +3,7 @@
 import os
 
 from modules.DataProcessing import RawDataProcessor
-from modules.ReaderBookEventManagement import ReaderManager, BookManager, ReadersEventManager
+from modules.DataManagement import ReaderManager, BookManager, ReadersEventManager
 
 # --------------------------------------------------------
 data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('data'))

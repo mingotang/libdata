@@ -274,7 +274,7 @@ class Reader(object):
             return False
 
     def update(self, other):
-        if len(self.type) > len(other.type):
+        if len(self.type) > len(other.type):  # conflict modification
             self.type = other.type
         if len(self.college) > len(other.college):
             self.college = other.college
