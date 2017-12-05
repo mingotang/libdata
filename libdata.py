@@ -2,21 +2,10 @@
 # ---------------------------------import------------------------------------
 import os
 
-from modules.DataProcessing import RawDataProcessor
+from modules.ServiceComponents import RawDataProcessor
 from modules.DataManagement import ReaderManager, BookManager, ReadersEventManager
 
 # --------------------------------------------------------
-data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('data'))
-manager_reader = ReaderManager(folder_path=os.path.join('data'))
-print(manager_reader)
-# manager_reader.extend(data)
-# manager_reader.save()
-manager_book = BookManager(folder_path=os.path.join('data'))
-# manager_book.extend(data)
-# manager_book.save()
-manager_events = ReadersEventManager(folder_path=os.path.join('data'))
-# manager_events.extend(data)
-# manager_events.save()
 
 
 # --------------------------------------------------------
@@ -26,6 +15,13 @@ if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------
+    import sys
+    for progress in range(100):
+        # time.sleep(0.2)
+        #
+        print('\rtest {0:d}'.format(progress), end='')
+        sys.stdout.flush()
+        time.sleep(2)
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time

@@ -1,30 +1,89 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+import random
 import pandas as pd
 
-from mlxtend.frequent_patterns import apriori
-from mlxtend.frequent_patterns import association_rules
+from tqdm import tqdm
 
+from modules.Algorithm import Apriori
+# from modules.DataStructure import Book, Reader, EventAction
 from modules.DataManagement import BookManager
 from modules.DataManagement import ReaderManager
 from modules.DataManagement import ReadersEventManager
 
 
 # --------------------------------------------------------
+class Results(object):
+    def __init__(self, result_model):
+        self.model = result_model
+
+
+class ResultsApriori(Results):
+    def __init__(self, result_model, method: str):
+        Results.__init__(self, result_model)
+        self.method = method
+
+
+# --------------------------------------------------------
 class LibAssociationRulesGeneration(object):
 
     @staticmethod
-    def apriori(manager, basket: str, item: str):
-        if type(manager) == BookManager:
-            pass
-        elif type(manager) == ReaderManager:
-            pass
-        elif type(manager) == ReadersEventManager:
-            pass
-        else:
-            raise ValueError(
-                'LibAssociationRulesGeneration.apriori: manager is not legal'
+    def apriori(book: BookManager, reader: ReaderManager, events: ReadersEventManager,
+                basket_tag: str, goods_tag: str, method='simple', classification_tag=None,
+                min_support=0.1):
+        if method == 'simple':
+            basket_dict = LibAssociationRulesGeneration.__apriori_collect_basket__(
+                by_tag=basket_tag, contain_tag=goods_tag,
+                book=book.stored_dict, reader=reader.stored_dict, events=events.stored_dict,
             )
+            basket_list = list()
+            for tag in basket_dict:
+                basket_list.append(list(basket_dict[tag]))
+            basket_list = random.sample(basket_list, 1000)
+            result = Apriori(basket_list, min_support=min_support)
+            return ResultsApriori(result_model=result, method=method)
+        elif method == 'classified':
+            basket_dict = LibAssociationRulesGeneration.__apriori_collect_basket__()
+        else:
+            raise ValueError('LibAssociationRulesGeneration.apriori param method is not legal')
+
+    @staticmethod
+    def __apriori_collect_basket__(by_tag: str, contain_tag: str,
+                                   book: dict, reader: dict, events: dict,
+                                   constrain_tag=None, constrain_value=None):
+        collected_dict = dict()
+        if by_tag == 'userID':
+            for tag in tqdm(
+                    events.keys(),
+                    desc='LibAssociationRulesGeneration.apriori collecting baskets '
+            ):
+                if tag not in collected_dict:
+                    collected_dict[tag] = set()
+                action_list = events[tag]
+                for action_index in range(len(action_list)):
+                    action = action_list[action_index]
+                    if contain_tag == 'sysID':
+                        collected_dict[tag].add(action.book_id)
+                    elif contain_tag == 'bookname':
+                        collected_dict[tag].add(book[action.book_id].name)
+                    elif contain_tag == 'author':
+                        collected_dict[tag].add(book[action.book_id].author)
+                    else:
+                        raise ValueError('{0:s} param contain_tag {1:s} is not legal'.format(
+                            LibAssociationRulesGeneration.__class__.__name__,
+                            contain_tag,
+                        ))
+        elif by_tag == 'sysID':
+            raise ValueError('{0:s} param contain_tag {1:s} is not defined'.format(
+                LibAssociationRulesGeneration.__class__.__name__,
+                contain_tag,
+            ))
+        else:
+            raise ValueError('{0:s} param by_tag {1:s} is not legal'.format(
+                LibAssociationRulesGeneration.__class__.__name__,
+                by_tag,
+            ))
+        return collected_dict
 
     @staticmethod
     def collaborative_filtering(base: str, **kwargs):
@@ -52,33 +111,16 @@ class LibAssociationRulesGeneration(object):
 
 
 if __name__ == '__main__':
+    import os
     import time
     start_time = time.time()
     # ------------------------------
-    LibAssociationRulesGeneration.apriori(base='c')
-    df = pd.read_excel('http://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx')
-    # print(df.head())
-    df['Description'] = df['Description'].str.strip()
-    df.dropna(axis=0, subset=['InvoiceNo'], inplace=True)
-    df['InvoiceNo'] = df['InvoiceNo'].astype('str')
-    df = df[~df['InvoiceNo'].str.contains('C')]
-    basket = (df[df['Country'] == "France"]
-              .groupby(['InvoiceNo', 'Description'])['Quantity']
-              .sum().unstack().reset_index().fillna(0)
-              .set_index('InvoiceNo'))
-    print(basket)
-    def encode_units(x):
-        if x <= 0:
-            return 0
-        if x >= 1:
-            return 1
-    basket_sets = basket.applymap(encode_units)
-    basket_sets.drop('POSTAGE', inplace=True, axis=1)
-    frequent_itemsets = apriori(basket_sets, min_support=0.07, use_colnames=True)
-    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
-    # print(rules.head())
-    # rules[(rules['lift'] >= 6) & (rules['confidence'] >= 0.8)]
-
+    book_data = BookManager(folder_path=os.path.join('..', '_data'))
+    reader_data = ReaderManager(folder_path=os.path.join('..', '_data'))
+    reader_event_data = ReadersEventManager(folder_path=os.path.join('..', '_data'),
+                                            loading_name='ReaderEventsData Tue Dec  5 15:47:29 2017.libdata')
+    LibAssociationRulesGeneration.apriori(book=book_data, reader=reader_data, events=reader_event_data,
+                                          basket_tag='userID', goods_tag='sysID')
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time

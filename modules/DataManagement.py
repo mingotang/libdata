@@ -28,7 +28,6 @@ class GeneralManager(GeneralDict):
             self.load(file_name=loading_name)
             self.__saved_or_not__ = True
         except FileNotFoundError:
-            self.save(file_name=loading_name)
             self.__saved_or_not__ = False
 
     def __repr__(self):
@@ -41,6 +40,9 @@ class GeneralManager(GeneralDict):
         else:
             text += 'None.'
         return text
+
+    def keys(self):
+        return self.stored_dict.keys()
 
     def __check_file_name__(self, file_name: str):
         if file_name != '':
@@ -115,6 +117,7 @@ class BookManager(GeneralManager):
         else:
             if value.is_one_book(self.stored_dict[key]):
                 self.stored_dict[key].update(value)
+                self.__saved_or_not__ = False
             else:
                 print('Conflict info - BookManager:')
                 print('\t', value)
@@ -131,6 +134,12 @@ class BookManager(GeneralManager):
                 output_file = open(store_path, 'wb')
                 pickle.dump(conf_info, output_file)
                 output_file.close()
+
+    def collect(self, method: str, target_tag: str, group_tag=None):
+        if method == 'distinct':
+            distinct_result = set()
+            for book_item in self.stored_dict:
+                if target_tag == 'sysID'
 
 
 # --------------------------------------------------------
@@ -152,6 +161,7 @@ class ReaderManager(GeneralManager):
         else:
             if value.is_one_reader(self.stored_dict[key]):
                 self.stored_dict[key].update(value)
+                self.__saved_or_not__ = False
             else:
                 print('Conflict info - ReaderManager:')
                 print('\t', value)
@@ -174,10 +184,10 @@ class ReaderManager(GeneralManager):
 class ReadersEventManager(GeneralManager):
     def __init__(self, folder_path: str, data_postfix='.libdata', loading_name='ReaderEventsData',
                  allow_duplicated_record=True):
-        self.allow_duplicated_events = allow_duplicated_record
-        self.lock = None
         GeneralManager.__init__(self, folder_path, data_postfix=data_postfix,
                                 loading_name=loading_name)
+        self.allow_duplicated_events = allow_duplicated_record
+        self.lock = None
         if self.__saved_or_not__ is True:
             self.lock = True
         else:
@@ -229,7 +239,9 @@ class ReadersEventManager(GeneralManager):
         else:
             if key not in self.stored_dict:
                 self.stored_dict[key] = EventActionList()
-            self.stored_dict[key].add(value, allow_duplicated_record=self.allow_duplicated_events)
+            else:
+                self.__saved_or_not__ = False
+                self.stored_dict[key].add(value, allow_duplicated_record=self.allow_duplicated_events)
 
     def extend(self, data_list: list):
         """
@@ -239,13 +251,6 @@ class ReadersEventManager(GeneralManager):
         """
         for item in tqdm(data_list, desc='ReadersEventManager.extending'):
             self.include(key=item['userID'], value=EventAction(data_object=item))
-
-    def group_for(self, key: str):
-        """
-
-        :param key:
-        :return: dict{}
-        """
 
 
 # --------------------------------------------------------
@@ -262,11 +267,13 @@ if __name__ == '__main__':
                                             file_type='txt', file_list=[])
     book_data = BookManager(folder_path=os.path.join('..', '_data'))
     book_data.extend(data)
-    print(type(book_data))
+    book_data.save()
     reader_data = ReaderManager(folder_path=os.path.join('..', '_data'))
     reader_data.extend(data)
+    reader_data.save()
     reader_event_data = ReadersEventManager(folder_path=os.path.join('..', '_data'))
     reader_event_data.extend(data)
+    reader_event_data.save()
     if False:
         file_list = glob.glob(os.path.join('..', '_data', '*.libdata'))
         print(file_list)

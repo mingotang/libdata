@@ -45,8 +45,6 @@ class GeneralDict(object):
 
 # --------------------------------------------------------
 class DataObject(GeneralDict):
-    def keys(self):
-        return self.stored_dict.keys()
 
     def set(self, key: str, element):
         self.__setitem__(key, element)
@@ -54,8 +52,8 @@ class DataObject(GeneralDict):
 
 # --------------------------------------------------------
 class CountingDict(GeneralDict):
-    # def __init__(self):
-    #     GeneralDict.__init__(self)
+    def __init__(self):
+        GeneralDict.__init__(self)
 
     def count(self, element: str, step=1):
         if element in self.stored_dict:
@@ -89,12 +87,13 @@ class CountingDict(GeneralDict):
 
 
 # --------------------------------------------------------
-class EventAction(object):
+class EventAction(GeneralDict):
     def __init__(self, data_object=DataObject(), **kwargs):
         """
         :param data_object: DataObject
         :param kwargs: key: 'event_type', 'event_date', 'userID', 'sysID'
         """
+        GeneralDict.__init__(self)
         if len(data_object) > 0:
             user_id = data_object['userID']
             book_id = data_object['sysID']
@@ -227,7 +226,7 @@ class EventActionList(object):
             for index in range(len(self.stored_list)):
                 if element == self.stored_list[index]:
                     return
-        for index in range(len(self.stored_list)):
+        for index in range(len(self.stored_list)):  # sorting when element added could be improved
             if element.not_later_than(self.stored_list[index]):
                 self.stored_list.insert(index, element)
                 return
@@ -235,13 +234,14 @@ class EventActionList(object):
 
 
 # --------------------------------------------------------
-class Reader(object):
+class Reader(GeneralDict):
     def __init__(self, data_object=DataObject(), **kwargs):
         """
         Data structure for readers
         :param data_object: DataObject
         :param kwargs: key: 'userID', 'user_type', 'collegeID'
         """
+        GeneralDict.__init__(self)
         if len(data_object) > 0:
             user_id = data_object['userID']
             user_type = data_object['user_type']
@@ -281,13 +281,14 @@ class Reader(object):
 
 
 # --------------------------------------------------------
-class Book(object):
+class Book(GeneralDict):
     def __init__(self, data_object=DataObject(), **kwargs):
         """
         Data structure for books
         :param data_object: DataObject
         :param kwargs: key: 'sysID', 'libIndexID', 'bookname', 'isbn', 'author', 'publish_year', 'publisher'
         """
+        GeneralDict.__init__(self)
         if len(data_object) > 0:
             book_id = data_object['sysID']
             book_lib = data_object['libIndexID']

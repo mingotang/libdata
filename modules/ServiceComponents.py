@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+import pickle
 import csv
 import os
 import re
@@ -52,6 +53,14 @@ class FileIO(object):
                                  )
         spam_writer.writerows(content)
         csv_file.close()
+
+    @staticmethod
+    def save_temp_bit(file_path: str, temp):
+        pickle.dump(open(file_path, 'wb'), temp)
+
+    @staticmethod
+    def load_temp_bit(file_path: str):
+        return pickle.load(open(file_path, 'rb'))
 
 
 # --------------------------------------------------------
