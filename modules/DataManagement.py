@@ -97,6 +97,34 @@ class GeneralManager(GeneralDict):
         self.__saved_or_not__ = False
         raise NameError('Method {0:s}.update_member is not defined'.format(self.__class__.__name__))
 
+    def collect(self, method: str, target_tag: str, group_tag=None, group_fix=None):
+        if method == 'distinct':
+            distinct_result = set(self.collect(method, target_tag, group_tag=group_tag, group_fix=group_fix))
+            return list(distinct_result)
+        elif method == 'duplicated':
+            result = list()
+            for data_item in self.stored_dict:
+                if group_tag is None:
+                    result.append(data_item[target_tag])
+                elif data_item[group_tag] == group_fix:
+                    result.append(data_item[target_tag])
+                else:
+                    pass
+            return result
+        else:
+            raise ValueError('{0:s} param method {1:s} not legal'.format(
+                self.__class__.__name__,
+                method
+            ))
+
+    def collect_by(self, method: str, target_tag: str, group_tag: str):
+        result = dict()
+        group_tag_list = self.collect(method='distinct', target_tag=group_tag)
+        for group_fix in group_tag_list:
+            result[group_fix] = self.collect(method=method, target_tag=target_tag,
+                                             group_tag=group_tag, group_fix=group_fix)
+        return result
+
 
 # --------------------------------------------------------
 class BookManager(GeneralManager):
@@ -134,12 +162,6 @@ class BookManager(GeneralManager):
                 output_file = open(store_path, 'wb')
                 pickle.dump(conf_info, output_file)
                 output_file.close()
-
-    def collect(self, method: str, target_tag: str, group_tag=None):
-        if method == 'distinct':
-            distinct_result = set()
-            for book_item in self.stored_dict:
-                if target_tag == 'sysID'
 
 
 # --------------------------------------------------------
@@ -274,7 +296,7 @@ if __name__ == '__main__':
     reader_event_data = ReadersEventManager(folder_path=os.path.join('..', '_data'))
     reader_event_data.extend(data)
     reader_event_data.save()
-    if False:
+    if True:
         file_list = glob.glob(os.path.join('..', '_data', '*.libdata'))
         print(file_list)
         for file_object in file_list:

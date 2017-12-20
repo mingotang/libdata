@@ -108,3 +108,4 @@ ENV/
 
 # Project local data
 _data/
+*.libdata

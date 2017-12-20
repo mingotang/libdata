@@ -104,12 +104,13 @@ class EventAction(GeneralDict):
             book_id = kwargs['sysID']
             event_type = kwargs['event_type']
             event_date = kwargs['event_date']
-        self.event_type = event_type
         self.year = event_date[0:4]
         self.month = event_date[4:6]
         self.day = event_date[6:8]
-        self.book_id = book_id
-        self.reader_id = user_id
+        self.stored_dict['event_date'] = event_date
+        self.event_type = self.stored_dict['event_type'] = event_type
+        self.book_id = self.stored_dict['sysID'] = book_id
+        self.reader_id = self.stored_dict['userID'] = user_id
 
     def __repr__(self):
         return ' '.join(['event_date:', self.year + self.month + self.day,
@@ -242,17 +243,31 @@ class Reader(GeneralDict):
         :param kwargs: key: 'userID', 'user_type', 'collegeID'
         """
         GeneralDict.__init__(self)
-        if len(data_object) > 0:
-            user_id = data_object['userID']
-            user_type = data_object['user_type']
-            college = data_object['collegeID']
+        self.id = None
+        self.type = None
+        self.college = None
+        self.update(other=data_object, kwargs=kwargs)
+
+    def update(self, other, **kwargs):
+        if type(other) == DataObject:
+            if len(other) > 0:
+                user_id = other['userID']
+                user_type = other['user_type']
+                college = other['collegeID']
+            else:
+                user_id = kwargs['userID']
+                user_type = kwargs['user_type']
+                college = kwargs['collegeID']
+            self.id = self.stored_dict['userID'] = user_id
+            self.type = self.stored_dict['user_type'] = user_type
+            self.college = self.stored_dict['collegeID'] = college
+        elif type(other) == type(self):
+            if len(self.type) > len(other.type):  # conflict modification
+                self.type = self.stored_dict['user_type'] = other.type
+            if len(self.college) > len(other.college):
+                self.college = self.stored_dict['collegeID'] = other.college
         else:
-            user_id = kwargs['userID']
-            user_type = kwargs['user_type']
-            college = kwargs['collegeID']
-        self.id = user_id
-        self.type = user_type
-        self.college = college
+            raise ValueError('{0:s} param other not legal'.format(self.__class__.__name__))
 
     def __repr__(self):
         return ' '.join(['readerID:', self.id, 'reader_type:', self.type,
@@ -273,12 +288,6 @@ class Reader(GeneralDict):
         else:
             return False
 
-    def update(self, other):
-        if len(self.type) > len(other.type):  # conflict modification
-            self.type = other.type
-        if len(self.college) > len(other.college):
-            self.college = other.college
-
 
 # --------------------------------------------------------
 class Book(GeneralDict):
@@ -289,29 +298,56 @@ class Book(GeneralDict):
         :param kwargs: key: 'sysID', 'libIndexID', 'bookname', 'isbn', 'author', 'publish_year', 'publisher'
         """
         GeneralDict.__init__(self)
-        if len(data_object) > 0:
-            book_id = data_object['sysID']
-            book_lib = data_object['libIndexID']
-            book_name = data_object['bookname']
-            book_isbn = data_object['isbn']
-            book_author = data_object['author']
-            book_year = data_object['publish_year']
-            book_publisher = data_object['publisher']
+        self.id = None
+        self.lib_index = None
+        self.name = None
+        self.isbn = None
+        self.author = None
+        self.year = None
+        self.publisher = None
+        self.update(other=data_object, kwargs=kwargs)
+
+    def update(self, other, **kwargs):
+        if type(other) == DataObject:
+            if len(other) > 0:
+                book_id = other['sysID']
+                book_lib = other['libIndexID']
+                book_name = other['bookname']
+                book_isbn = other['isbn']
+                book_author = other['author']
+                book_year = other['publish_year']
+                book_publisher = other['publisher']
+            else:
+                book_id = kwargs['sysID']
+                book_lib = kwargs['libIndexID']
+                book_name = kwargs['bookname']
+                book_isbn = kwargs['isbn']
+                book_author = kwargs['author']
+                book_year = kwargs['publish_year']
+                book_publisher = kwargs['publisher']
+            self.id = self.stored_dict['sysID'] = book_id
+            self.lib_index = self.stored_dict['libIndexID'] = book_lib
+            self.name = self.stored_dict['bookname'] = book_name
+            self.isbn = self.stored_dict['isbn'] = book_isbn
+            self.author = self.stored_dict['author'] = book_author
+            self.year = self.stored_dict['publish_year'] = book_year
+            self.publisher = self.stored_dict['publisher'] = book_publisher
+        elif type(other) == type(self):
+            if len(self.author) != len(other.author):
+                self.author = self.stored_dict['author'] = other.author
+            if len(self.isbn) > other.isbn:
+                self.isbn = self.stored_dict['isbn'] = other.isbn
+            if len(self.name) > len(other.name):
+                self.name = self.stored_dict['bookname'] = other.name
+            if len(self.lib_index) > len(other.lib_index):
+                self.lib_index = self.stored_dict['libIndexID'] = other.lib_index
+            if len(self.year) > len(other.year):
+                self.year = self.stored_dict['publish_year'] = other.year
+            if len(self.publisher) > len(other.publisher):
+                self.publisher = self.stored_dict['publisher'] = other.publisher
         else:
-            book_id = kwargs['sysID']
-            book_lib = kwargs['libIndexID']
-            book_name = kwargs['bookname']
-            book_isbn = kwargs['isbn']
-            book_author = kwargs['author']
-            book_year = kwargs['publish_year']
-            book_publisher = kwargs['publisher']
-        self.id = book_id
-        self.lib_index = book_lib
-        self.name = book_name
-        self.isbn = book_isbn
-        self.author = book_author
-        self.year = book_year
-        self.publisher = book_publisher
+            raise ValueError('{0:s} param other not legal'.format(self.__class__.__name__))
+
 
     def __repr__(self):
         return ' '.join(['BookID:', self.id, 'BookLibIndex:', self.lib_index,
@@ -338,20 +374,6 @@ class Book(GeneralDict):
             return True
         else:
             return False
-
-    def update(self, other):
-        if len(self.author) != len(other.author):
-            self.author = other.author
-        if len(self.isbn) > other.isbn:
-            self.isbn = other.isbn
-        if len(self.name) > len(other.name):
-            self.name = other.name
-        if len(self.lib_index) > len(other.lib_index):
-            self.lib_index = other.lib_index
-        if len(self.year) > len(other.year):
-            self.year = other.year
-        if len(self.publisher) > len(other.publisher):
-            self.publisher = other.publisher
 
 
 # --------------------------------------------------------
