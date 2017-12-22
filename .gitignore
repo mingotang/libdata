@@ -107,5 +107,5 @@ ENV/
 .DS_Store
 
 # Project local data
-_data/
-*.libdata
+data/*.libdata
+data/*.txt

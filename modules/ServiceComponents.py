@@ -4,12 +4,34 @@ import pickle
 import csv
 import os
 import re
+import sys
 
 import pymysql
 from tqdm import tqdm
 
 from modules.BasicSettings import BasicSettings
 from modules.DataStructure import DataObject
+
+
+# --------------------------------------------------------
+class SupervisionInfo(object):
+
+    @staticmethod
+    def print_runningtime(running_time: float, end_line='', following=False, refresh=False):
+        if refresh:
+            print('\r', end='')
+        print('Running time: {0:.2f} s'.format(running_time), end='')
+        if following is False:
+            sys.stdout.flush()
+
+    @staticmethod
+    def print_stepinfo(current_step: int, total_step: int, prefix_info='', end_line='',
+                       following=False, refresh=False):
+        if refresh:
+            print('\r', end='')
+        print(prefix_info, ' {0:d}/{1:d}'.format(current_step, total_step), end=end_line)
+        if following is False:
+            sys.stdout.flush()
 
 
 # --------------------------------------------------------
@@ -56,7 +78,7 @@ class FileIO(object):
 
     @staticmethod
     def save_temp_bit(file_path: str, temp):
-        pickle.dump(open(file_path, 'wb'), temp)
+        pickle.dump(temp, open(file_path, 'wb'))
 
     @staticmethod
     def load_temp_bit(file_path: str):

@@ -18,7 +18,6 @@ if __name__ == '__main__':
     import sys
     for progress in range(100):
         # time.sleep(0.2)
-        #
         print('\rtest {0:d}'.format(progress), end='')
         sys.stdout.flush()
         time.sleep(2)

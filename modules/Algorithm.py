@@ -3,6 +3,8 @@
 import sys
 import time
 
+from modules.ServiceComponents import SupervisionInfo
+
 
 # --------------------------------------------------------
 class Apriori(object):
@@ -37,24 +39,15 @@ class Apriori(object):
             self.is_finished = False
         else:
             self.is_finished = True
-        duration = time.time() - self.start_time
-        print('\r Running time: {0:d} h {1:d} m {2:.2f} s'.format(
-            int(duration)//3600,  int(duration) // 60 - 60 * int(duration) // 3600, duration % 60
-        ), end='')
-        sys.stdout.flush()
+        SupervisionInfo.print_runningtime(time.time() - self.start_time, end_line='', refresh=True, following=False)
 
     def __find_primary_goods__(self, datasets: list):
+        print('\rApriori: running at frequent set size {0:d} finding primary goods'.format(
+            self.freq_set_level), end='\t')
+        SupervisionInfo.print_runningtime(time.time() - self.start_time, end_line='', refresh=False)
         l1 = []
         for transaction_index in range(len(datasets)):
             transaction = datasets[transaction_index]
-            print('\rApriori: running at frequent set size {0:d} finding primary goods {1:d}/{2:d}'.format(
-                self.freq_set_level, transaction_index+1, len(datasets)), end='\t'
-            )
-            duration = time.time() - self.start_time
-            print('Running time: {0:d} h {1:d} m {2:.2f} s'.format(
-                int(duration) // 3600, int(duration) // 60 - 60 * int(duration) // 3600, duration % 60
-            ), end='')
-            sys.stdout.flush()
             for __item__ in transaction:
                 if [__item__] not in l1:
                     l1.append([__item__])
@@ -64,16 +57,11 @@ class Apriori(object):
     def __collect_freq_support__(self, freq_sets, datasets: list):
         freq_set_count = {}
         num_of_items = float(len(datasets))
+        print('\rApriori: running at frequent set size {0:d} collecting freq support'.format(
+            self.freq_set_level), end='\t')
+        SupervisionInfo.print_runningtime(time.time() - self.start_time, end_line='', refresh=False)
         for baskets_index in range(len(datasets)):  # 对于每一条transaction
             baskets = datasets[baskets_index]
-            duration = time.time() - self.start_time
-            print('\rApriori: running at frequent set size {0:d} collecting freq support step {1:d}/{2:f}'.format(
-                self.freq_set_level, baskets_index+1, num_of_items), end='\t'
-            )
-            print('Running time: {0:d} h {1:d} m {2:.2f} s'.format(
-                int(duration) // 3600, int(duration) // 60 - 60 * int(duration) // 3600, duration % 60
-            ), end='')
-            sys.stdout.flush()
             for can in freq_sets:  # 对于每一个候选项集can，检查是否是transaction的一部分 # 即该候选can是否得到transaction的支持
                 if can.issubset(baskets):
                     freq_set_count[can] = freq_set_count.get(can, 0) + 1
@@ -91,15 +79,10 @@ class Apriori(object):
         num_of_freq_sets = len(old_freq_sets)
         if num_of_freq_sets >= 2:
             old_level = len(old_freq_sets[0])
+            print('\rApriori: running at frequent set size {0:d} generating super sets'.format(
+                self.freq_set_level), end='\t')
+            SupervisionInfo.print_runningtime(time.time() - self.start_time, end_line='', refresh=False)
             for i in range(num_of_freq_sets):
-                print('\rApriori: running at frequent set size {0:d} generating super sets step {1:d}/{2:d}'.format(
-                    self.freq_set_level, i+1, num_of_freq_sets), end='\t'
-                )
-                duration = time.time() - self.start_time
-                print('Running time: {0:d} h {1:d} m {2:.2f} s'.format(
-                    int(duration) // 3600, int(duration) // 60 - 60 * int(duration) // 3600, duration % 60
-                ), end='')
-                sys.stdout.flush()
                 left = list(old_freq_sets[i])
                 left.sort()
                 left = left[:old_level - 1]
