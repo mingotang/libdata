@@ -20,7 +20,15 @@ class SupervisionInfo(object):
     def print_runningtime(running_time: float, end_line='', following=False, refresh=False):
         if refresh:
             print('\r', end='')
-        print('Running time: {0:.2f} s'.format(running_time), end='')
+        hour = int(running_time) // 3600
+        minutes = int(running_time) // 60 - 60 * hour
+        seconds = running_time % 60
+        if hour > 0:
+            print('Running time: {0:d} h {1:d} m {2:.2f} s'.format(hour, minutes, seconds), end=end_line)
+        elif minutes > 0:
+            print('Running time: {0:d} m {1:.2f} s'.format(minutes, seconds), end=end_line)
+        else:
+            print('Running time: {0:.2f} s'.format(seconds), end=end_line)
         if following is False:
             sys.stdout.flush()
 
@@ -30,6 +38,14 @@ class SupervisionInfo(object):
         if refresh:
             print('\r', end='')
         print(prefix_info, ' {0:d}/{1:d}'.format(current_step, total_step), end=end_line)
+        if following is False:
+            sys.stdout.flush()
+
+    @staticmethod
+    def print_statusinfo(info='', end_line='', following=False, refresh=True):
+        if refresh:
+            print('\r', end='')
+        print(info, end=end_line)
         if following is False:
             sys.stdout.flush()
 
@@ -58,7 +74,7 @@ class FileIO(object):
         return __content__
 
     @staticmethod
-    def save_csv(file_path: str, content: list, encode='utf-8'):
+    def save_csv(file_path: str, content, encode='utf-8'):
         """
         save a list which is of two dimension to the file
         with lines in list and columns in sub_lists
@@ -67,13 +83,26 @@ class FileIO(object):
             file_name = file_path + '.csv'
         else:
             file_name = file_path
+        if type(content) == list:
+            content_to_file = content
+        elif type(content) == dict:
+            content_to_file = list()
+            for tag in content:
+                line_to_file = list()
+                line_to_file.append(tag)
+                if type(content[tag]) == list:
+                    line_to_file.extend(content[tag])
+                else:
+                    raise ValueError()
+        else:
+            raise ValueError()
         csv_file = open(file_name, 'w', newline='', encoding=encode)
         spam_writer = csv.writer(csv_file,
                                  delimiter=',',
                                  quotechar='"',
                                  quoting=csv.QUOTE_MINIMAL
                                  )
-        spam_writer.writerows(content)
+        spam_writer.writerows(content_to_file)
         csv_file.close()
 
     @staticmethod
@@ -111,7 +140,7 @@ class RawDataProcessor(object):
                     if RawDataProcessor.__check_data_line__(line_content):
                         data_object = DataObject()
                         for tag in data_match_dict:
-                            data_object.set(key=tag, element=line_content[data_match_dict[tag]])
+                            data_object[tag] = line_content[data_match_dict[tag]]
                         data_list.append(data_object)
                     elif len(line_content) == 0:
                         pass

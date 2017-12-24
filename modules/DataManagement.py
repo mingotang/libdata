@@ -7,6 +7,7 @@ import pickle
 from tqdm import tqdm
 
 from modules.DataStructure import GeneralDict, DataObject
+from modules.DataProcessing import LibIndex
 
 
 # --------------------------------------------------------
@@ -121,7 +122,7 @@ class EventActionList(object):
         self.__index_for_iter__ = int()
 
     def __repr__(self):
-        return '\n'.join(self.stored_list)
+        return '\n'.join([str(var) for var in self.stored_list]) + '\n'
 
     def __len__(self):
         return len(self.stored_list)
@@ -206,9 +207,6 @@ class Reader(GeneralDict):
         else:
             return False
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def is_one_reader(self, other):
         if self.id == other.id:
             return True
@@ -218,8 +216,10 @@ class Reader(GeneralDict):
 
 # --------------------------------------------------------
 class Book(GeneralDict):
-    tag_index_list = ['sysID', 'libIndexID', 'bookname', 'isbn', 'author',
-                      'publish_year', 'publisher', ]
+    tag_index_list = [
+        'sysID', 'libIndexID', 'bookname', 'isbn', 'author', 'publish_year', 'publisher',   # in data
+        'lib_index_class',  # self defined
+    ]
 
     def __init__(self, data_object=DataObject(), **kwargs):
         """
@@ -277,6 +277,7 @@ class Book(GeneralDict):
                 self.publisher = self.stored_dict['publisher'] = other.publisher
         else:
             raise ValueError('{0:s} param other not legal'.format(self.__class__.__name__))
+        self.stored_dict['lib_index_class'] = LibIndex.derive_specified_tag_list(self.lib_index)['content_class']
 
     def __repr__(self):
         return ' '.join(['BookID:', self.id, 'BookLibIndex:', self.lib_index,
@@ -294,9 +295,6 @@ class Book(GeneralDict):
                 return False
         else:
             return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def is_one_book(self, other):
         if self.id == other.id:
@@ -323,6 +321,10 @@ class GeneralManager(GeneralDict):
         if not new_manager:
             try:
                 self.load(file_name=loading_name)
+                print('{0:s}: File {1:s} loaded! Data length {2:d}'.format(
+                    self.__class__.__name__,
+                    loading_name+self.__postfix__,
+                    len(self.stored_dict)))
                 self.__saved_or_not__ = True
             except FileNotFoundError:
                 self.__saved_or_not__ = False
@@ -396,15 +398,26 @@ class GeneralManager(GeneralDict):
 
     def collect(self, method: str, target_tag: str):
         if method == 'distinct':
-            distinct_result = set(self.collect(method, target_tag))
+            distinct_result = set(self.collect(method='duplicated', target_tag=target_tag))
             return list(distinct_result)
         elif method == 'duplicated':
             result = list()
-            for data_item in self.stored_dict:
-                result.append(data_item[target_tag])
+            for data_tag in self.stored_dict:
+                result.append(self.stored_dict[data_tag][target_tag])
             return result
         else:
             raise ValueError('{0:s} param method {1:s} not legal'.format(self.__class__.__name__,method))
+
+    def group_by(self, group_tag: str):
+        result = dict()
+        tag_value_list = self.collect(method='distinct', target_tag=group_tag)
+        for value in tag_value_list:
+            sub_dict = dict()
+            for inner_tag in self.stored_dict:
+                if self.stored_dict[inner_tag][group_tag] == value:
+                    sub_dict[inner_tag] = self.stored_dict[inner_tag]
+            result[value] = sub_dict
+        return result
 
 
 # --------------------------------------------------------
@@ -444,17 +457,6 @@ class BookManager(GeneralManager):
                 pickle.dump(conf_info, output_file)
                 output_file.close()
 
-    def group_by(self, group_tag: str):
-        result = dict()
-        tag_value_list = self.collect(method='distinct', target_tag=group_tag)
-        for value in tag_value_list:
-            sub_manager = BookManager(folder_path=self.folder_path, data_postfix=self.__postfix__, new_manager=True)
-            for inner_tag in self.keys():
-                if self.stored_dict[inner_tag][group_tag] == value:
-                    sub_manager[inner_tag] = self.stored_dict[inner_tag]
-            result[value] = sub_manager
-        return result
-
 
 # --------------------------------------------------------
 class ReaderManager(GeneralManager):
@@ -492,17 +494,6 @@ class ReaderManager(GeneralManager):
                 output_file = open(store_path, 'wb')
                 pickle.dump(conf_info, output_file)
                 output_file.close()
-
-    def group_by(self, group_tag: str):
-        result = dict()
-        tag_value_list = self.collect(method='distinct', target_tag=group_tag)
-        for value in tag_value_list:
-            sub_manager = ReaderManager(folder_path=self.folder_path, data_postfix=self.__postfix__, new_manager=True)
-            for inner_tag in self.keys():
-                if self.stored_dict[inner_tag][group_tag] == value:
-                    sub_manager[inner_tag] = self.stored_dict[inner_tag]
-            result[value] = sub_manager
-        return result
 
 
 # --------------------------------------------------------

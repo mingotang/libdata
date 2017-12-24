@@ -54,6 +54,8 @@ index:  11 	length:  5 02000
 - 分类/年代顺序索书号
 - 分类/图书编目次序索书号
 
+
+
 它们的结构大体相同，都由两个基本部分组成，一部分为分类号，列于上行；另一部分为
 书次号，即著者号、书名编号、图书出版年代号、该类图书编目先后次序号，列于分类号
 下一行。少数图书，索书号仅由上述两个基本部分组成。但对大多数图书，为了使索书号
@@ -78,95 +80,3 @@ index:  11 	length:  5 02000
 
 
 ## Notes:
-
-Traceback (most recent call last):
-  File "/Users/Mingo/Documents/libdata/libdata.py", line 102, in <module>
-    apply_apriori(data, filename=str(college), minisupport=0.02, miniconfig=0.3)
-  File "/Users/Mingo/Documents/libdata/libdata.py", line 14, in apply_apriori
-    rules = generateRules(L, suppData, miniconfig)
-  File "/Users/Mingo/Documents/libdata/apriori.py", line 129, in generateRules
-    rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
-  File "/Users/Mingo/Documents/libdata/apriori.py", line 108, in rulesFromConseq
-    Hmp1 = check_Conf(freqSet, Hmp1, supportData, brl, minConf)  # 对于新生成的m+1大小的频繁项集，计算新生成的关联规则的右则的集合
-  File "/Users/Mingo/Documents/libdata/apriori.py", line 88, in check_Conf
-    conf = supportData[freqSet] / supportData[freqSet - conseq]
-KeyError: frozenset({'应用', 'Verilog', '设计', '教程'})
-
-### Pandoc Output Formats
-
-    pandoc --list-output-formats
-
-```
-asciidoc
-beamer
-commonmark
-context
-docbook
-docbook5
-docx
-dokuwiki
-dzslides
-epub
-epub3
-fb2
-haddock
-html
-html5
-icml
-json
-latex
-man
-markdown
-markdown_github
-markdown_mmd
-markdown_phpextra
-markdown_strict
-mediawiki
-native
-odt
-opendocument
-opml
-org
-plain
-revealjs
-rst
-rtf
-s5
-slideous
-slidy
-tei
-texinfo
-textile
-zimwiki
-```
-
-### Pandoc Input Formats
-
-    pandoc --list-input-formats
-
-
-```
-commonmark
-docbook
-docx
-epub
-haddock
-html
-json
-latex
-markdown
-markdown_github
-markdown_mmd
-markdown_phpextra
-markdown_strict
-mediawiki
-native
-odt
-opml
-org
-rst
-t2t
-textile
-twiki
-```
-

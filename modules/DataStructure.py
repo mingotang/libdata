@@ -42,18 +42,27 @@ class GeneralDict(object):
     def __eq__(self, other):
         raise NameError('Method {0:s}.__eq__ is not defined'.format(self.__class__.__name__))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 # --------------------------------------------------------
 class DataObject(GeneralDict):
-
-    def set(self, key: str, element):
-        self.__setitem__(key, element)
+    def __setitem__(self, key: str, value):
+        self.stored_dict[key] = value if value != '' else 'nan'
 
 
 # --------------------------------------------------------
 class CountingDict(GeneralDict):
     def __init__(self):
         GeneralDict.__init__(self)
+
+    def __mul__(self, other):
+        result = 0
+        for self_element in self.stored_dict:
+            if self_element in other:
+                result += self.stored_dict[self_element] * other[self_element]
+        return result
 
     def count(self, element: str, step=1):
         if element in self.stored_dict:

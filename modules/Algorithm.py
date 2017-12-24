@@ -39,7 +39,7 @@ class Apriori(object):
             self.is_finished = False
         else:
             self.is_finished = True
-        SupervisionInfo.print_runningtime(time.time() - self.start_time, end_line='', refresh=True, following=False)
+        SupervisionInfo.print_runningtime(time.time() - self.start_time, end_line='\n', refresh=True, following=False)
 
     def __find_primary_goods__(self, datasets: list):
         print('\rApriori: running at frequent set size {0:d} finding primary goods'.format(
@@ -243,7 +243,7 @@ if __name__ == '__main__':
               [1, 2, 3, 4, 5],
               [2, 3, 4, 5]
               ]
-    result1 = Apriori(my_dat, min_support=0.5, min_confidence=0.7, depth=2)
+    result1 = Apriori(my_dat, min_support=0.5, depth=2)
     result1.show_results()
     # ------------------------------
     # Test CF
