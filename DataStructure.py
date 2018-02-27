@@ -1,5 +1,88 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+import datetime
+
+from Config import BasicInfo
+
+
+# --------------------------------------------------------
+class Reader(object):
+    def __init__(self, reader_id: str, rtype: str, college: str):
+        self.id = reader_id
+        self.rtype = rtype
+        self.college = college
+
+    def __repr__(self):
+        return '\t'.join([
+            'readerID: ', self.id,
+            'reader_type: ', self.rtype,
+            'college: ', self.college
+        ])
+
+    def isone(self, other):
+        return self.id == other.id
+
+    def __eq__(self, other):
+        return self.id == other.id and self.rtype == other.rtype and self.college == other.college
+
+    def update(self, other):
+        if self.isone(other):
+            if len(self.college) < len(other.college):
+                self.college = other.college
+            if len(self.rtype) < len(other.rtype):
+                self.rtype = other.rtype
+
+
+class Book(object):
+    def __init__(self, book_id: str, lib_index: str, name: str,
+                 isbn: str, author: str, year: str, publisher: str):
+        self.id = book_id
+        self.lib_index = lib_index
+        self.name = name
+        self.isbn = isbn
+        self.author = author
+        self.year = year
+        self.publisher = publisher
+
+    def __repr__(self):
+        return '\t'.join([
+            'BookID: ', self.id,
+            'BookLibIndex: ', self.lib_index,
+            'BookName: ', self.name,
+            'ISBN: ', self.isbn,
+            'author: ', self.author,
+            'publish_year: ', self.year,
+            'publisher: ', self.publisher
+        ])
+
+    def isone(self, other):
+        return self.id == other.id
+
+    def __eq__(self, other):
+        return self.id == other.id and self.lib_index == other.lib_index and self.name == other.name \
+            and self.isbn == other.isbn and self.author == other.author and self.year == other.year \
+            and self.publisher == other.publisher
+
+
+class EventAction(object):
+    def __init__(self, book_id: str, reader_id: str,
+                 event_date: datetime.datetime, event_type: str):
+        self.book_id = book_id
+        self.reader_id = reader_id
+        self.event_date = event_date
+        self.event_type = event_type
+
+    def __repr__(self):
+        return '\t'.join([
+            'userID: ', self.reader_id,
+            'sysID: ', self.book_id,
+            'event_date: ', self.event_date.strftime(BasicInfo.event_date_format),
+            'event_type: ', self.event_type,
+        ])
+
+    def __eq__(self, other):
+        return self.book_id == other.book_id and self.reader_id == other.reader_id \
+            and self.event_date == other.event_date and self.event_type == other.event_type
 
 
 # --------------------------------------------------------
@@ -49,7 +132,7 @@ class GeneralDict(object):
 # --------------------------------------------------------
 class DataObject(GeneralDict):
     def __setitem__(self, key: str, value):
-        self.stored_dict[key] = value if value != '' else 'nan'
+        self.stored_dict[key] = value if value != '' else None
 
 
 # --------------------------------------------------------

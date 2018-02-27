@@ -3,7 +3,7 @@
 import sys
 import time
 
-from modules.ServiceComponents import SupervisionInfo
+from ServiceComponents import SupervisionInfo
 
 
 # --------------------------------------------------------

@@ -28,11 +28,11 @@ Package requirements：
 
 数据相关文件
 
-modules.**`DataStructure`**
+**`DataStructure`**
 
 
 
-modules.**`DataStructure`**
+**`DataStructure`**
 
 - GeneralDict：
 	- 扩展内置dict的功能
@@ -61,6 +61,6 @@ modules.**`DataStructure`**
 	- is_one_book(other)：以id判断是否是同一本书
 	- update(other)：遇到重复的Book对象时更新内容
 
-modules.**`DataStructure`**
+**`DataStructure`**
 
 

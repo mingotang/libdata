@@ -1,7 +1,13 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-# --------------------------------------------------------
-class BasicSettings(object):
+from enum import Enum
+
+
+class DataBaseConfig(Enum):
+    file_path = '/Users/mingo/Downloads/Libdata.db'
+
+
+class BasicInfo(object):
     raw_text_file_list = [
         '2016-11-16-guanyuan2013.txt',
         '2016-11-16-guanyuan2014.txt',
@@ -70,36 +76,4 @@ class BasicSettings(object):
         '62': '研究生VIP2',
         '63': '研究生VIP3',
     }
-    inner_tag_to_table_xx_tag_dict = {  # TODO: finish this when SQL database is set
-        'sysID': 0,
-        'libIndexID': 1,
-        'bookname': 2,
-        'isbn': 3,
-        'author': 4,
-        'publish_year': 5,
-        'publisher': 6,
-        'userID': 7,
-        'event_date': 8,
-        'event_type': 9,
-        'user_type': 10,
-        'collegeID': 11,
-    }
-
-
-# --------------------------------------------------------
-
-
-# --------------------------------------------------------
-
-
-if __name__ == '__main__':
-    import time
-    start_time = time.time()
-    # ------------------------------
-    # ------------------------------
-    end_time = time.time()
-    duration = end_time - start_time
-    hour = int(duration) // 3600
-    minutes = int(duration) // 60 - 60 * hour
-    seconds = duration % 60
-    print('\nRunning time: {0:d} h {1:d} m {2:.4f} s'.format(hour, minutes, seconds))
+    event_date_format = '%Y%m%d'

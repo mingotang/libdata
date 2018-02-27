@@ -3,7 +3,7 @@
 import os
 import re
 
-from modules.ServiceComponents import FileIO
+from ServiceComponents import FileIO
 
 
 class ISBN(object):

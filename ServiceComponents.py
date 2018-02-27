@@ -9,8 +9,8 @@ import sys
 import pymysql
 from tqdm import tqdm
 
-from modules.BasicSettings import BasicSettings
-from modules.DataStructure import DataObject
+from Config import BasicInfo
+from DataStructure import DataObject
 
 
 # --------------------------------------------------------
@@ -118,16 +118,14 @@ class FileIO(object):
 class RawDataProcessor(object):
 
     @staticmethod
-    def derive_raw_data(folder_path: str,
-                        file_list: list,
-                        file_type='txt',
-                        splitter='@',
+    def derive_raw_data(folder_path: str, file_list: list,
+                        file_type='txt', splitter='@',
                         text_encoding='gb18030',
                         ):
         if len(file_list) == 0:
-            file_list = BasicSettings.raw_text_file_list
+            file_list = BasicInfo.raw_text_file_list
         data_list = list()
-        data_match_dict = BasicSettings.inner_tag_to_text_index_dict
+        data_match_dict = BasicInfo.inner_tag_to_text_index_dict
         for file_name in tqdm(file_list, desc='Reading file:'):
             if file_type == 'txt':
                 data_file = open(os.path.join(folder_path, file_name), 'r', encoding=text_encoding)
@@ -153,11 +151,11 @@ class RawDataProcessor(object):
 
     @staticmethod
     def __check_data_line__(content: list):
-        if len(content) != len(BasicSettings.inner_tag_to_text_index_dict):
+        if len(content) != len(BasicInfo.inner_tag_to_text_index_dict):
             return False
         if not re.search(r'[12][890123]\d\d[01]\d[0123]\d', content[8]):
             return False
-        if content[9] not in BasicSettings.event_index_to_real_tag_dict:
+        if content[9] not in BasicInfo.event_index_to_real_tag_dict:
             return False
         return True
 
@@ -183,9 +181,9 @@ class RawDataProcessor(object):
             cont = list()
             cont.extend(content)
             __temp_list__.clear()
-            if cont[9] in BasicSettings.event_index_to_real_tag_dict:
+            if cont[9] in BasicInfo.event_index_to_real_tag_dict:
                 return cont
-            elif cont[10] in BasicSettings.event_index_to_real_tag_dict:
+            elif cont[10] in BasicInfo.event_index_to_real_tag_dict:
                 if len(cont[4]) == 17:
                     cont[2] = cont[2] + cont[3]
                     del cont[3]
@@ -205,7 +203,7 @@ class RawDataProcessor(object):
 
 
 # --------------------------------------------------------
-class LibDB(object):
+class LibDB_MySQL(object):
     def __init__(self, host_ip: str, database: str):
         self.host = host_ip
         self.database = database
@@ -246,6 +244,9 @@ class LibDB(object):
         except:
             print('LibDB.execute_sql Warning! \t Wrong SQL !')
             return None
+
+
+# --------------------------------------------------------
 
 
 # --------------------------------------------------------

@@ -1,17 +1,15 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import time
-import pandas as pd
 
 from tqdm import tqdm
 
-from modules.Algorithm import Apriori
-from modules.DataStructure import CountingDict
-from modules.DataManagement import Book, Reader, EventAction, EventActionList
-from modules.DataManagement import BookManager
-from modules.DataManagement import ReaderManager
-from modules.DataManagement import ReadersEventManager
-from modules.ServiceComponents import SupervisionInfo
+from Algorithm import Apriori
+from DataStructure import CountingDict
+from DataManagement import Book, Reader
+from DataManagement import BookManager
+from DataManagement import ReaderManager
+from DataManagement import ReadersEventManager
 
 
 # --------------------------------------------------------
@@ -197,7 +195,7 @@ if __name__ == '__main__':
     # import time
     start_time = time.time()
     # ------------------------------
-    from modules.ServiceComponents import RawDataProcessor
+    from ServiceComponents import RawDataProcessor
     data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', 'data'),
                                             file_type='txt', file_list=['2016-11-16-guanyuan2013.txt'])
     book_data = BookManager(folder_path=os.path.join('..', 'data'))
@@ -217,7 +215,7 @@ if __name__ == '__main__':
         base='reader',
         book=book_data, reader=reader_data, events=reader_event_data,
     )
-    from modules.ServiceComponents import FileIO
+    from ServiceComponents import FileIO
     FileIO.save_csv('CF_base-reader.csv', recommend_info)
     # ------------------------------
     end_time = time.time()
