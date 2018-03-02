@@ -5,11 +5,10 @@ import time
 from tqdm import tqdm
 
 from Algorithm import Apriori
+from BasicInfo import AprioriMethods, CollaborativeFilteringMethods
+from DataBaseWrapper import SqliteWrapper
+from DataManagement import Book, Reader, EventAction
 from DataStructure import CountingDict
-from DataManagement import Book, Reader
-from DataManagement import BookManager
-from DataManagement import ReaderManager
-from DataManagement import ReadersEventManager
 
 
 # --------------------------------------------------------
@@ -17,22 +16,20 @@ from DataManagement import ReadersEventManager
 
 # --------------------------------------------------------
 class LibAssociationRulesGeneration(object):
+    def __init__(self, local_db: SqliteWrapper):
+        self.db = local_db
 
     @staticmethod
-    def apriori(method='simple',
-                min_support=0.1,
-                min_conf=0.2,
-                **kwargs):
+    def apriori(method: AprioriMethods, min_support=0.1, min_conf=0.2, **kwargs):
         """
 
         :param method:
         :param min_support:
-        :param kwargs: Key: 'book', 'reader', 'events', 'basket_tag', 'goods_tag'
-                            'group_tag',
+        :param kwargs: Key: 'basket_tag', 'goods_tag', 'group_tag',
         :return:
         """
         apriori_start_time = time.time()
-        if method == 'simple' and 'group_tag' not in kwargs:
+        if method == AprioriMethods.Basic:
             basket_list = LibAssociationRulesGeneration.__apriori_collect_basket__(**kwargs)
             print(basket_list)
             result = Apriori(basket_list, min_support=min_support)
@@ -48,7 +45,7 @@ class LibAssociationRulesGeneration(object):
                     min_conf = float(input('Please input new min_conf:  '))
                 else:
                     min_conf = float(input('Please input new min_conf:  '))
-        elif method == 'groupspecified' and 'group_tag' in kwargs:
+        elif method == AprioriMethods.GroupByReaderCollege:
             result = dict()
             basket_dict = LibAssociationRulesGeneration.__apriori_collect_basket__(**kwargs)
             for group_value in basket_dict:
@@ -195,15 +192,6 @@ if __name__ == '__main__':
     # import time
     start_time = time.time()
     # ------------------------------
-    from ServiceComponents import RawDataProcessor
-    data = RawDataProcessor.derive_raw_data(folder_path=os.path.join('..', 'data'),
-                                            file_type='txt', file_list=['2016-11-16-guanyuan2013.txt'])
-    book_data = BookManager(folder_path=os.path.join('..', 'data'))
-    book_data.extend(data)
-    reader_data = ReaderManager(folder_path=os.path.join('..', 'data'))
-    reader_data.extend(data)
-    reader_event_data = ReadersEventManager(folder_path=os.path.join('..', 'data'))
-    reader_event_data.extend(data)
     # LibAssociationRulesGeneration.apriori(
     #     method='simple',
     #     # method='groupspecified', group_tag='collegeID',

@@ -1,42 +1,45 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import datetime
+import re
 
-from Config import BasicInfo
+from BasicInfo import DataInfo
 
 
 # --------------------------------------------------------
 class Reader(object):
-    def __init__(self, reader_id: str, rtype: str, college: str):
-        self.id = reader_id
+    __attributes__ = ('index', 'rtype', 'college')
+
+    def __init__(self, index: str, rtype: str, college: str):
+        self.index = index
         self.rtype = rtype
         self.college = college
 
     def __repr__(self):
-        return '\t'.join([
-            'readerID: ', self.id,
-            'reader_type: ', self.rtype,
-            'college: ', self.college
-        ])
-
-    def isone(self, other):
-        return self.id == other.id
+        return '\t'.join([(var + ': ' + str(self.__dict__[var])) for var in self.__attributes__])
 
     def __eq__(self, other):
-        return self.id == other.id and self.rtype == other.rtype and self.college == other.college
+        if type(self) != type(other):
+            return False
+        else:
+            for tag in self.__attributes__:
+                if self.__dict__[tag] != other.__dict__[tag]:
+                    return False
+            return True
 
     def update(self, other):
-        if self.isone(other):
-            if len(self.college) < len(other.college):
-                self.college = other.college
-            if len(self.rtype) < len(other.rtype):
-                self.rtype = other.rtype
+        if len(other.college) == 5 and len(self.college) < 5:
+            self.college = other.college
+        if len(other.rtype) == 2 and len(self.rtype) < 2:
+            self.rtype = other.rtype
 
 
 class Book(object):
-    def __init__(self, book_id: str, lib_index: str, name: str,
+    __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher')
+
+    def __init__(self, index: str, lib_index: str, name: str,
                  isbn: str, author: str, year: str, publisher: str):
-        self.id = book_id
+        self.index = index
         self.lib_index = lib_index
         self.name = name
         self.isbn = isbn
@@ -45,137 +48,166 @@ class Book(object):
         self.publisher = publisher
 
     def __repr__(self):
-        return '\t'.join([
-            'BookID: ', self.id,
-            'BookLibIndex: ', self.lib_index,
-            'BookName: ', self.name,
-            'ISBN: ', self.isbn,
-            'author: ', self.author,
-            'publish_year: ', self.year,
-            'publisher: ', self.publisher
-        ])
-
-    def isone(self, other):
-        return self.id == other.id
+        return '\t'.join([(var + ': ' + str(self.__dict__[var])) for var in self.__attributes__])
 
     def __eq__(self, other):
-        return self.id == other.id and self.lib_index == other.lib_index and self.name == other.name \
-            and self.isbn == other.isbn and self.author == other.author and self.year == other.year \
-            and self.publisher == other.publisher
+        if type(self) != type(other):
+            return False
+        else:
+            for tag in self.__attributes__:
+                if self.__dict__[tag] != other.__dict__[tag]:
+                    return False
+            return True
+
+    def update(self, other):
+        for tag in self.__attributes__:
+            if len(self.__dict__[tag]) < len(other.__dict__[tag]):
+                self.__dict__[tag] = other.__dict__[tag]
 
 
 class EventAction(object):
+    __attributes__ = ('book_id', 'reader_id', 'event_date', 'event_type')
+
     def __init__(self, book_id: str, reader_id: str,
-                 event_date: datetime.datetime, event_type: str):
+                 event_date: str, event_type: str):
         self.book_id = book_id
         self.reader_id = reader_id
         self.event_date = event_date
         self.event_type = event_type
 
     def __repr__(self):
-        return '\t'.join([
-            'userID: ', self.reader_id,
-            'sysID: ', self.book_id,
-            'event_date: ', self.event_date.strftime(BasicInfo.event_date_format),
-            'event_type: ', self.event_type,
-        ])
+        return '\t'.join([(var + ': ' + str(self.__dict__[var])) for var in self.__attributes__])
 
     def __eq__(self, other):
         return self.book_id == other.book_id and self.reader_id == other.reader_id \
             and self.event_date == other.event_date and self.event_type == other.event_type
 
+    @property
+    def date(self):
+        return datetime.datetime.strptime(self.event_date, DataInfo.event_date_format)
+
 
 # --------------------------------------------------------
-class GeneralDict(object):
+
+
+# --------------------------------------------------------
+class DataObject(dict):
+    inner_tag_to_line_index = {
+        'libIndexID': 1,
+        'bookname': 2,
+        'isbn': 3,
+        'author': 4,
+        'publish_year': 5,
+        'publisher': 6,
+        'event_date': 8,
+        'event_type': 9,
+        'user_type': 10,
+        'collegeID': 11,
+    }
+    def __init__(self, from_list: list):
+        dict.__init__(self)
+        self.__setitem__('sysID', re.sub(r'\W', '', from_list[0]))
+        self.__setitem__('userID', re.sub(r'\W', '', from_list[7].upper()))
+        for tag in self.inner_tag_to_line_index:
+            self.__setitem__(tag, from_list[self.inner_tag_to_line_index[tag]])
+
+
+# --------------------------------------------------------
+class CountingDict(dict):
     def __init__(self):
-        self.stored_dict = dict()
-        self.__list_for_iter__ = list()
-
-    def __repr__(self):
-        return str(self.stored_dict)
-
-    def __len__(self):
-        return len(self.stored_dict)
-
-    def __getitem__(self, key: str):
-        if key not in self.stored_dict:
-            raise IndexError('{0:s}.__getitem__: index {1:s} not in dict'.format(self.__class__.__name__, key))
-        else:
-            return self.stored_dict[key]
-
-    def __setitem__(self, key: str, value):
-        self.stored_dict[key] = value
-
-    def __contains__(self, key: str):
-        if key in self.stored_dict:
-            return True
-        else:
-            return False
-
-    def __iter__(self):
-        self.__list_for_iter__ = list(self.stored_dict)
-        self.__list_for_iter__.reverse()
-        return self
-
-    def __next__(self):
-        if len(self.__list_for_iter__) == 0:
-            raise StopIteration()
-        return self.__list_for_iter__.pop()
-
-    def __eq__(self, other):
-        raise NameError('Method {0:s}.__eq__ is not defined'.format(self.__class__.__name__))
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-
-# --------------------------------------------------------
-class DataObject(GeneralDict):
-    def __setitem__(self, key: str, value):
-        self.stored_dict[key] = value if value != '' else None
-
-
-# --------------------------------------------------------
-class CountingDict(GeneralDict):
-    def __init__(self):
-        GeneralDict.__init__(self)
+        dict.__init__(self)
 
     def __mul__(self, other):
-        result = 0
-        for self_element in self.stored_dict:
-            if self_element in other:
-                result += self.stored_dict[self_element] * other[self_element]
-        return result
+        if isinstance(other, dict):
+            result = 0
+            for self_element in self.keys():
+                if self_element in other:
+                    result += self.__getitem__(self_element) * other[self_element]
+            return result
+        else:
+            raise TypeError()
 
     def count(self, element: str, step=1):
-        if element in self.stored_dict:
-            self.stored_dict[element] += step
+        if isinstance(step, int):
+            if self.__contains__(element):
+                self.__setitem__(element, self.__getitem__(element)+step)
+            else:
+                self.__setitem__(element, step)
         else:
-            self.stored_dict[element] = step
-
-    def keys(self):
-        return self.stored_dict.keys()
+            raise TypeError('step should be in type int instead of {0:s}'.format(step.__class__.__name__))
 
     def sort_by_weights(self, inverse=False):
-        stored_list = list(self.stored_dict)
+        """ 按照值从小到大排序 """
+        stored_list = list(self.keys())
         for index_x in range(len(stored_list)):
             for index_y in range(index_x + 1, len(stored_list)):
-                if self.stored_dict[stored_list[index_x]] > self.stored_dict[stored_list[index_y]]:
+                if self[stored_list[index_x]] > self[stored_list[index_y]]:
                     stored_list[index_x], stored_list[index_y] = stored_list[index_y], stored_list[index_x]
         if inverse is True:
             return stored_list.reverse()
         else:
             return stored_list
 
-    def total_weights(self, tag_list=tuple()):
-        total_num = 0
-        if len(tag_list) > 0:
-            for tag in tag_list:
-                total_num += self.stored_dict[tag]
+    def total_weights(self, tag_list):
+        if isinstance(tag_list, (list, tuple, set, frozenset)):
+            total_num = 0
+            if len(tag_list) > 0:
+                for tag in tag_list:
+                    total_num += self.__getitem__(tag)
+            else:
+                for tag in self.keys():
+                    total_num += self.__getitem__(tag)
+            return total_num
         else:
-            for tag in self.stored_dict:
-                total_num += self.stored_dict[tag]
-        return total_num
+            raise TypeError()
+
+
+# --------------------------------------------------------
+class LogInfo(object):
+    @staticmethod
+    def running(running: str, status: str):
+        return '[running]: {0:s} - now {1:s}'.format(
+            running, status,
+        )
+
+    @staticmethod
+    def variable_detail(variable):
+        return '[variable]: {0:s} got type {1:s} and content {2:s}'.format(
+            str(id(variable)), str(type(variable)), str(variable)
+        )
+
+
+# --------------------------------------------------------
+class ParamTypeError(Exception):
+    def __init__(self, param_name: str, param_target_type: str, param):
+        self.name = param_name
+        self.target_type = param_target_type
+        self.got_type = str(type(param))
+
+    def __repr__(self):
+        return 'param {0:s} expect type {1:s} but got type {2:s}'.format(
+            self.name, self.target_type, self.got_type,
+        )
+
+
+class ParamOutOfRangeError(Exception):
+    def __init__(self, param_name: str, value_range: tuple, param):
+        self.name = param_name
+        self.range = value_range
+        self.got_value = str(param)
+
+    def __repr__(self):
+        return 'param {0:s} range from {1} to {2} but got value {3:s}'.format(
+            self.name, str(self.range[0]), str(self.range[1]), self.got_value,
+        )
+
+
+class ParamNoContentError(Exception):
+    def __init__(self, param_name: str):
+        self.name = param_name
+
+    def __repr__(self):
+        return 'param {0:s} has no content'.format(self.name)
 
 
 # --------------------------------------------------------

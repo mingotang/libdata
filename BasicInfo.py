@@ -7,7 +7,7 @@ class DataBaseConfig(Enum):
     file_path = '/Users/mingo/Downloads/Libdata.db'
 
 
-class BasicInfo(object):
+class DataInfo(object):
     raw_text_file_list = [
         '2016-11-16-guanyuan2013.txt',
         '2016-11-16-guanyuan2014.txt',
@@ -77,3 +77,12 @@ class BasicInfo(object):
         '63': '研究生VIP3',
     }
     event_date_format = '%Y%m%d'
+
+
+class AprioriMethods(Enum):
+    Basic = 'ReaderIDAsBuyer_BookIDAsGoods'
+    GroupByReaderCollege = 'ReaderIDAsBuyer_BookIDAsGoods-GroupByReaderCollege'
+
+
+class CollaborativeFilteringMethods(Enum):
+    pass
