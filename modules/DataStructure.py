@@ -104,6 +104,7 @@ class DataObject(dict):
         'user_type': 10,
         'collegeID': 11,
     }
+
     def __init__(self, from_list: list):
         dict.__init__(self)
         self.__setitem__('sysID', re.sub(r'\W', '', from_list[0]))
@@ -127,14 +128,11 @@ class CountingDict(dict):
         else:
             raise TypeError()
 
-    def count(self, element: str, step=1):
-        if isinstance(step, int):
-            if self.__contains__(element):
-                self.__setitem__(element, self.__getitem__(element)+step)
-            else:
-                self.__setitem__(element, step)
-        else:
-            raise TypeError('step should be in type int instead of {0:s}'.format(step.__class__.__name__))
+    def count(self, element, step=1):
+        try:
+            self.__setitem__(element, self.__getitem__(element) + step)
+        except KeyError:
+            self.__setitem__(element, step)
 
     def sort_by_weights(self, inverse=False):
         """ 按照值从小到大排序 """
@@ -163,54 +161,14 @@ class CountingDict(dict):
 
 
 # --------------------------------------------------------
-class LogInfo(object):
-    @staticmethod
-    def running(running: str, status: str):
-        return '[running]: {0:s} - now {1:s}'.format(
-            running, status,
-        )
-
-    @staticmethod
-    def variable_detail(variable):
-        return '[variable]: {0:s} got type {1:s} and content {2:s}'.format(
-            str(id(variable)), str(type(variable)), str(variable)
-        )
 
 
 # --------------------------------------------------------
-class ParamTypeError(Exception):
-    def __init__(self, param_name: str, param_target_type: str, param):
-        self.name = param_name
-        self.target_type = param_target_type
-        self.got_type = str(type(param))
-
-    def __repr__(self):
-        return 'param {0:s} expect type {1:s} but got type {2:s}'.format(
-            self.name, self.target_type, self.got_type,
-        )
-
-
-class ParamOutOfRangeError(Exception):
-    def __init__(self, param_name: str, value_range: tuple, param):
-        self.name = param_name
-        self.range = value_range
-        self.got_value = str(param)
-
-    def __repr__(self):
-        return 'param {0:s} range from {1} to {2} but got value {3:s}'.format(
-            self.name, str(self.range[0]), str(self.range[1]), self.got_value,
-        )
-
-
-class ParamNoContentError(Exception):
-    def __init__(self, param_name: str):
-        self.name = param_name
-
-    def __repr__(self):
-        return 'param {0:s} has no content'.format(self.name)
 
 
 # --------------------------------------------------------
+
+
 if __name__ == '__main__':
     import time
     start_time = time.time()

@@ -1,12 +1,12 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import logging
-import re
 import time
 
 from tqdm import tqdm
 
-from DataStructure import Reader, Book, EventAction, ParamTypeError
+from modules.DataStructure import Reader, Book, EventAction
+from utils.Errors import ParamTypeError
 
 
 # --------------------------------------------------------
@@ -134,8 +134,8 @@ if __name__ == '__main__':
     start_time = time.time()
     # ------------------------------
     # store data to sqlite database
-    from DataBaseWrapper import SqliteWrapper
-    from DataStructure import LogInfo
+    from modules.DataBaseWrapper import SqliteWrapper
+    from modules.DataStructure import LogInfo
     from ServiceComponents import RawDataProcessor
 
     logging.basicConfig(

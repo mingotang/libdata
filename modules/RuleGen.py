@@ -4,11 +4,11 @@ import time
 
 from tqdm import tqdm
 
-from Algorithm import Apriori
-from BasicInfo import AprioriMethods, CollaborativeFilteringMethods
-from DataBaseWrapper import SqliteWrapper
-from DataManagement import Book, Reader, EventAction
-from DataStructure import CountingDict
+from BasicInfo import AprioriMethods
+from algorithm.Apriori import Apriori
+from modules.DataBaseWrapper import SqliteWrapper
+from modules.DataManager import Book, Reader
+from modules.DataStructure import CountingDict
 
 
 # --------------------------------------------------------
@@ -188,7 +188,6 @@ class LibAssociationRulesGeneration(object):
 
 
 if __name__ == '__main__':
-    import os
     # import time
     start_time = time.time()
     # ------------------------------

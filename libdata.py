@@ -2,10 +2,10 @@
 # ---------------------------------import------------------------------------
 import logging
 
-from ServiceComponents import RawDataProcessor
-from DataBaseWrapper import SqliteWrapper
-from DataManagement import ReaderManager, BookManager, ReadersEventManager
-from ServiceComponents import LogInfo
+from modules.DataBaseWrapper import SqliteWrapper
+from modules.DataManager import ReaderManager, BookManager, ReadersEventManager
+from utils.Data import RawDataProcessor
+from utils.String import LogInfo
 
 
 logging.basicConfig(
@@ -19,9 +19,11 @@ logging.basicConfig(
 
 # --------------------------------------------------------
 def store_raw_data_to_local_database():
-    """ 大概需要内存 3GB， 运行时间 7 分钟"""
+    """
+    把文本数据存到数据库里面
+    大概需要内存 3GB， 运行时间 7 分钟
+    """
     local_db = SqliteWrapper(flush_db=True)
-
     logging.info(LogInfo.running('connect sqlite3 database', 'finished'))
     logging.warning(LogInfo.running('flush sqlite3 database when connect', 'finished'))
 

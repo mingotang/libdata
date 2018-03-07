@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-from .DataStructure import EventAction
+from modules.DataStructure import EventAction
 
 
 # --------------------------------------------------------
