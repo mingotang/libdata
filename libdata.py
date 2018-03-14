@@ -2,9 +2,9 @@
 # ---------------------------------import------------------------------------
 import logging
 
-from modules.DataBaseWrapper import SqliteWrapper
-from modules.DataManager import ReaderManager, BookManager, ReadersEventManager
-from utils.Data import RawDataProcessor
+from functions.DataBase import SqliteWrapper
+from functions.DataManager import ReaderManager, BookManager, ReadersEventManager
+from functions.DataLoad import RawDataProcessor
 from utils.String import LogInfo
 
 

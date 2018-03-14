@@ -4,14 +4,21 @@ import time
 
 from tqdm import tqdm
 
-from BasicInfo import AprioriMethods
-from algorithm.Apriori import Apriori
-from modules.DataBaseWrapper import SqliteWrapper
-from modules.DataManager import Book, Reader
-from modules.DataStructure import CountingDict
+from algorithm import Apriori
+from functions import SqliteWrapper
+from structures import Book, Reader
+from structures import CountingDict
+from utils.Consts.Base import BaseEnum
 
 
 # --------------------------------------------------------
+class AprioriMethods(BaseEnum):
+    Basic = 'ReaderIDAsBuyer_BookIDAsGoods'
+    GroupByReaderCollege = 'ReaderIDAsBuyer_BookIDAsGoods-GroupByReaderCollege'
+
+
+class CollaborativeFilteringMethods(BaseEnum):
+    pass
 
 
 # --------------------------------------------------------
@@ -28,7 +35,6 @@ class LibAssociationRulesGeneration(object):
         :param kwargs: Key: 'basket_tag', 'goods_tag', 'group_tag',
         :return:
         """
-        apriori_start_time = time.time()
         if method == AprioriMethods.Basic:
             basket_list = LibAssociationRulesGeneration.__apriori_collect_basket__(**kwargs)
             print(basket_list)

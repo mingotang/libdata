@@ -5,12 +5,12 @@ import time
 
 from tqdm import tqdm
 
-from modules.DataStructure import Reader, Book, EventAction
-from utils.Errors import ParamTypeError
+from structures import Reader, Book, Event
+from utils import ParamTypeError
 
 
 # --------------------------------------------------------
-class GeneralManager(object):
+class BaseManager(object):
 
     def __init__(self):
         """General class for libdata info management"""
@@ -33,10 +33,10 @@ class GeneralManager(object):
                 self.update_member(value)
             else:
                 self.stored_dict[value.index] = value
-        elif isinstance(value, EventAction):
+        elif isinstance(value, Event):
             self.stored_list.append(value)
         else:
-            raise ParamTypeError('value', 'Book/Reader/EventAction', value)
+            raise ParamTypeError('value', 'Book/Reader/Event', value)
 
     def update_member(self, value):
         raise NotImplementedError()
@@ -50,7 +50,7 @@ class GeneralManager(object):
 
 
 # --------------------------------------------------------
-class BookManager(GeneralManager):
+class BookManager(BaseManager):
 
     def update_member(self, value: Book):
         if value.index == self.stored_dict[value.index].index:
@@ -79,7 +79,7 @@ class BookManager(GeneralManager):
         return [self.stored_dict[var] for var in self.stored_dict]
 
 
-class ReaderManager(GeneralManager):
+class ReaderManager(BaseManager):
 
     def update_member(self, value: Reader):
         if value.index == self.stored_dict[value.index].index:
@@ -104,12 +104,12 @@ class ReaderManager(GeneralManager):
         return [self.stored_dict[var] for var in self.stored_dict]
 
 
-class ReadersEventManager(GeneralManager):
+class ReadersEventManager(BaseManager):
 
     def extend(self, data_list: list):
         for item in tqdm(data_list, desc='{0:s}.extending'.format(self.__class__.__name__)):
             self.include(
-                value=EventAction(
+                value=Event(
                     book_id=item['sysID'],
                     reader_id=item['userID'],
                     event_date=item['event_date'],
@@ -134,9 +134,9 @@ if __name__ == '__main__':
     start_time = time.time()
     # ------------------------------
     # store data to sqlite database
-    from modules.DataBaseWrapper import SqliteWrapper
-    from modules.DataStructure import LogInfo
-    from ServiceComponents import RawDataProcessor
+    from functions.DataBase import SqliteWrapper
+    from functions.DataLoad import RawDataProcessor
+    from utils import LogInfo
 
     logging.basicConfig(
         level=logging.DEBUG,  # 定义输出到文件的log级别，

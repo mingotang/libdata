@@ -1,13 +1,13 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from enum import Enum
 
 
-class DataBaseConfig(Enum):
+class DataBaseConfig(object):
     file_path = '/Users/mingo/Downloads/Libdata.db'
 
 
 class DataInfo(object):
+    event_date_format = '%Y%m%d'
     raw_text_file_list = [
         '2016-11-16-guanyuan2013.txt',
         '2016-11-16-guanyuan2014.txt',
@@ -76,13 +76,9 @@ class DataInfo(object):
         '62': '研究生VIP2',
         '63': '研究生VIP3',
     }
-    event_date_format = '%Y%m%d'
 
 
-class AprioriMethods(Enum):
-    Basic = 'ReaderIDAsBuyer_BookIDAsGoods'
-    GroupByReaderCollege = 'ReaderIDAsBuyer_BookIDAsGoods-GroupByReaderCollege'
 
 
-class CollaborativeFilteringMethods(Enum):
-    pass
+
+

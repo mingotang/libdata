@@ -4,12 +4,32 @@ import logging
 import re
 import os
 
-from BasicInfo import DataInfo
-from modules.DataStructure import DataObject
-from utils.String import LogInfo
+from Config import DataInfo
+from utils import LogInfo
 
 
-# --------------------------------------------------------
+class DataObject(dict):
+    inner_tag_to_line_index = {
+        'libIndexID': 1,
+        'bookname': 2,
+        'isbn': 3,
+        'author': 4,
+        'publish_year': 5,
+        'publisher': 6,
+        'event_date': 8,
+        'event_type': 9,
+        'user_type': 10,
+        'collegeID': 11,
+    }
+
+    def __init__(self, from_list: list):
+        dict.__init__(self)
+        self.__setitem__('sysID', re.sub(r'\W', '', from_list[0]))
+        self.__setitem__('userID', re.sub(r'\W', '', from_list[7].upper()))
+        for tag in self.inner_tag_to_line_index:
+            self.__setitem__(tag, from_list[self.inner_tag_to_line_index[tag]])
+
+
 class RawDataProcessor(object):
 
     @staticmethod

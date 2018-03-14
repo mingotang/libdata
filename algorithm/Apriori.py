@@ -3,9 +3,9 @@
 import logging
 import sys
 
-from modules.DataStructure import CountingDict
-from utils.Errors import ParamNoContentError, ParamTypeError
-from utils.String import LogInfo
+from structures import CountingDict
+from utils import LogInfo
+from utils import ParamNoContentError, ParamTypeError
 
 
 class Apriori(object):

@@ -7,15 +7,15 @@ from sqlalchemy import Table, MetaData, Column, Integer, String
 from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy.exc import IntegrityError
 
-from BasicInfo import DataBaseConfig
-from modules.DataStructure import Book, Reader, EventAction
-from utils.Errors import ParamNoContentError, ParamTypeError
-from utils.String import LogInfo
+from Config import DataBaseConfig
+from structures import Book, Reader, Event
+from utils import LogInfo
+from utils import ParamNoContentError, ParamTypeError
 
 
 # --------------------------------------------------------
 class SqliteWrapper(object):
-    def __init__(self, db_path=DataBaseConfig.file_path.value, flush_db=False):
+    def __init__(self, db_path=DataBaseConfig.file_path, flush_db=False):
         self.engine = create_engine('sqlite:///{host}'.format(host=db_path), echo=False)
         self.metadata = MetaData(bind=self.engine)
         self.__table_definition__()
@@ -56,7 +56,7 @@ class SqliteWrapper(object):
     def __table_mapping__(self):
         mapper(Reader, self.user_table)
         mapper(Book, self.book_table)
-        mapper(EventAction, self.events_table)
+        mapper(Event, self.events_table)
 
     def add_all(self, obj, pass_duplicated=False):
         if len(obj) > 0:
@@ -75,7 +75,7 @@ class SqliteWrapper(object):
             logging.warning(repr(ParamNoContentError('obj')))
 
     def add(self, obj):
-        if isinstance(obj, (Book, Reader, EventAction)):
+        if isinstance(obj, (Book, Reader, Event)):
             self.session.add(obj)
             self.session.commit()
         else:
