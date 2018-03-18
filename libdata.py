@@ -2,9 +2,9 @@
 # ---------------------------------import------------------------------------
 import logging
 
-from functions.DataBase import SqliteWrapper
-from functions.DataManager import ReaderManager, BookManager, ReadersEventManager
-from functions.DataLoad import RawDataProcessor
+from modules.DataBase import SqliteWrapper
+from modules.DataManager import ReaderManager, BookManager, ReadersEventManager
+from modules.DataLoad import RawDataProcessor
 from utils.String import LogInfo
 
 
@@ -23,7 +23,7 @@ def store_raw_data_to_local_database():
     把文本数据存到数据库里面
     大概需要内存 3GB， 运行时间 7 分钟
     """
-    local_db = SqliteWrapper(flush_db=True)
+    local_db = SqliteWrapper(clear_db=True)
     logging.info(LogInfo.running('connect sqlite3 database', 'finished'))
     logging.warning(LogInfo.running('flush sqlite3 database when connect', 'finished'))
 

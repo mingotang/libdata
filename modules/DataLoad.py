@@ -5,29 +5,33 @@ import re
 import os
 
 from Config import DataInfo
-from utils import LogInfo
+from utils.Logger import LogInfo
 
 
 class DataObject(dict):
-    inner_tag_to_line_index = {
-        'libIndexID': 1,
-        'bookname': 2,
-        'isbn': 3,
-        'author': 4,
-        'publish_year': 5,
-        'publisher': 6,
-        'event_date': 8,
-        'event_type': 9,
-        'user_type': 10,
-        'collegeID': 11,
+    list_index_to_inner_tag_dict = {
+        0: 'sysID',
+        1: 'libIndexID',
+        2: 'bookname',
+        3: 'isbn',
+        4: 'author',
+        5: 'publish_year',
+        6: 'publisher',
+        7: 'userID',
+        8: 'event_date',
+        9: 'event_type',
+        10: 'user_type',
+        11: 'collegeID',
     }
 
     def __init__(self, from_list: list):
         dict.__init__(self)
-        self.__setitem__('sysID', re.sub(r'\W', '', from_list[0]))
-        self.__setitem__('userID', re.sub(r'\W', '', from_list[7].upper()))
-        for tag in self.inner_tag_to_line_index:
-            self.__setitem__(tag, from_list[self.inner_tag_to_line_index[tag]])
+        for index, inner_tag in self.list_index_to_inner_tag_dict.items():
+            self[inner_tag] = from_list[index]
+
+        # data cleaning
+        self['sysID'] = re.sub(r'\W', '', self['sysID'])
+        self['userID'] = re.sub(r'\W', '', self['userID'].upper())
 
 
 class RawDataProcessor(object):
@@ -61,7 +65,7 @@ class RawDataProcessor(object):
 
     @staticmethod
     def __check_data_line__(content: list):
-        if len(content) != len(DataInfo.inner_tag_to_text_index_dict):  # 数量长度必须和预设相同
+        if len(content) != len(DataObject.list_index_to_inner_tag_dict):  # 数量长度必须和预设相同
             return False
         else:
             if not re.search(r'[12][890123]\d\d[01]\d[0123]\d', content[8]):  # event_date 必须遵循 YYYYmmdd格式

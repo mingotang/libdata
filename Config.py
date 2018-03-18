@@ -1,5 +1,8 @@
 # -*- encoding: UTF-8 -*-
-# ---------------------------------import------------------------------------
+
+
+class RawDataConfig(object):
+    date_format = '%Y%m%d'
 
 
 class DataBaseConfig(object):
@@ -13,20 +16,6 @@ class DataInfo(object):
         '2016-11-16-guanyuan2014.txt',
         '2016-11-16-guanyuan2015.txt',
     ]
-    inner_tag_to_text_index_dict = {
-        'sysID': 0,
-        'libIndexID': 1,
-        'bookname': 2,
-        'isbn': 3,
-        'author': 4,
-        'publish_year': 5,
-        'publisher': 6,
-        'userID': 7,
-        'event_date': 8,
-        'event_type': 9,
-        'user_type': 10,
-        'collegeID': 11,
-    }
     inner_tag_to_real_tag_dict = {
         'sysID': '系统号',
         'libIndexID': '索书号',

@@ -1,6 +1,6 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from utils import ParamNoContentError
+from utils.Exceptions import ParamNoContentError
 
 
 class UnicodeStr(object):
@@ -63,3 +63,24 @@ class UnicodeStr(object):
             else:
                 char_list.append(chr(inside_code))
         return ''.join(char_list)
+
+
+def attributes_repr(inst):
+    return "{}({})".format(
+        inst.__class__.__name__,
+        ', '.join([str(var) + ': ' + str(getattr(inst, var)) for var in inst.__attributes__])
+    )
+
+
+def slots_repr(inst):
+    return "{}({})".format(
+        inst.__class__.__name__,
+        ', '.join([str(k) + ': ' + str(v) for k, v in slots(inst).items()])
+    )
+
+
+def slots(inst):
+    result = dict()
+    for slot in inst.__slots__:
+        result[slot] = getattr(inst, slot)
+    return result

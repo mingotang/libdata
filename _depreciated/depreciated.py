@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-from modules.DataStructure import EventAction
+from models.DataStructure import EventAction
 
 
 # --------------------------------------------------------
@@ -112,7 +112,7 @@ class EventActionList(object):
 # #     PRIMARY KEY (`id`)
 # # ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin
 # # AUTO_INCREMENT=1 ;
-# # CREATE TABLE modules.rawdata (
+# # CREATE TABLE models.rawdata (
 # #  	sysID varchar(100),
 # #  	indexID varchar(100),
 # #  	bookname varchar(100),
@@ -259,7 +259,7 @@ class EventActionList(object):
 #     # connect_info[0] = '192.168.3.116'
 #     # connect_info[1] = 'mingotang'
 #     # connect_info[2] = 'sql771422'
-#     # connect_info[3] = 'modules'
+#     # connect_info[3] = 'models'
 #     # print(connect_info)
 #     # save_data('bookdata/local_libdata.pickle', connect_info)
 #     # ------------------------------------

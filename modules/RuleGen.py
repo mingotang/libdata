@@ -5,10 +5,10 @@ import time
 from tqdm import tqdm
 
 from algorithm import Apriori
-from functions import SqliteWrapper
+from modules import SqliteWrapper
 from structures import Book, Reader
 from structures import CountingDict
-from utils.Consts.Base import BaseEnum
+from utils.Constants import BaseEnum
 
 
 # --------------------------------------------------------
