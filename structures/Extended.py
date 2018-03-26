@@ -46,3 +46,54 @@ class CountingDict(dict):
             return total_num
         else:
             raise TypeError()
+
+
+class SparseVector(object):
+    def __init__(self, length=None, default_value=0):
+        assert isinstance(length, (type(None), int))
+        self.__length__ = length
+        self.data = dict()
+        self.__default_value__ = default_value
+
+    def __len__(self):
+        if self.__length__ is None:
+            raise RuntimeError('SparseVector defined without length.')
+        else:
+            return self.__length__
+
+    def __setitem__(self, key, value):
+        if value != self.__default_value__:
+            self.data.__setitem__(key, value)
+
+    def __getitem__(self, key):
+        try:
+            return self.data.__getitem__(key)
+        except KeyError:
+            return self.__default_value__
+
+    def __iter__(self):
+        assert isinstance(self.__length__, int), str('SparseVector defined without length.')
+        for k in self.data:
+            yield k
+
+    def __contains__(self, item):
+        return item in self.data
+
+    def __mul__(self, other):
+        if isinstance(other, (SparseVector, dict)):
+            assert self.__len__() == other.__len__()
+            result = 0.0
+            for tag in other:
+                try:
+                    result += self.data.__getitem__(tag) * other.__getitem__(tag)
+                except KeyError:
+                    pass
+            return result
+        else:
+            raise NotImplementedError
+
+    def get(self, key):
+        return self.__getitem__(key)
+
+    def set(self, key, value):
+        self.__setitem__(key, value)

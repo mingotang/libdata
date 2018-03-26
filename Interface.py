@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-from abc import ABCMeta, abstractmethod, abstractclassmethod, abstractstaticmethod
+from abc import ABCMeta, abstractmethod, abstractclassmethod
 
 
 class AbstractDataManager:
@@ -29,9 +29,25 @@ class AbstractDataObject:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def update_from(self, value):
+    def update_from(self, *args, **kwargs):
         raise NotImplementedError
 
     @abstractclassmethod
-    def init_from(cls, value):
+    def init_from(cls, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def compare_by(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class AbstractPersistent:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def set_state(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_state(self):
         raise NotImplementedError

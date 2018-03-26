@@ -39,7 +39,7 @@ class Book(AbstractDataObject):
 
     @property
     def update_date(self):
-        return datetime.datetime.strptime(self.op_dt, '%Y%m%d')
+        return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
 
     def update_from(self, value):
         if type(value) == type(self):
@@ -53,6 +53,16 @@ class Book(AbstractDataObject):
                 if value.__dict__[tag] is not None:
                     if len(self.__dict__[tag]) < len(value.__dict__[tag]):
                         self.__dict__[tag] = value.__dict__[tag]
+        return self
+
+    def compare_by(self, **kwargs):
+        for tag in kwargs:
+            if tag not in self.__attributes__:
+                raise AttributeError('Book has no attribute {}'.format(tag))
+            else:
+                if kwargs[tag] != getattr(self, tag):
+                    return False
+        return True
 
     @classmethod
     def init_from(cls, value):

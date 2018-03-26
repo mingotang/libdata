@@ -80,3 +80,10 @@ index:  11 	length:  5 02000
 
 
 ## Notes:
+
+** persisit data**
+
+- readers: `Pdict`
+- books: `Pdict`
+- events: `Pdict`
+

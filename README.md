@@ -2,7 +2,7 @@
 
 对图书馆借阅流水数据进行处理，做出书籍相关推荐。
 
-BY： [Mingo Tang](mailto:mtang024@163.com)
+BY： [Mingo Tang](mailto:mtang024@126.com)
 
 
 ## 目录
@@ -27,6 +27,7 @@ Package requirements：
 ## 文件及对象<a id='file_and_objects'></a>
 
 数据相关文件
+
 
 **`DataStructure`**
 
@@ -61,6 +62,5 @@ Package requirements：
 	- is_one_book(other)：以id判断是否是同一本书
 	- update(other)：遇到重复的Book对象时更新内容
 
-**`DataStructure`**
 
 

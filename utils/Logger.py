@@ -1,5 +1,4 @@
 # -*- encoding: UTF-8 -*-
-import logging
 import logbook
 
 logbook.set_datetime_format("local")
@@ -17,6 +16,7 @@ def set_logbook():
     pass
 
 def set_logging():
+    import logging
     logging.basicConfig(
         level=logging.DEBUG,  # 定义输出到文件的log级别，
         format='%(asctime)s  %(filename)s : %(levelname)s  %(message)s',  # 定义输出log的格式

@@ -2,6 +2,8 @@
 import csv
 import pickle
 
+from abc import ABCMeta, abstractclassmethod
+
 from utils.Constants import BaseEnum
 
 
@@ -12,10 +14,11 @@ class FileType(BaseEnum):
 
 
 class BaseFileSupport(object):
+    __metaclass__ = ABCMeta
     __file_type__ = None
 
     @classmethod
-    def check_file_type(cls, file_path: str):
+    def __check_type__(cls, file_path: str):
         """check and correct file_path to target file type -> str"""
         if '.' in file_path:
             if file_path.split('.')[-1] == cls.__file_type__:
@@ -25,20 +28,12 @@ class BaseFileSupport(object):
         else:
             return '.'.join([file_path, cls.__file_type__])
 
-    @classmethod
+    @abstractclassmethod
     def load(cls, *args, **kwargs):
         raise NotImplementedError
 
-    @classmethod
+    @abstractclassmethod
     def save(cls, *args, **kwargs):
-        raise NotImplementedError
-
-    @classmethod
-    def loads(cls, *args, **kwargs):
-        raise NotImplementedError
-
-    @classmethod
-    def saves(cls, *args, **kwargs):
         raise NotImplementedError
 
 
@@ -51,22 +46,11 @@ class PickleSupport(BaseFileSupport):
         try:  # parameters
             file_path = args[0]
             assert isinstance(file_path, str), repr(TypeError)
-            file_path = cls.check_file_type(file_path)
+            file_path = cls.__check_type__(file_path)
         except IndexError:
             raise ValueError('file_path is missing.')
 
         return pickle.load(open(file_path, 'rb'))
-
-    @classmethod
-    def loads(cls, *args, **kwargs):
-        """BytesSupport.load(bytes_content) -> object"""
-        try:
-            bytes_content = args[0]
-            assert isinstance(bytes_content, bytes), repr(TypeError)
-        except IndexError:
-            raise ValueError('bytes_content is missing.')
-
-        return pickle.loads(bytes_content)
 
     @classmethod
     def save(cls, *args, **kwargs):
@@ -74,7 +58,7 @@ class PickleSupport(BaseFileSupport):
         try:  # parameters
             file_path = args[0]
             assert isinstance(file_path, str), repr(TypeError)
-            file_path = cls.check_file_type(file_path)
+            file_path = cls.__check_type__(file_path)
         except IndexError:
             raise ValueError('file_path is missing.')
         try:
@@ -83,16 +67,6 @@ class PickleSupport(BaseFileSupport):
             raise ValueError('content is missing')
 
         pickle.dump(content, open(file_path, 'wb'))
-
-    @classmethod
-    def saves(cls, *args, **kwargs):
-
-        try:
-            content = args[0]
-        except IndexError:
-            raise ValueError('content is missing')
-
-        return pickle.dumps(content)
 
 
 class CSVSupport(BaseFileSupport):
@@ -105,7 +79,7 @@ class CSVSupport(BaseFileSupport):
         try:  # parameters
             file_path = args[0]
             assert isinstance(file_path, str), repr(TypeError)
-            file_path = cls.check_file_type(file_path)
+            file_path = cls.__check_type__(file_path)
         except IndexError:
             raise ValueError('file_path is missing')
 
@@ -139,7 +113,7 @@ class CSVSupport(BaseFileSupport):
         try:  # parameters
             file_path = args[0]
             assert isinstance(file_path, str), repr(TypeError)
-            file_path = cls.check_file_type(file_path)
+            file_path = cls.__check_type__(file_path)
         except IndexError:
             raise ValueError('file_path is missing.')
         try:

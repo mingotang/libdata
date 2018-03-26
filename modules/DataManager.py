@@ -1,16 +1,48 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import logging
+import os
 import time
 
 from Interface import AbstractDataObject, AbstractDataManager
-from modules.DataBase import SqliteWrapper
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
+from utils.Persisit import Pdict
 
 
 class DataManager(AbstractDataManager):
+
+    def __init__(self, data_type: type, index_tag: str):
+        self.__index_tag__ = index_tag
+        self.__data_type__  = data_type
+        self.data = dict()
+
+    def include(self, value):
+        if isinstance(value, self.__data_type__):
+            tag = getattr(value, self.__index_tag__)
+            if tag not in self.data:
+                self.data[tag] = value
+            else:
+                stored = self.data[tag]
+                stored.update_from(value)
+                self.data[tag] = stored
+        else:
+            raise TypeError
+
+    def extend(self, iterable):
+        for item in iterable:
+            self.include(item)
+
+    def to_pdict(self, data_path: str, keep_history=False):
+        if not os.path.exists(data_path):
+            os.mkdir(data_path)
+        Pdict.init_from(self.data, data_path=data_path, keep_history=keep_history)
+
+
+class DataManagerByDB(AbstractDataManager):
+    from modules.DataBase import SqliteWrapper
+    """[Depreciated]"""
 
     def __init__(self, db: SqliteWrapper):
         """General class for libdata info management"""
@@ -65,44 +97,26 @@ if __name__ == '__main__':
     start_time = time.time()
     # ------------------------------
     # store data to sqlite database
-    from tqdm import tqdm
-    from modules.DataBase import SqliteWrapper
     from modules.DataLoad import RawDataProcessor
     from utils.Logger import LogInfo, set_logging
 
     set_logging()
 
-    local_db = SqliteWrapper(clear_db=True, exist_optimize=False)
-    logging.info(LogInfo.running('connect sqlite3 database', 'finished'))
-    logging.warning(LogInfo.running('flush sqlite3 database when connect', 'finished'))
+    data_manager = DataManager(Book, 'index')
+    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+        data_manager.include(Book.init_from(d_object))
+    data_manager.to_pdict('/Users/mingo/Downloads/persisted_libdata/books', keep_history=False)
 
-    data = RawDataProcessor.derive_raw_data(folder_path='data')
-    logging.info(LogInfo.running('loading raw data', 'loaded'))
+    data_manager = DataManager(Reader, 'index')
+    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+        data_manager.include(Reader.init_from(d_object))
+    data_manager.to_pdict('/Users/mingo/Downloads/persisted_libdata/readers', keep_history=False)
 
-    data_manager = DataManager(local_db)
+    data_manager = DataManager(Event, 'hashable_key')
+    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+        data_manager.include(Event.init_from(d_object))
+    data_manager.to_pdict('/Users/mingo/Downloads/persisted_libdata/events', keep_history=False)
 
-    # book_dict = dict()
-    # for item in tqdm([Book.init_from(var) for var in data], desc='converting Book info'):
-    #     if item.index in book_dict:
-    #         book_dict[item.index].update_from(item)
-    #     else:
-    #         book_dict[item.index] = item
-    # data_manager.extend(list(book_dict.values()))
-    # logging.info(LogInfo.running('extending Book info', 'finished'))
-    # del book_dict
-
-    reader_dict = dict()
-    for item in tqdm([Reader.init_from(var) for var in data], desc='converting Book info'):
-        if item.index in reader_dict:
-            reader_dict[item.index].update_from(item)
-        else:
-            reader_dict[item.index] = item
-    data_manager.extend(list(reader_dict.values()))
-    data_manager.extend([Reader.init_from(var) for var in data])
-    logging.info(LogInfo.running('extending Reader info', 'finished'))
-    #
-    # data_manager.extend([Event.init_from(var) for var in data])
-    # logging.info(LogInfo.running('extending Event info', 'finished'))
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time

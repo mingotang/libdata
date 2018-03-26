@@ -5,6 +5,7 @@ import re
 import os
 
 from Config import DataInfo
+from utils.Constants import event_type_chinese_map
 from utils.Logger import LogInfo
 
 
@@ -64,6 +65,33 @@ class RawDataProcessor(object):
         return data_list
 
     @staticmethod
+    def iter_data_object(folder_path: str, file_range=DataInfo.raw_text_file_list,
+                         splitter='@', text_encoding='gb18030',):
+        logging.debug(LogInfo.running('derive_raw_data', 'checking file'))
+
+        # data_list = list()
+        for file_name in file_range:
+            logging.debug(LogInfo.running('derive_raw_data', 'reading file {0}'.format(str(file_name))))
+            data_file = open(os.path.join(folder_path, file_name), 'r', encoding=text_encoding)
+
+            text_line = data_file.readline()
+            __temp_list__ = list()
+            while text_line:
+                line_content = text_line.split(splitter)
+                line_content.pop()
+                line_content = RawDataProcessor.__raw_data_line_clean__(line_content, __temp_list__)
+                if RawDataProcessor.__check_data_line__(line_content):
+                    data_object = DataObject(line_content)
+                    yield data_object
+                    # data_list.append(data_object)
+                elif len(line_content) == 0:
+                    logging.debug('RawDataProcessor: empty line')
+                else:
+                    logging.warning("Unqualified data :  {0:s}".format(str(line_content)))
+                text_line = data_file.readline()
+        # return data_list
+
+    @staticmethod
     def __check_data_line__(content: list):
         if len(content) != len(DataObject.list_index_to_inner_tag_dict):  # 数量长度必须和预设相同
             return False
@@ -71,7 +99,7 @@ class RawDataProcessor(object):
             if not re.search(r'[12][890123]\d\d[01]\d[0123]\d', content[8]):  # event_date 必须遵循 YYYYmmdd格式
                 return False
             else:
-                if content[9] not in DataInfo.event_index_to_real_tag_dict:  # event_type 必须在预定范围内
+                if content[9] not in event_type_chinese_map:  # event_type 必须在预定范围内
                     return False
                 else:
                     return True
@@ -96,9 +124,9 @@ class RawDataProcessor(object):
             cont = list()
             cont.extend(content)
             __temp_list__.clear()
-            if cont[9] in DataInfo.event_index_to_real_tag_dict:
+            if cont[9] in event_type_chinese_map:
                 return cont
-            elif cont[10] in DataInfo.event_index_to_real_tag_dict:
+            elif cont[10] in event_type_chinese_map:
                 if len(cont[4]) == 17:
                     cont[2] = cont[2] + cont[3]
                     del cont[3]

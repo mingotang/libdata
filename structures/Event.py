@@ -44,7 +44,7 @@ class Event(AbstractDataObject):
 
     @property
     def date(self):
-        return datetime.datetime.strptime(self.event_date, '%Y%m%d')
+        return datetime.datetime.strptime(self.event_date, '%Y%m%d').date()
 
     def update_from(self, value):
         if type(value) == type(self):
@@ -54,6 +54,16 @@ class Event(AbstractDataObject):
                 pass
         else:
             raise NotImplementedError
+        return self
+
+    def compare_by(self, **kwargs):
+        for tag in kwargs:
+            if tag not in self.__attributes__:
+                raise AttributeError('Event has no attribute {}'.format(tag))
+            else:
+                if kwargs[tag] != getattr(self, tag):
+                    return False
+        return True
 
     @classmethod
     def init_from(cls, value):
