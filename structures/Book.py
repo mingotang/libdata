@@ -1,13 +1,13 @@
 # -*- encoding: UTF-8 -*-
 import datetime
 
-from sqlalchemy import MetaData, Table, Column, String
-
 from Interface import AbstractDataObject
 from utils.String import attributes_repr
 
 
-def define_book_table(meta: MetaData):
+def define_book_table(meta):
+    from sqlalchemy import MetaData, Table, Column, String
+    assert isinstance(meta, MetaData)
     return Table(
         'books', meta,
         Column('index', String, nullable=False, primary_key=True),

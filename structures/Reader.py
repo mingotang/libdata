@@ -1,8 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import datetime
 
-from sqlalchemy import MetaData, Table, Column, String
-
 from Interface import AbstractDataObject
 from utils.String import attributes_repr
 
@@ -10,7 +8,9 @@ from utils.String import attributes_repr
 NOW_YEAR = datetime.datetime.now().date().year
 
 
-def define_reader_table(meta: MetaData):
+def define_reader_table(meta):
+    from sqlalchemy import MetaData, Table, Column, String
+    assert isinstance(meta, MetaData)
     return Table(
         'users', meta,
         Column('index', String, nullable=False, primary_key=True),
@@ -74,7 +74,7 @@ class Reader(AbstractDataObject):
         if len(self.index) == 10:
             if self.index.startswith('5'):  # 本科生学号
                 r_y = int(self.index[1:3]) + 2000
-            elif self.index.startswith('0'):  #  博士生学号
+            elif self.index.startswith('0'):   # 博士生学号
                 r_y = int(self.index[1:3]) + 2000
             elif self.index.startswith('1'):  # 研究生学号
                 r_y = int(self.index[1:3]) + 2000

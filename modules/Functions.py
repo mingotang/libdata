@@ -10,14 +10,19 @@ from utils.Logger import LogInfo
 from utils.Persisit import Pdict
 
 
+__i__ = logging.debug
+
+
 def group_by(group_tag: str, by_tag: str, in_memory=True):
     """
 
     :param group_tag: 'readers'/'books'
     :param by_tag: related attribute
+    :param in_memory: bool
     :return: None
     """
-    logging.debug(LogInfo.running('group {} by {}', 'begin'))
+
+    __i__(LogInfo.running('group {} by {}', 'begin'))
 
     pdata = Pdict(os.path.join(DataConfig.persisted_data_path, group_tag), keep_history=True)
 
@@ -56,9 +61,38 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
             keep_history=False,
         )
 
+    __i__(LogInfo.running('group {} by {}', 'end'))
+
+
+from structures.Book import Book
+from structures.Event import Event
+
+
+def collect_basket(events_list, book_tag: str):
+    """
+
+    :param events_list:
+    :param book_tag:
+    :return:
+    """
+    from algorithm.Apriori import BasketCollector
+
+    assert isinstance(events_list, (dict, Pdict))
+
+    books = Pdict(os.path.join(DataConfig.persisted_data_path, 'books'), keep_history=True)
+
+    new_basket = BasketCollector()
+    for event in events_list:
+        # assert isinstance(event, Event)
+        book = books[event.book_id]
+        # assert isinstance(book, Book)
+        new_basket.add(event.reader_id, getattr(book, book_tag))
+
+    return new_basket
+
 
 if __name__ == '__main__':
     from utils.Logger import set_logging
     set_logging()
 
-    group_by(group_tag='books', by_tag='author')
+    group_by(group_tag='books', by_tag='year')

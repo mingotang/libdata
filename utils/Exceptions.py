@@ -14,10 +14,7 @@ class FileTypeError(Exception):
         self.file_path = file_path  # get_all file path
 
         if isinstance(target_type, str):  # get_all target path
-            try:
-                self.target_type = FileType(target_type)
-            except ValueError:
-                raise ParamOutOfRangeError('target_type', )
+            self.target_type = FileType(target_type)
         elif isinstance(target_type, FileType):
             self.target_type = target_type.value
         else:

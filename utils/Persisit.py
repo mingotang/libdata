@@ -12,7 +12,7 @@ class BasePersisit(object):
     def __init__(self, data_path=None, keep_history=False):
         if data_path is None:
             logging.debug('initiating {} into path {}'.format(self.__class__.__name__, os.getcwd()))
-            self.__path__ = os.path.join(os.getcwd(), str(time.time()).replace('.', ''))
+            self.__path__ = os.path.join(os.getcwd(), self.__time_index__)
         elif isinstance(data_path, str):
             logging.debug('initiating {} from path {}'.format(self.__class__.__name__, data_path))
             self.__path__ = data_path
@@ -40,7 +40,7 @@ class BasePersisit(object):
         pickle.dump(self.__ptype__, open(__ptype_path__, 'wb'))
 
     @classmethod
-    def init_from(cls, inst, data_path=None, keep_history=False):
+    def init_from(cls, *args, **kwargs):
         raise NotImplementedError
 
     def __repr__(self):
@@ -62,7 +62,11 @@ class BasePersisit(object):
             yield self.__read__(tag)
 
     def __len__(self):
-        return len([var for var in self.__file_list__()])
+        return len(list(self.__file_list__()))
+
+    @property
+    def __time_index__(self):
+        return str(int(time.time() * 100000000))
 
     def __pjoin__(self, name: str):
         return os.path.join(self.__path__, name)
@@ -78,8 +82,7 @@ class BasePersisit(object):
         return os.path.exists(self.__pjoin__(name))
 
     def __file_list__(self):
-        file_list = os.listdir(self.__path__)
-        for file in file_list:
+        for file in os.listdir(self.__path__):
             if self.__fcheck__(file):
                 yield file
 
@@ -102,11 +105,10 @@ class BasePersisit(object):
         for file in self.__file_list__():
             os.remove(self.__pjoin__(file))
 
-    def get(self, k, d=None):
-        raise NotImplementedError
-
-    def set(self, k, v):
-        raise NotImplementedError
+    def clean(self):
+        for file in os.listdir(self.__path__):
+            os.remove(self.__pjoin__(file))
+        os.rmdir(self.__path__)
 
 
 class Plist(BasePersisit):
@@ -445,6 +447,79 @@ class Pset(BasePersisit):
             if self.__read__(file) == y:
                 return True
         return False
+
+
+class PqueueFIFO(BasePersisit):
+    """FIFO Queue"""
+    __ptype__ = 'deque'
+
+    def __init__(self, data_path=None, keep_history=False, max_length=None):
+        BasePersisit.__init__(self, data_path, keep_history=keep_history)
+
+        if isinstance(max_length, (type(None), int)):
+            self.__max_length__ = max_length
+        else:
+            raise TypeError
+
+    @classmethod
+    def init_from(cls, inst, data_path=None, keep_history=False, max_length=None):
+        from collections import Iterable
+        assert isinstance(inst, Iterable)
+        new_q = cls(data_path, keep_history=keep_history, max_length=max_length)
+        for item in inst:
+            new_q.put(item)
+        return new_q
+
+    def __min_name__(self):
+        return str(min([int(var) for var in self.__file_list__()]))
+
+    def __max_name__(self):
+        return str(max([int(var) for var in self.__file_list__()]))
+
+    def put(self, value):
+        if self.full():
+            raise IndexError
+        else:
+            self.__write__(self.__time_index__, value)
+
+    def top(self):
+        return self.__read__(self.__min_name__())
+
+    def bottom(self):
+        return self.__read__(self.__max_name__())
+
+    def get(self):
+        top_name = self.__min_name__()
+        q_value = self.__read__(top_name)
+        self.__remove__(top_name)
+        return q_value
+
+    def empty(self):
+        return self.__len__() == 0
+
+    def full(self):
+        if self.__max_length__ is None:
+            return False
+        else:
+            if self.__len__() < self.__max_length__:
+                return False
+            else:
+                return True
+
+
+class PqueueLIFO(PqueueFIFO):
+
+    def top(self):
+        return self.__read__(self.__max_name__())
+
+    def bottom(self):
+        return self.__read__(self.__min_name__())
+
+    def get(self):
+        top_name = self.__max_name__()
+        q_value = self.__read__(top_name)
+        self.__remove__(top_name)
+        return q_value
 
 
 if __name__ == '__main__':

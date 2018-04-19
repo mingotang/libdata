@@ -5,9 +5,13 @@ import sys
 
 from collections import defaultdict
 
+from Interface import AbstractCollector
 from utils.Logger import LogInfo
 from utils.Exceptions import ParamNoContentError, ParamTypeError
 from utils.Persisit import Pdict, Plist
+
+__i__ = logging.debug
+
 
 # -------------------------------------------------------------------------------- #
 # 关联规则就是有关联的规则，形式是这样定义的：两个不相交的非空集合X、Y，如果有X–>Y，就说X–>Y是一条关联规则。
@@ -16,110 +20,160 @@ from utils.Persisit import Pdict, Plist
 # -------------------------------------------------------------------------------- #
 
 
+class AprioriResult(object):
+    def __init__(self, min_support: float):
+        self.__freq_sets__ = dict()
+        self.__freq_sets_support__ = dict()
+        self.__min_support__ = min_support
+        self.__finished__ = None
+
+    @property
+    def min_support(self):
+        return self.__min_support__
+
+    @property
+    def is_finished(self):
+        if self.__finished__ is None:
+            raise RuntimeError
+        return self.__finished__
+
+    def finish(self, with_value=True):
+        self.__finished__ = with_value
+
+    def add_freq_set(self, freq_level: int, freq_set: list):
+        self.__freq_sets__[freq_level] = freq_set
+
+    def add_freq_set_support(self, support: dict):
+        self.__freq_sets_support__.update(support)
+
+    def generate_rules(self, min_conf=0.0):
+        rule_list = list()
+
+        for x_index in range(1, len(self.__freq_sets__)+1):
+            for y_index in range(x_index + 1, len(self.__freq_sets__)+1):
+                for suber_set in self.__freq_sets__[x_index]:
+                    for hyper_set in self.__freq_sets__[y_index]:
+                        if suber_set.issubset(hyper_set):
+                            config = self.__freq_sets_support__[hyper_set] / self.__freq_sets_support__[suber_set]
+                            if config >= min_conf:
+                                rule_list.append((suber_set, hyper_set, config))
+        return rule_list
+
+    def show_results(self, rules_by_conf=None):
+        print("\n所有候选项集的支持度信息：")
+        for __item__ in self.__freq_sets_support__:
+            print('\t' + str(__item__) + ':' + str(self.__freq_sets_support__[__item__]))
+        if rules_by_conf is not None:
+            assert isinstance(rules_by_conf, float), repr(ParamTypeError('rules_by_config', 'float', rules_by_conf))
+            print('\nrules:')
+            for __item__ in self.generate_rules(rules_by_conf):
+                print('\t' + str(__item__[0]) + ' ---> ' + str(__item__[1]) + ' , conf: ' + str(__item__[2]))
+
+
 class Apriori(object):
-    def __init__(self, data_sets, min_support=0.5, depth=sys.maxsize, temp_path=None):
+    def __init__(self, data_sets, **kwargs):
         """
 
         :param data_sets: sets in list/Plist
         :param float min_support:
-        :param int depth:
-        :param temp_path:
+        :param kwargs: depth int, temp_path str
         """
-        assert isinstance(data_sets, (list, Plist)), str(
-            ParamTypeError('data_sets', 'list/Plist', data_sets)
-        )
-        # setting parameters
-        self.min_support = min_support
-        self.depth = min(max(len(var) for var in data_sets), depth)
-        self.data_length = len(data_sets)
+        if isinstance(data_sets, BasketCollector):
+            data_sets = data_sets.to_dict()
 
-        freq_set_level = 1  # starting apriori
-        self.freq_sets = dict()
-        self.freq_sets_support = dict()
-
-        # pre operation
+        assert isinstance(data_sets, (list, Plist)), str(ParamTypeError('data_sets', 'list/Plist', data_sets))
         assert len(data_sets) > 0, repr(ParamNoContentError('data_sets'))
 
-        if isinstance(data_sets[0], (set, frozenset)):
-            transaction_sets = data_sets
+        # pre operation
+        if isinstance(data_sets, Plist) and isinstance(data_sets[0], (set, frozenset)):
+            self.data_sets = data_sets
+        elif kwargs.get('force_origin', False) is True:
+            self.data_sets = [set(var) for var in data_sets]
         else:
-            if temp_path is None:
-                transaction_sets = [set(var) for var in data_sets]
-            elif isinstance(temp_path, str):
-                transaction_sets = Plist(temp_path)
-                for var in data_sets:
-                    transaction_sets.append(set(var))
-            else:
-                raise ParamTypeError('temp_path', 'str', temp_path)
+            self.data_sets = Plist(kwargs.get('temp_path', None))
+            for var in data_sets:
+                self.data_sets.append(set(var))
+            del data_sets
+        self.depth = min(max(len(var) for var in self.data_sets), kwargs.get('depth', sys.maxsize))
+
+    def run(self, min_support: float):
+        # setting parameters
+        this_result = AprioriResult(min_support)
+
+        freq_set_level = 1  # starting apriori
 
         # 基本频繁项数据
-        freq_sets_k, freq_sets_support = self.find_primary_freq_goods(transaction_sets)     # collecting frequent set
-        self.freq_sets[freq_set_level] = freq_sets_k
-        self.freq_sets_support.update(freq_sets_support)
+        freq_sets_k, freq_sets_support = self.find_primary_freq_goods(this_result)  # collecting frequent set
+        this_result.add_freq_set(freq_set_level, freq_sets_k)
+        this_result.add_freq_set_support(freq_sets_support)
 
         # 频繁项超集数据
         while freq_set_level <= self.depth and len(freq_sets_k) > 0:
             freq_set_level += 1
-            logging.debug(LogInfo.running('running at frequent set level {}'.format(freq_set_level), 'begin'))
+            __i__(LogInfo.running('running at frequent set level {}'.format(freq_set_level), 'begin'))
             freq_sets_k = self.generate_super_frequent_sets(freq_sets_k)
-            freq_sets_k, freq_sets_support = self.collect_freq_support(freq_sets_k, transaction_sets)
-            self.freq_sets[freq_set_level] = freq_sets_k
-            self.freq_sets_support.update(freq_sets_support)
+            freq_sets_k, freq_sets_support = self.collect_freq_support(freq_sets_k, this_result)
+            this_result.add_freq_set(freq_set_level, freq_sets_k)
+            this_result.add_freq_set_support(freq_sets_support)
 
         # tag whether the process stops when there is no super frequent sets
         if len(freq_sets_k) > 0:
-            self.__finished__ = False
+            this_result.finish(False)
         else:
-            self.__finished__ = True
+            this_result.finish(True)
 
-    @property
-    def is_finished(self):
-        return self.__finished__
+        return this_result
 
-    def find_primary_freq_goods(self, datasets: list):
+    @classmethod
+    def run_once(cls):
+        pass
+
+    def find_primary_freq_goods(self, result: AprioriResult):
         """ frozensets in list, support of frozenset in dict """
-        logging.debug(LogInfo.running('finding_primary_goods', 'begin'))
+        __i__(LogInfo.running('finding_primary_goods', 'begin'))
 
         # 收集频繁度数据
         basic_freq = defaultdict(int)
-        for transaction_index in range(len(datasets)):
-            for item in datasets[transaction_index]:
+        for transaction_index in range(len(self.data_sets)):
+            for item in self.data_sets[transaction_index]:
                 basic_freq[frozenset([item])] += 1
 
         # 排除非频繁项
         ret_list = list()
         support_dict = dict()
         for item in basic_freq:
-            support = basic_freq[item] / self.data_length
-            if support >= self.min_support:
+            support = basic_freq[item] / len(self.data_sets)
+            if support >= result.min_support:
                 ret_list.append(item)
                 support_dict[item] = support
         ret_list.sort()
-        logging.debug(LogInfo.running('finding_primary_goods', 'end'))
+
+        __i__(LogInfo.running('finding_primary_goods', 'end'))
+
         return ret_list, support_dict
 
-    def collect_freq_support(self, freq_sets: list, datasets: list):
+    def collect_freq_support(self, freq_sets: list, result: AprioriResult):
         """ frozensets in list, support of frozenset in dict """
-        logging.debug(LogInfo.running('collect_freq_support', 'begin'))
+        __i__(LogInfo.running('collect_freq_support', 'begin'))
 
         # 收集频繁度数据
         freq_count = defaultdict(int)
         for can in freq_sets:  # 对于每一个候选项集can，检查是否是transaction的一部分
-            for index in range(len(datasets)):  # 对于每一条transaction
-                if can.issubset(datasets[index]):
+            for index in range(len(self.data_sets)):  # 对于每一条transaction
+                if can.issubset(self.data_sets[index]):
                     freq_count[can] += 1
 
         ret_list = list()
         support_dict = dict()
         for can in freq_sets:
-            support = freq_count[can] / self.data_length  # 每个项集的支持度
-            if support >= self.min_support:  # 将满足最小支持度的项集，加入retList
+            support = freq_count[can] / len(self.data_sets)  # 每个项集的支持度
+            if support >= result.min_support:  # 将满足最小支持度的项集，加入retList
                 ret_list.append(can)
                 support_dict[can] = support  # 汇总支持度数据
-        logging.debug(LogInfo.running('collect_freq_support', 'end'))
+        __i__(LogInfo.running('collect_freq_support', 'end'))
         return ret_list, support_dict
 
-    def generate_super_frequent_sets(self, old_freq_sets):
+    def generate_super_frequent_sets(self, old_freq_sets: list):
         num_of_freq_sets = len(old_freq_sets)
 
         if num_of_freq_sets >= 2:
@@ -181,37 +235,14 @@ class Apriori(object):
     #         rule_list[index] = temp
     #     return rule_list
 
-    def generate_rules(self, min_conf=0.0):
-        rule_list = list()
 
-        for x_index in range(1, len(self.freq_sets)+1):
-            for y_index in range(x_index + 1, len(self.freq_sets)+1):
-                for suber_set in self.freq_sets[x_index]:
-                    for hyper_set in self.freq_sets[y_index]:
-                        if suber_set.issubset(hyper_set):
-                            config = self.freq_sets_support[hyper_set] / self.freq_sets_support[suber_set]
-                            if config >= min_conf:
-                                rule_list.append((suber_set, hyper_set, config))
-        return rule_list
-
-    def show_results(self, rules_by_conf=None):
-        print("\n所有候选项集的支持度信息：")
-        for __item__ in self.freq_sets_support:
-            print('\t' + str(__item__) + ':' + str(self.freq_sets_support[__item__]))
-        if rules_by_conf is not None:
-            assert isinstance(rules_by_conf, float), repr(ParamTypeError('rules_by_config', 'float', rules_by_conf))
-            print('\nrules:')
-            for __item__ in self.generate_rules(rules_by_conf):
-                print('\t' + str(__item__[0]) + ' ---> ' + str(__item__[1]) + ' , conf: ' + str(__item__[2]))
-
-
-class BasketCollector(object):
-    def __init__(self, data_path=None):
-        if data_path is not None:
-            assert isinstance(data_path, str), str(ParamTypeError('data_path', 'str', data_path))
-            self.data = Pdict(data_path)
-        else:
+class BasketCollector(AbstractCollector):
+    def __init__(self, *args):
+        if len(args) == 0:
             self.data = dict()
+        else:
+            assert len(args) == 1
+            self.data = Pdict(args[0])
 
     def add(self, customer: str, good):
         if customer not in self.data:
@@ -220,29 +251,34 @@ class BasketCollector(object):
         stored_set.add(good)
         self.data[customer] = stored_set
 
-    def to_list(self, data_path=None):
-        if data_path is not None:
-            assert isinstance(data_path, str), str(ParamTypeError('data_path', 'str', data_path))
-            this_list = Plist(data_path)
+    def to_dict(self):
+        if isinstance(self.data, Pdict):
+            return self.data.copy()
         else:
-            this_list = list()
-        for tag in self.data:
-            this_list.append(self.data[tag])
-        return this_list
+            return self.data
+
+    def to_pdict(self, *args):
+        if isinstance(self.data, Pdict):
+            return self.data
+        else:
+            assert len(args) == 1, 'to_pdict takes one and only one param data_path'
+            return Pdict.init_from(self.data, args[0])
 
 
 if __name__ == '__main__':
     # ------------------------------
-    logging.basicConfig(
-        level=logging.DEBUG,  # 定义输出到文件的log级别，
-        format='%(asctime)s  %(filename)s : %(levelname)s  %(message)s',  # 定义输出log的格式
-        datefmt='%Y-%m-%d %A %H:%M:%S',  # 时间
-    )
+    from utils.Logger import set_logging, RunTimeCounter
+    set_logging()
+    import time
+    RunTimeCounter.get_instance()
+    time.sleep(3)
     # Test Apriori
     my_dat = [[1, 3, 4, 5],
               [2, 3, 5],
               [1, 2, 3, 4, 5],
               [2, 3, 4, 5]
               ]
-    result1 = Apriori(my_dat, min_support=0.5, depth=2)
-    result1.show_results(0.0)
+    apri_1 = Apriori(my_dat, force_origin=True)
+    result1 = apri_1.run(0.2)
+    result1.show_results(0.1)
+    __i__(LogInfo.time_passed())

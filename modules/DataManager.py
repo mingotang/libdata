@@ -15,7 +15,7 @@ class DataManager(AbstractDataManager):
 
     def __init__(self, data_type: type, index_tag: str):
         self.__index_tag__ = index_tag
-        self.__data_type__  = data_type
+        self.__data_type__ = data_type
         self.data = dict()
 
     def include(self, value):
@@ -28,6 +28,7 @@ class DataManager(AbstractDataManager):
                 stored.update_from(value)
                 self.data[tag] = stored
         else:
+            logging.debug(LogInfo.variable_detail(value))
             raise TypeError
 
     def extend(self, iterable):
@@ -97,6 +98,7 @@ if __name__ == '__main__':
     start_time = time.time()
     # ------------------------------
     # store data to sqlite database
+    from Config import DataConfig
     from modules.DataLoad import RawDataProcessor
     from utils.Logger import LogInfo, set_logging
 
@@ -105,17 +107,17 @@ if __name__ == '__main__':
     data_manager = DataManager(Book, 'index')
     for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
         data_manager.include(Book.init_from(d_object))
-    data_manager.to_pdict('/Users/mingo/Downloads/persisted_libdata/books', keep_history=False)
+    data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'books'), keep_history=False)
 
     data_manager = DataManager(Reader, 'index')
     for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
         data_manager.include(Reader.init_from(d_object))
-    data_manager.to_pdict('/Users/mingo/Downloads/persisted_libdata/readers', keep_history=False)
+    data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'readers'), keep_history=False)
 
     data_manager = DataManager(Event, 'hashable_key')
     for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
         data_manager.include(Event.init_from(d_object))
-    data_manager.to_pdict('/Users/mingo/Downloads/persisted_libdata/events', keep_history=False)
+    data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=False)
 
     # ------------------------------
     end_time = time.time()

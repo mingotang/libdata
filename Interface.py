@@ -11,16 +11,6 @@ class AbstractDataManager:
         raise NotImplementedError
 
     @abstractmethod
-    def __update_value__(self, value):
-        """update value in data if value already in data"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def __add_value__(self, value):
-        """add value to data if value is not in data"""
-        raise NotImplementedError
-
-    @abstractmethod
     def extend(self, value_list):
         raise NotImplementedError
 
@@ -32,7 +22,7 @@ class AbstractDataObject:
     def update_from(self, *args, **kwargs):
         raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
     def init_from(cls, *args, **kwargs):
         raise NotImplementedError
 
@@ -50,4 +40,12 @@ class AbstractPersistent:
 
     @abstractmethod
     def get_state(self):
+        raise NotImplementedError
+
+
+class AbstractCollector:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def add(self, *args, **kwargs):
         raise NotImplementedError
