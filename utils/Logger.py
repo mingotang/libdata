@@ -16,6 +16,10 @@ def set_logging():
 
 class LogInfo(object):
     @staticmethod
+    def initiate_time_counter():
+        RunTimeCounter.get_instance()
+
+    @staticmethod
     def running(running: str, status: str):
         return '[running]: {0:s} - now {1:s}'.format(
             running, status,

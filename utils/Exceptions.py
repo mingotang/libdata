@@ -1,30 +1,5 @@
 # -*- encoding: UTF-8 -*-
 
-from utils.FileSupport import FileType
-
-
-class FileTypeError(Exception):
-    def __init__(self, file_path: str, target_type):
-
-        if '.' in file_path:  # get_all wrong file_type
-            self.file_type = file_path.split('.')[-1]
-        else:
-            self.file_type = str(type(None))
-
-        self.file_path = file_path  # get_all file path
-
-        if isinstance(target_type, str):  # get_all target path
-            self.target_type = FileType(target_type)
-        elif isinstance(target_type, FileType):
-            self.target_type = target_type.value
-        else:
-            raise TypeError()
-
-    def __repr__(self):
-        return 'file {0:s} expect type {1:s} but got type {2:s}'.format(
-            self.file_path, self.target_type, self.file_type,
-        )
-
 
 class ParamTypeError(Exception):
     def __init__(self, param_name: str, param_target_type, param):

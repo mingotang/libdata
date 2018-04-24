@@ -4,14 +4,15 @@ import logging
 import os
 import time
 
+from Config import DataConfig
 from Interface import AbstractDataObject, AbstractDataManager
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
-from utils.Persisit import Pdict
+from utils.Persisit import Pdict, Pseries
 
 
-class DataManager(AbstractDataManager):
+class DataStore(AbstractDataManager):
 
     def __init__(self, data_type: type, index_tag: str):
         self.__index_tag__ = index_tag
@@ -92,38 +93,59 @@ class DataManagerByDB(AbstractDataManager):
             self.__update_value__(item)
 
 
+class DataInduction(object):
+    def __init__(self, folder_path: str):
+        self.__path__ = folder_path
+
+    def __pjoin__(self, name: str):
+        return os.path.join(self.__path__, name)
+
+    def get(self, key: str):
+        if os.path.exists(self.__pjoin__(key)):
+            return Pseries(self.__pjoin__(key), keep_history=True)
+        else:
+            return Pseries(self.__pjoin__(key), keep_history=False)
+
+
 # --------------------------------------------------------
 if __name__ == '__main__':
-    # import time
-    start_time = time.time()
-    # ------------------------------
-    # store data to sqlite database
-    from Config import DataConfig
-    from modules.DataLoad import RawDataProcessor
     from utils.Logger import LogInfo, set_logging
-
     set_logging()
-
-    data_manager = DataManager(Book, 'index')
-    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-        data_manager.include(Book.init_from(d_object))
-    data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'books'), keep_history=False)
-
-    data_manager = DataManager(Reader, 'index')
-    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-        data_manager.include(Reader.init_from(d_object))
-    data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'readers'), keep_history=False)
-
-    data_manager = DataManager(Event, 'hashable_key')
-    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-        data_manager.include(Event.init_from(d_object))
-    data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=False)
-
+    LogInfo.initiate_time_counter()
     # ------------------------------
-    end_time = time.time()
-    duration = end_time - start_time
-    hour = int(duration) // 3600
-    minutes = int(duration) // 60 - 60 * hour
-    seconds = duration % 60
-    time.sleep(1)
-    print('\nRunning time: {0:d} h {1:d} m {2:.2f} s'.format(hour, minutes, seconds))
+
+    from tqdm import tqdm
+
+    from modules.DataLoad import RawDataProcessor
+    # data_manager = DataStore(Book, 'index')
+    # for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+    #     data_manager.include(Book.init_from(d_object))
+    # data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'books'), keep_history=False)
+    #
+    # data_manager = DataStore(Reader, 'index')
+    # for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+    #     data_manager.include(Reader.init_from(d_object))
+    # data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'readers'), keep_history=False)
+    #
+    # data_manager = DataStore(Event, 'hashable_key')
+    # for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+    #     data_manager.include(Event.init_from(d_object))
+    # data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=False)
+
+    readers = Pdict(os.path.join(DataConfig.persisted_data_path, 'readers'), keep_history=True)
+    events = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True).copy()
+
+    for reader_id in readers.keys():
+        logging.debug(LogInfo.running('inducting', reader_id))
+        sum_list = list()
+        for event in tqdm(events.values(), desc='collecting events'):
+            assert isinstance(event, Event)
+            if event.reader_id == reader_id:
+                sum_list.append(event)
+        Pseries.init_from(
+            sum_list,
+            os.path.join(DataConfig.persisted_data_path, 'inducted_events', reader_id),
+            index_tag='event_date'
+        )
+    # ------------------------------
+    print(LogInfo.time_passed())

@@ -56,7 +56,7 @@ class AprioriResult(object):
                         if suber_set.issubset(hyper_set):
                             config = self.__freq_sets_support__[hyper_set] / self.__freq_sets_support__[suber_set]
                             if config >= min_conf:
-                                rule_list.append((suber_set, hyper_set, config))
+                                rule_list.append((set(suber_set), set(hyper_set), config))
         return rule_list
 
     def show_results(self, rules_by_conf=None):
@@ -69,6 +69,10 @@ class AprioriResult(object):
             for __item__ in self.generate_rules(rules_by_conf):
                 print('\t' + str(__item__[0]) + ' ---> ' + str(__item__[1]) + ' , conf: ' + str(__item__[2]))
 
+    def to_csv(self, path: str, min_conf: float):
+        from utils.FileSupport import save_csv
+        save_csv(self.generate_rules(min_conf), path)
+
 
 class Apriori(object):
     def __init__(self, data_sets, **kwargs):
@@ -79,7 +83,7 @@ class Apriori(object):
         :param kwargs: depth int, temp_path str
         """
         if isinstance(data_sets, BasketCollector):
-            data_sets = data_sets.to_dict()
+            data_sets = data_sets.to_list()
 
         assert isinstance(data_sets, (list, Plist)), str(ParamTypeError('data_sets', 'list/Plist', data_sets))
         assert len(data_sets) > 0, repr(ParamNoContentError('data_sets'))
@@ -242,6 +246,7 @@ class BasketCollector(AbstractCollector):
             self.data = dict()
         else:
             assert len(args) == 1
+            assert isinstance(args[0], str)
             self.data = Pdict(args[0])
 
     def add(self, customer: str, good):
@@ -251,18 +256,18 @@ class BasketCollector(AbstractCollector):
         stored_set.add(good)
         self.data[customer] = stored_set
 
+    def to_list(self):
+        return [set(self.data[var]) for var in self.data.keys()]
+
+    def to_plist(self, *args):
+        assert len(args) == 1, 'to_plist takes one and only one param data_path'
+        return Plist.init_from(self.to_list(), args[0])
+
     def to_dict(self):
         if isinstance(self.data, Pdict):
             return self.data.copy()
         else:
             return self.data
-
-    def to_pdict(self, *args):
-        if isinstance(self.data, Pdict):
-            return self.data
-        else:
-            assert len(args) == 1, 'to_pdict takes one and only one param data_path'
-            return Pdict.init_from(self.data, args[0])
 
 
 if __name__ == '__main__':

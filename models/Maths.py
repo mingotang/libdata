@@ -1,9 +1,7 @@
 # -*- encoding: UTF-8 -*-
 import math
 
-from collections import Iterable
-
-from structures.Extended import SparseVector
+from structures.SparseVector import SparseVector
 
 
 def EuclideanDistance(x, y):
@@ -53,9 +51,10 @@ def TanimotoCoefficient(x, y):
 
 
 if __name__ == '__main__':
-    from utils.Logger import set_logging
-
+    from utils.Logger import set_logging, LogInfo
+    LogInfo.initiate_time_counter()
     # ------------------------------
     set_logging()
 
     # ------------------------------
+    print(LogInfo.time_passed())

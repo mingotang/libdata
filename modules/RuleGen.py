@@ -1,10 +1,12 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import logging
+import multiprocessing
 import os
 
+from types import FunctionType
+
 from utils.Constants import BaseEnum
-from utils.Logger import LogInfo
 
 
 __i__ = logging.debug
@@ -17,33 +19,30 @@ class AprioriMethods(BaseEnum):
 
 
 class CollaborativeFilteringMethods(BaseEnum):
-    pass
+    ReaderBase = 'ReaderBase'
+    BookBase = 'BookBase'
 
 
 # --------------------------------------------------------
-def apply_apriori(method: AprioriMethods):
+def apply_apriori(method: AprioriMethods, **kwargs):
     """
 
     :param method:
     :return:
     """
     from Config import DataConfig
-    from algorithm.Apriori import BasketCollector, Apriori
+    from algorithm.Apriori import Apriori
+    from modules.Functions import collect_baskets
     from structures.Event import Event
+    from utils.FileSupport import load_pickle, get_pdict
     from utils.Persisit import Pdict
     if method == AprioriMethods.Basic:
         __i__(LogInfo.running('AprioriMethods.Basic', 'start'))
 
-        events_dict = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True)
+        events_dict = get_pdict('events')
 
         __i__(LogInfo.running('collecting baskets', 'begin'))
-        basket = BasketCollector()  # '/Users/mingo/Downloads/basket_dict'
-
-        for event in events_dict.values():
-            assert isinstance(event, Event)
-            basket.add(event.reader_id, event.book_id)
-
-        # basket = basket.to_dict()   # '/Users/mingo/Downloads/basket_dict'
+        basket = collect_baskets(events_dict, 'index')  # '/Users/mingo/Downloads/basket_dict'
         __i__(LogInfo.running('collecting baskets', 'end'))
 
         __i__(LogInfo.running('initiate apriori', 'begin'))
@@ -51,38 +50,140 @@ def apply_apriori(method: AprioriMethods):
         __i__(LogInfo.running('initiate apriori', 'end'))
 
         while True:
-            min_conf = 0.2
-            print('Apriori rules for min_conf={0:.2f}: '.format(min_conf))
+            min_support = kwargs.get('min_support', 0.1)
+
+            __i__(LogInfo.running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support)))
             result = apri_inst.run(min_support=min_support)
-            result.show_results(min_conf)
-            # print('Result rules: ', result.show_results(min_conf))
-            print('Max rules: {0:d}'.format(len(result.generate_rules(min_conf=0.0001))))
-            config = input('Are you satisfied with the result above? (y/n)  ')
+
+            while True:
+                min_conf = kwargs.get('min_conf', 0.2)
+
+                result.show_results(min_conf)
+                print('Max rules: {0:d}'.format(len(result.generate_rules(min_conf=0.0001))))
+                config = input('Are you satisfied with the result? (y/n)  ')
+                if config.lower() == 'y':
+                    break
+                elif config.lower() == 'n':
+                    min_conf = float(input('Please input new min_conf:  '))
+                else:
+                    continue
+            config = input('Are you satisfied with the results above? (y/n)  ')
             if config.lower() == 'y':
                 break
             elif config.lower() == 'n':
-                # print(result.show_results())
-                min_conf = float(input('Please input new min_conf:  '))
+                min_support = float(input('Please input new min_support:  '))
             else:
-                break
-                # min_conf = float(input('Please input new min_conf:  '))
+                continue
     elif method == AprioriMethods.GroupByReaderCollege:
-        pass
+        __i__(LogInfo.running('AprioriMethods.GroupByReaderCollege', 'start'))
+
+        # events_dict = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True)
+        readers_in_college = Pdict(
+            os.path.join(DataConfig.persisted_data_path, 'readers_group_by_college'),
+            keep_history=True
+        )
+
+        for college in readers_in_college.keys():
+            reader_set = readers_in_college[college]
+
+            __i__(LogInfo.running('collecting baskets for {}'.format(college), 'begin'))
+            events_dict = load_pickle('events.pick')
+            events_list = list()
+            for event in events_dict.values():
+                assert isinstance(event, Event)
+                if event.reader_id in reader_set:
+                    events_list.append(event)
+            del events_dict
+            basket = collect_baskets(events_list, 'index')  # '/Users/mingo/Downloads/basket_dict'
+            del events_list
+            __i__(LogInfo.running('collecting baskets for {}'.format(college), 'end'))
+
+            __i__(LogInfo.running('initiate apriori for {}'.format(college), 'begin'))
+            apri_inst = Apriori(basket, force_origin=True, depth=2)
+            __i__(LogInfo.running('initiate apriori for {}'.format(college), 'end'))
+
+            min_support = kwargs.get('min_support', 0.2)
+            min_conf = kwargs.get('min_conf', 0.2)
+
+            while True:
+                __i__(LogInfo.running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support)))
+                result = apri_inst.run(min_support=min_support)
+
+                while True:
+                    result.show_results(min_conf)
+                    print('Max rules: {0:d}'.format(len(result.generate_rules(min_conf=0.0001))))
+                    config = input('Are you satisfied with the result? (y/n)  ')
+                    if config.lower() == 'y':
+                        break
+                    elif config.lower() == 'n':
+                        min_conf = float(input('Please input new min_conf:  '))
+                    else:
+                        continue
+                config = input('Are you satisfied with the results above? (y/n)  ')
+                if config.lower() == 'y':
+                    result.to_csv(os.path.join('apriori', college), min_conf)
+                    break
+                elif config.lower() == 'n':
+                    min_support = float(input('Please input new min_support:  '))
+                else:
+                    continue
     else:
         raise NotImplementedError
 
 
-def collaborative_filtering(base: str, max_length=20, **kwargs):
-    """
+def apply_collaborative_filtering(method: CollaborativeFilteringMethods, simi_func: FunctionType, **kwargs):
+    from structures.Extended import CountingDict
+    from tqdm import tqdm
+    from utils.FileSupport import get_pdict, load_pickle, save_csv
 
-    :param base: str, 'reader', 'book'
-    :param kwargs: kwargs: Key: 'book', 'reader', 'events', 'chara_tag'
-    :return:
-    """
-    pass
+    max_length = kwargs.get('max_length', 10)
+    books_by_reader = load_pickle('books_group_by_readers')
+    readers_by_book = load_pickle('readers_group_by_books')
+
+    if method == CollaborativeFilteringMethods.ReaderBase:
+        simi_dict = get_pdict('cf_simi_dict')
+        # reader_attributes = get_pdict('reader_attributes')
+        # for reader_a in tqdm(reader_attributes.keys(), desc='calculating similarity'):
+        #     this_simi = CountingDict()
+        #     vec_a = reader_attributes[reader_a]
+        #     possible_readers = set()
+        #     for book_id in books_by_reader[reader_a]:
+        #         possible_readers.update(readers_by_book[book_id])
+        #     for reader_b in possible_readers:
+        #         if reader_b == reader_a:
+        #             continue
+        #         else:
+        #             this_simi.set(reader_b, simi_func.__call__(vec_a, reader_attributes[reader_b]))
+        #     simi_dict[reader_a] = this_simi
+        # del reader_attributes
+
+        result = get_pdict('cf_results')
+        for reader in tqdm(simi_dict.keys(), desc='finding books'):
+            recommend_list = list()
+            this_selected = books_by_reader[reader]
+            assert isinstance(this_selected, set)
+            simi_list = simi_dict[reader].sort(inverse=True)
+            for simi_reader in simi_list:
+                for item in books_by_reader[simi_reader]:
+                    assert isinstance(books_by_reader[simi_reader], set)
+                    if item not in this_selected and item not in recommend_list:
+                        recommend_list.append(item)
+                    if len(recommend_list) >= max_length:
+                        break
+                if len(recommend_list) >= max_length:
+                    break
+            result[reader] = recommend_list
+        save_csv(result.copy(), 'CollaborativeFilteringMethods.ReaderBase')
+    else:
+        raise NotImplemented
 
 
 if __name__ == '__main__':
-    from utils.Logger import set_logging
+    from utils.Logger import set_logging, LogInfo
+    from models.Maths import EuclideanSimilarity
+    LogInfo.initiate_time_counter()
     set_logging()
-    apply_apriori(AprioriMethods.Basic, min_support=0.1)
+    # apply_apriori(AprioriMethods.GroupByReaderCollege)
+    apply_collaborative_filtering(CollaborativeFilteringMethods.ReaderBase, EuclideanSimilarity)
+
+    print(LogInfo.time_passed())
