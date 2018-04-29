@@ -17,7 +17,7 @@ class NeighborType(Enum):
 
 
 class SimilarityType(Enum):
-    from models.Maths import CosineSimilarity, EuclideanSimilarity, PearsonCorrelationCoefficient, TanimotoCoefficient
+    from functions.Maths import CosineSimilarity, EuclideanSimilarity, PearsonCorrelationCoefficient, TanimotoCoefficient
     Cosine = CosineSimilarity
     Euclidean = EuclideanSimilarity
     Pearson = PearsonCorrelationCoefficient

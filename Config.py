@@ -3,7 +3,7 @@
 
 class DataConfig(object):
     raw_data_folder = 'data'
-    persisted_data_path = '/Users/mingo/Downloads/persisted_libdata'
+    data_path = '/Users/mingo/Downloads/persisted_libdata'
 
 
 class DataBaseConfig(object):

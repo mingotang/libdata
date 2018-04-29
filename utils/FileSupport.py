@@ -13,7 +13,7 @@ from utils.Persisit import Pdict, Pseries, Plist
 def get_pdict(*args, keep_history=True):
     assert len(args) > 0
     return Pdict(
-        os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)),
+        os.path.join(DataConfig.data_path, os.path.sep.join(args)),
         keep_history=keep_history,
     )
 
@@ -22,34 +22,34 @@ def convert_pdict_to_dict(*args):
     assert len(args) > 0
     name = os.path.sep.join(args)
     save_pickle(
-        Pdict(os.path.join(DataConfig.persisted_data_path, name), keep_history=True).copy(),
-        os.path.join(DataConfig.persisted_data_path, name)
+        Pdict(os.path.join(DataConfig.data_path, name), keep_history=True).copy(),
+        os.path.join(DataConfig.data_path, name)
     )
 
 
 def init_pdict(inst, *args):
     return Pdict.init_from(
         inst,
-        os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)),
+        os.path.join(DataConfig.data_path, os.path.sep.join(args)),
         keep_history=False,
     )
 
 def get_pseries(*args, keep_history=True):
     assert len(args) > 0
     return Pseries(
-        os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)),
+        os.path.join(DataConfig.data_path, os.path.sep.join(args)),
         keep_history=keep_history
     )
 
 def init_pseries(inst, *args, index_tag='index', **kwargs):
     return Pseries.init_from(
             inst,
-            os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)),
+            os.path.join(DataConfig.data_path, os.path.sep.join(args)),
             index_tag=index_tag, keep_history=False
         )
 
 
-def check_type(file_path: str, file_type: str):
+def __check_type__(file_path: str, file_type: str):
     if '.' in file_path:
         if file_path.split('.')[-1] == file_type:
             return file_path
@@ -62,21 +62,21 @@ def check_type(file_path: str, file_type: str):
 def load_pickle(*args):
     """BytesSupport.load(file_path) -> object"""
     assert len(args) > 0
-    file_path = check_type(os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)), 'pick')
+    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'pick')
     logging.debug('pickle file {} loading.'.format(file_path))
     return pickle.load(open(file_path, 'rb'))
 
 
 def save_pickle(content, *args):
     assert len(args) > 0
-    file_path = check_type(os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)), 'pick')
+    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'pick')
     pickle.dump(content, open(file_path, 'wb'))
     logging.debug('pickle file {} dumped.'.format(file_path))
 
 
 def load_csv(*args, **kwargs):
     assert len(args) > 0
-    file_path = check_type(os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)), 'csv')
+    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')
@@ -101,7 +101,7 @@ def load_csv(*args, **kwargs):
 def save_csv(content, *args, **kwargs):
 
     assert len(args) > 0
-    file_path = check_type(os.path.join(DataConfig.persisted_data_path, os.path.sep.join(args)), 'csv')
+    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')

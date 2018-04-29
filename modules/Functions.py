@@ -25,7 +25,7 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
     :param in_memory: bool
     :return: None
     """
-    from utils.FileSupport import get_pdict
+    from utils.FileSupport import get_pdict, init_pdict
 
     __i__(LogInfo.running('group {} by {}', 'begin'))
 
@@ -34,10 +34,7 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
     if in_memory is True:
         grouped_dict = dict()
     else:
-        grouped_dict = Pdict(
-            data_path=os.path.join(DataConfig.persisted_data_path, '{}_group_by_{}'.format(group_tag, by_tag)),
-            keep_history=False,
-        )
+        grouped_dict = init_pdict(dict(), '{}_group_by_{}'.format(group_tag, by_tag))
 
     for index in tqdm(pdata.keys(), desc='grouping {} by {}'.format(group_tag, by_tag)):
         obj = pdata[index]
@@ -60,22 +57,16 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
         grouped_dict[by_value] = stored
 
     if in_memory is True:
-        Pdict.init_from(
-            grouped_dict,
-            data_path=os.path.join(DataConfig.persisted_data_path, '{}_group_by_{}'.format(group_tag, by_tag)),
-            keep_history=False,
-        )
+        init_pdict(grouped_dict, '{}_group_by_{}'.format(group_tag, by_tag))
 
     __i__(LogInfo.running('group {} by {}', 'end'))
 
 
-def group_events(events_bag):
+def index_events(events_bag):
     from collections import defaultdict, Mapping, Iterable
     from tqdm import tqdm
     from utils.FileSupport import init_pdict
 
-    # books_group_by_readers = get_pdict('books_group_by_readers', keep_history=False)
-    # readers_group_by_books = get_pdict('readers_group_by_books', keep_history=False)
     books_group_by_readers = defaultdict(set)
     readers_group_by_books = defaultdict(set)
 
@@ -92,8 +83,8 @@ def group_events(events_bag):
     else:
         raise TypeError
 
-    init_pdict(books_group_by_readers, 'books_group_by_readers')
-    init_pdict(readers_group_by_books, 'readers_group_by_books')
+    init_pdict(books_group_by_readers, 'temp', 'books_group_by_readers')
+    init_pdict(readers_group_by_books, 'temp', 'readers_group_by_books')
 
 
 def induct_events(events_bag):
@@ -114,19 +105,14 @@ def induct_events(events_bag):
         raise TypeError
 
     for reader_id in sum_dict.keys():
-        init_pseries(sum_dict[reader_id], 'inducted_events', reader_id, index_tag='event_date')
+        init_pseries(sum_dict[reader_id], 'temp', 'inducted_events', reader_id, index_tag='event_date')
 
 
 def collect_baskets(events_bag, book_tag: str):
-    """
 
-    :param events_bag:
-    :param book_tag:
-    :return: `~BasketCollector`
-    """
     from algorithm.Apriori import BasketCollector
 
-    books = Pdict(os.path.join(DataConfig.persisted_data_path, 'books'), keep_history=True)
+    books = Pdict(os.path.join(DataConfig.data_path, 'books'), keep_history=True)
 
     new_basket = BasketCollector()
     if isinstance(events_bag, (list, Plist)):
@@ -146,16 +132,16 @@ def collect_baskets(events_bag, book_tag: str):
     return new_basket
 
 
-def collect_reader_attributes(events):
+def collect_reader_attributes(events, **kwargs):
+
     from collections import defaultdict
     from structures.SparseVector import SparseVector
     from tqdm import tqdm
-    from utils.FileSupport import get_pdict
+    from utils.FileSupport import get_pdict, init_pdict
 
     assert isinstance(events, (list, Plist))
 
     books = get_pdict('books')
-
     reader_attributes = defaultdict(SparseVector)
 
     for i in tqdm(range(len(events)), desc='checking events'):
@@ -163,11 +149,12 @@ def collect_reader_attributes(events):
         assert isinstance(event, Event)
         reader_attributes[event.reader_id][event.book_id] = event.times
 
-    total_books = len(books)
+    total_books = kwargs.get('length', len(books))
+
     for reader_id in reader_attributes:
         reader_attributes[reader_id].set_length(total_books)
 
-    Pdict.init_from(reader_attributes, os.path.join(DataConfig.persisted_data_path, 'reader_attributes'))
+    return reader_attributes
 
 
 if __name__ == '__main__':
@@ -176,17 +163,8 @@ if __name__ == '__main__':
     LogInfo.initiate_time_counter()
     set_logging()
 
-    # from utils.FileSupport import save_pickle
-    # data = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True)
-    # save_pickle(os.path.join(DataConfig.persisted_data_path, 'event_copy.pick'), data.copy())
-
     # group_by(group_tag='books', by_tag='year')
     # collect_reader_attributes(Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True))
-
-
-    # events = get_dict('event_copy.pick')
-    # basket = collect_baskets(events, 'index')
-    # save_pickle(os.path.join(DataConfig.persisted_data_path, 'books_group_by_readers'), basket.to_dict())
 
     # group_events(load_pickle('event_copy.pick'))
     induct_events(load_pickle('events.pick'))

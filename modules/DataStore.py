@@ -36,61 +36,55 @@ class DataStore(AbstractDataManager):
         for item in iterable:
             self.include(item)
 
-    def to_pdict(self, data_path: str, keep_history=False):
-        if not os.path.exists(data_path):
-            os.mkdir(data_path)
-        Pdict.init_from(self.data, data_path=data_path, keep_history=keep_history)
+    def to_dict(self):
+        return self.data
 
 
-class DataManagerByDB(AbstractDataManager):
-    from modules.DataBase import SqliteWrapper
-    """[Depreciated]"""
+def store_book():
+    from modules.DataLoad import RawDataProcessor
+    from utils.FileSupport import init_pdict
+    data_manager = DataStore(Book, 'index')
+    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+        data_manager.include(Book.init_from(d_object))
+    init_pdict(data_manager.to_dict(), 'books')
 
-    def __init__(self, db: SqliteWrapper):
-        """General class for libdata info management"""
-        self._db = db
 
-    def include(self, value):
-        if isinstance(value, AbstractDataObject):
-            if self._db.exists(value):
-                self.__update_value__(value)
-            else:
-                self.__add_value__(value)
-        else:
-            raise TypeError
+def store_reader():
+    from modules.DataLoad import RawDataProcessor
+    from utils.FileSupport import init_pdict
+    data_manager = DataStore(Reader, 'index')
+    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+        data_manager.include(Reader.init_from(d_object))
+    init_pdict(data_manager.to_dict(), 'readers')
 
-    def __update_value__(self, value):
-        if isinstance(value, (Book, Reader)):
-            stored_value = self._db.get_one(type(value), index=value.index)
-            stored_value.update_from(value)
-            self._db.merge(stored_value)
-        elif isinstance(value, Event):
-            stored_value = self._db.get_one(Event,
-                                            book_id=value.book_id, reader_id=value.reader_id,
-                                            event_date=value.event_date, event_type=value.event_type)
-            stored_value.update_from(value)
-            self._db.merge(stored_value)
-        else:
-            raise TypeError
 
-    def __add_value__(self, value):
-        if isinstance(value, list):
-            self._db.add_all(value)
-        else:
-            self._db.add(value)
+def store_event():
+    from modules.DataLoad import RawDataProcessor
+    from utils.FileSupport import init_pdict
+    data_manager = DataStore(Event, 'hashable_key')
+    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
+        data_manager.include(Event.init_from(d_object))
+    init_pdict(data_manager.to_dict(), 'events')
 
-    def extend(self, value_list: list):
-        for_add = list()
-        for_change = list()
-        check_list = self._db.exists(value_list)
-        for i in range(len(value_list)):
-            if check_list[i] is True:
-                for_change.append(value_list[i])
-            else:
-                for_add.append(value_list[i])
-        self.__add_value__(for_add)
-        for item in for_change:
-            self.__update_value__(item)
+
+def induct_events():
+    from tqdm import tqdm
+    from utils.FileSupport import get_pdict, load_pickle
+    readers = get_pdict('readers')
+    events = load_pickle('events')
+
+    for reader_id in readers.keys():
+        logging.debug(LogInfo.running('inducting', reader_id))
+        sum_list = list()
+        for event in tqdm(events.values(), desc='collecting events'):
+            assert isinstance(event, Event)
+            if event.reader_id == reader_id:
+                sum_list.append(event)
+        Pseries.init_from(
+            sum_list,
+            os.path.join(DataConfig.data_path, 'inducted_events', reader_id),
+            index_tag='event_date'
+        )
 
 
 class DataInduction(object):
@@ -114,38 +108,6 @@ if __name__ == '__main__':
     LogInfo.initiate_time_counter()
     # ------------------------------
 
-    from tqdm import tqdm
 
-    from modules.DataLoad import RawDataProcessor
-    # data_manager = DataStore(Book, 'index')
-    # for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-    #     data_manager.include(Book.init_from(d_object))
-    # data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'books'), keep_history=False)
-    #
-    # data_manager = DataStore(Reader, 'index')
-    # for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-    #     data_manager.include(Reader.init_from(d_object))
-    # data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'readers'), keep_history=False)
-    #
-    # data_manager = DataStore(Event, 'hashable_key')
-    # for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-    #     data_manager.include(Event.init_from(d_object))
-    # data_manager.to_pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=False)
-
-    readers = Pdict(os.path.join(DataConfig.persisted_data_path, 'readers'), keep_history=True)
-    events = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True).copy()
-
-    for reader_id in readers.keys():
-        logging.debug(LogInfo.running('inducting', reader_id))
-        sum_list = list()
-        for event in tqdm(events.values(), desc='collecting events'):
-            assert isinstance(event, Event)
-            if event.reader_id == reader_id:
-                sum_list.append(event)
-        Pseries.init_from(
-            sum_list,
-            os.path.join(DataConfig.persisted_data_path, 'inducted_events', reader_id),
-            index_tag='event_date'
-        )
     # ------------------------------
     print(LogInfo.time_passed())

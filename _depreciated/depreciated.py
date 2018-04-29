@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-from models.DataStructure import EventAction
+from functions.DataStructure import EventAction
 
 
 # --------------------------------------------------------
@@ -112,7 +112,7 @@ class EventActionList(object):
 # #     PRIMARY KEY (`id`)
 # # ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin
 # # AUTO_INCREMENT=1 ;
-# # CREATE TABLE models.rawdata (
+# # CREATE TABLE functions.rawdata (
 # #  	sysID varchar(100),
 # #  	indexID varchar(100),
 # #  	bookname varchar(100),
@@ -259,7 +259,7 @@ class EventActionList(object):
 #     # connect_info[0] = '192.168.3.116'
 #     # connect_info[1] = 'mingotang'
 #     # connect_info[2] = 'sql771422'
-#     # connect_info[3] = 'models'
+#     # connect_info[3] = 'functions'
 #     # print(connect_info)
 #     # save_data('bookdata/local_libdata.pickle', connect_info)
 #     # ------------------------------------
@@ -272,3 +272,54 @@ class EventActionList(object):
 #
 #
 # --------------------------------------------------------
+
+
+class DataManagerByDB(AbstractDataManager):
+    from modules.DataBase import SqliteWrapper
+    """[Depreciated]"""
+
+    def __init__(self, db: SqliteWrapper):
+        """General class for libdata info management"""
+        self._db = db
+
+    def include(self, value):
+        if isinstance(value, AbstractDataObject):
+            if self._db.exists(value):
+                self.__update_value__(value)
+            else:
+                self.__add_value__(value)
+        else:
+            raise TypeError
+
+    def __update_value__(self, value):
+        if isinstance(value, (Book, Reader)):
+            stored_value = self._db.get_one(type(value), index=value.index)
+            stored_value.update_from(value)
+            self._db.merge(stored_value)
+        elif isinstance(value, Event):
+            stored_value = self._db.get_one(Event,
+                                            book_id=value.book_id, reader_id=value.reader_id,
+                                            event_date=value.event_date, event_type=value.event_type)
+            stored_value.update_from(value)
+            self._db.merge(stored_value)
+        else:
+            raise TypeError
+
+    def __add_value__(self, value):
+        if isinstance(value, list):
+            self._db.add_all(value)
+        else:
+            self._db.add(value)
+
+    def extend(self, value_list: list):
+        for_add = list()
+        for_change = list()
+        check_list = self._db.exists(value_list)
+        for i in range(len(value_list)):
+            if check_list[i] is True:
+                for_change.append(value_list[i])
+            else:
+                for_add.append(value_list[i])
+        self.__add_value__(for_add)
+        for item in for_change:
+            self.__update_value__(item)

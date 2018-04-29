@@ -79,7 +79,7 @@ def apply_apriori(method: AprioriMethods, **kwargs):
 
         # events_dict = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True)
         readers_in_college = Pdict(
-            os.path.join(DataConfig.persisted_data_path, 'readers_group_by_college'),
+            os.path.join(DataConfig.data_path, 'readers_group_by_college'),
             keep_history=True
         )
 
@@ -180,7 +180,7 @@ def apply_collaborative_filtering(method: CollaborativeFilteringMethods, simi_fu
 
 if __name__ == '__main__':
     from utils.Logger import set_logging, LogInfo
-    from models.Maths import EuclideanSimilarity
+    from functions.Maths import EuclideanSimilarity
     LogInfo.initiate_time_counter()
     set_logging()
     # apply_apriori(AprioriMethods.GroupByReaderCollege)
