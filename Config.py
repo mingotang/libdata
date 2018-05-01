@@ -2,7 +2,7 @@
 
 
 class DataConfig(object):
-    raw_data_folder = 'data'
+    raw_data_folder = '/Users/mingo/Downloads/persisted_libdata/raw_data'
     data_path = '/Users/mingo/Downloads/persisted_libdata'
 
 

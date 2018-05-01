@@ -29,8 +29,8 @@ from modules.Functions import group_by
 # -------- convert data --------
 from utils.FileSupport import convert_pdict_to_dict
 # convert_pdict_to_dict('books')
-convert_pdict_to_dict('events')
-convert_pdict_to_dict('readers')
+# convert_pdict_to_dict('events')
+# convert_pdict_to_dict('readers')
 
 
 print(LogInfo.time_passed())

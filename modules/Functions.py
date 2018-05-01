@@ -27,7 +27,7 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
     """
     from utils.FileSupport import get_pdict, init_pdict
 
-    __i__(LogInfo.running('group {} by {}', 'begin'))
+    __i__(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'begin'))
 
     pdata = get_pdict(group_tag)
 
@@ -59,7 +59,7 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
     if in_memory is True:
         init_pdict(grouped_dict, '{}_group_by_{}'.format(group_tag, by_tag))
 
-    __i__(LogInfo.running('group {} by {}', 'end'))
+    __i__(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'end'))
 
 
 def index_events(events_bag):
@@ -137,19 +137,24 @@ def collect_reader_attributes(events, **kwargs):
     from collections import defaultdict
     from structures.SparseVector import SparseVector
     from tqdm import tqdm
-    from utils.FileSupport import get_pdict, init_pdict
+    from utils.FileSupport import get_pdict
 
     assert isinstance(events, (list, Plist))
 
-    books = get_pdict('books')
     reader_attributes = defaultdict(SparseVector)
 
-    for i in tqdm(range(len(events)), desc='checking events'):
-        event = events[i]
-        assert isinstance(event, Event)
-        reader_attributes[event.reader_id][event.book_id] = event.times
+    if isinstance(events, (list, Plist)):
+        for i in tqdm(range(len(events)), desc='checking events'):
+            event = events[i]
+            assert isinstance(event, Event)
+            reader_attributes[event.reader_id][event.book_id] = event.times
+    elif isinstance(events, (dict, Pdict)):
+        for event in tqdm(events.values(), desc='checking events'):
+            reader_attributes[event.reader_id][event.book_id] = event.times
+    else:
+        raise TypeError
 
-    total_books = kwargs.get('length', len(books))
+    total_books = kwargs.get('length', len(get_pdict('books')))
 
     for reader_id in reader_attributes:
         reader_attributes[reader_id].set_length(total_books)
@@ -163,10 +168,6 @@ if __name__ == '__main__':
     LogInfo.initiate_time_counter()
     set_logging()
 
-    # group_by(group_tag='books', by_tag='year')
-    # collect_reader_attributes(Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True))
-
-    # group_events(load_pickle('event_copy.pick'))
     induct_events(load_pickle('events.pick'))
 
     print(LogInfo.time_passed())
