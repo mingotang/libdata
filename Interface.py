@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-from abc import ABCMeta, abstractmethod, abstractclassmethod
+from abc import ABCMeta, abstractmethod
 
 
 class AbstractDataManager:

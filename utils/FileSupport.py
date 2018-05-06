@@ -4,18 +4,19 @@ import logging
 import pickle
 import os
 
-from collections import Iterable, Mapping
-
 from Config import DataConfig
 from utils.Persisit import Pdict, Pseries, Plist
 
 
 def get_pdict(*args, keep_history=True):
     assert len(args) > 0
-    return Pdict(
-        os.path.join(DataConfig.data_path, os.path.sep.join(args)),
-        keep_history=keep_history,
-    )
+    try:
+        return load_pickle(*args)
+    except FileNotFoundError:
+        return Pdict(
+            os.path.join(DataConfig.data_path, os.path.sep.join(args)),
+            keep_history=keep_history,
+        )
 
 
 def convert_pdict_to_dict(*args):
@@ -27,12 +28,16 @@ def convert_pdict_to_dict(*args):
     )
 
 
-def init_pdict(inst, *args):
-    return Pdict.init_from(
+def init_pdict(inst, *args, load_optimize=False):
+    new_pdict = Pdict.init_from(
         inst,
         os.path.join(DataConfig.data_path, os.path.sep.join(args)),
         keep_history=False,
     )
+    if load_optimize is True:
+        convert_pdict_to_dict(*args)
+    return new_pdict
+
 
 def get_pseries(*args, keep_history=True):
     assert len(args) > 0
@@ -41,7 +46,8 @@ def get_pseries(*args, keep_history=True):
         keep_history=keep_history
     )
 
-def init_pseries(inst, *args, index_tag='index', **kwargs):
+
+def init_pseries(inst, *args, index_tag='index'):
     return Pseries.init_from(
             inst,
             os.path.join(DataConfig.data_path, os.path.sep.join(args)),

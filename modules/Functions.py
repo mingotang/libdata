@@ -57,7 +57,7 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
         grouped_dict[by_value] = stored
 
     if in_memory is True:
-        init_pdict(grouped_dict, '{}_group_by_{}'.format(group_tag, by_tag))
+        init_pdict(grouped_dict, '{}_group_by_{}'.format(group_tag, by_tag), load_optimize=True)
 
     __i__(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'end'))
 
@@ -83,8 +83,8 @@ def index_events(events_bag):
     else:
         raise TypeError
 
-    init_pdict(books_group_by_readers, 'temp', 'books_group_by_readers')
-    init_pdict(readers_group_by_books, 'temp', 'readers_group_by_books')
+    init_pdict(books_group_by_readers, 'temp', 'books_group_by_readers', load_optimize=True)
+    init_pdict(readers_group_by_books, 'temp', 'readers_group_by_books', load_optimize=True)
 
 
 def induct_events(events_bag):
