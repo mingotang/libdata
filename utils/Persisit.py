@@ -30,7 +30,7 @@ class BasePersisit(object):
                 else:
                     assert keep_history is False, repr(FileExistsError)
             except FileNotFoundError:
-                raise RuntimeError('Not valid data_path.')
+                pass
             # for file in self.__file_list__():
             #     assert os.path.isfile(self.__pjoin__(file)), str('Not valid data_path - subdir exists.')
             if keep_history is True:

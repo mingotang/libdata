@@ -2,6 +2,7 @@
 # ---------------------------------import------------------------------------
 import logging
 import sys
+import datetime
 
 from collections import defaultdict
 
@@ -26,6 +27,7 @@ class AprioriResult(object):
         self.__freq_sets_support__ = dict()
         self.__min_support__ = min_support
         self.__finished__ = None
+        self.__rules__ = dict()
 
     @property
     def min_support(self):
@@ -47,17 +49,20 @@ class AprioriResult(object):
         self.__freq_sets_support__.update(support)
 
     def generate_rules(self, min_conf=0.0):
-        rule_list = list()
-
-        for x_index in range(1, len(self.__freq_sets__)+1):
-            for y_index in range(x_index + 1, len(self.__freq_sets__)+1):
-                for suber_set in self.__freq_sets__[x_index]:
-                    for hyper_set in self.__freq_sets__[y_index]:
-                        if suber_set.issubset(hyper_set):
-                            config = self.__freq_sets_support__[hyper_set] / self.__freq_sets_support__[suber_set]
-                            if config >= min_conf:
-                                rule_list.append((set(suber_set), set(hyper_set), config))
-        return rule_list
+        if min_conf in self.__rules__:
+            return self.__rules__[min_conf]
+        else:
+            rule_list = list()
+            for x_index in range(1, len(self.__freq_sets__) + 1):
+                for y_index in range(x_index + 1, len(self.__freq_sets__) + 1):
+                    for suber_set in self.__freq_sets__[x_index]:
+                        for hyper_set in self.__freq_sets__[y_index]:
+                            if suber_set.issubset(hyper_set):
+                                config = self.__freq_sets_support__[hyper_set] / self.__freq_sets_support__[suber_set]
+                                if config >= min_conf:
+                                    rule_list.append((set(suber_set), set(hyper_set) - set(suber_set), config))
+            self.__rules__[min_conf] = rule_list
+            return rule_list
 
     def show_results(self, rules_by_conf=None):
         print("\n所有候选项集的支持度信息：")
@@ -69,9 +74,19 @@ class AprioriResult(object):
             for __item__ in self.generate_rules(rules_by_conf):
                 print('\t' + str(__item__[0]) + ' ---> ' + str(__item__[1]) + ' , conf: ' + str(__item__[2]))
 
-    def to_csv(self, path: str, min_conf: float):
+    def save_rules(self, min_conf: float, name: str, sep='|'):
         from utils.FileSupport import save_csv
-        save_csv(self.generate_rules(min_conf), path)
+        assert isinstance(sep, str)
+        rules = self.generate_rules(min_conf)
+        content_list = [['X', 'Y', 'confidence']]
+        for i in range(len(rules)):
+            content_list.append([sep.join(rules[i][0]), sep.join(rules[i][1]), str(rules[i][2])])
+        save_csv(
+            content_list,
+            'results', 'Apriori rules {} - min_support {} min_config {} at {}'.format(
+                name, self.min_support, min_conf, datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')
+            )
+        )
 
 
 class Apriori(object):

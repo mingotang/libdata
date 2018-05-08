@@ -40,31 +40,19 @@ class DataStore(AbstractDataManager):
         return self.data
 
 
-def store_book():
+def store_record_data():
     from modules.DataLoad import RawDataProcessor
     from utils.FileSupport import init_pdict
-    data_manager = DataStore(Book, 'index')
-    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-        data_manager.include(Book.init_from(d_object))
-    init_pdict(data_manager.to_dict(), 'books')
-
-
-def store_reader():
-    from modules.DataLoad import RawDataProcessor
-    from utils.FileSupport import init_pdict
-    data_manager = DataStore(Reader, 'index')
-    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-        data_manager.include(Reader.init_from(d_object))
-    init_pdict(data_manager.to_dict(), 'readers')
-
-
-def store_event():
-    from modules.DataLoad import RawDataProcessor
-    from utils.FileSupport import init_pdict
-    data_manager = DataStore(Event, 'hashable_key')
-    for d_object in RawDataProcessor.iter_data_object(folder_path='data'):
-        data_manager.include(Event.init_from(d_object))
-    init_pdict(data_manager.to_dict(), 'events')
+    book_manager = DataStore(Book, 'index')
+    reader_manager = DataStore(Reader, 'index')
+    event_manager = DataStore(Event, 'hashable_key')
+    for d_object in RawDataProcessor.iter_data_object():
+        book_manager.include(Book.init_from(d_object))
+        reader_manager.include(Reader.init_from(d_object))
+        event_manager.include(Event.init_from(d_object))
+    init_pdict(book_manager.to_dict(), 'books')
+    init_pdict(reader_manager.to_dict(), 'readers')
+    init_pdict(event_manager.to_dict(), 'events')
 
 
 def induct_events():

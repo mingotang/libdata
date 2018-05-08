@@ -14,23 +14,24 @@ __i__ = logging.debug
 
 
 # -------- storing data --------
-from modules.DataStore import store_book, store_event, store_reader
-# store_book()
-# store_event()
-# store_reader()
+from modules.DataStore import store_record_data
+from utils.FileSupport import convert_pdict_to_dict, get_pdict
+# store_record_data()
+# convert_pdict_to_dict('books')
+# convert_pdict_to_dict('events')
+# convert_pdict_to_dict('readers')
 
-# -------- grouping data --------
+# -------- process data --------
 from modules.Functions import group_by
 # group_by(group_tag='books', by_tag='year')
 # group_by(group_tag='readers', by_tag='college')
 # group_by(group_tag='readers', by_tag='register_year')
 # group_by(group_tag='readers', by_tag='rtype')
 
-# -------- convert data --------
-from utils.FileSupport import convert_pdict_to_dict
-# convert_pdict_to_dict('books')
-# convert_pdict_to_dict('events')
-# convert_pdict_to_dict('readers')
+from modules.Functions import index_events
+index_events(get_pdict('events'))
+
+# -------- clean data --------
 
 
 print(LogInfo.time_passed())

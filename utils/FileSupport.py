@@ -8,30 +8,43 @@ from Config import DataConfig
 from utils.Persisit import Pdict, Pseries, Plist
 
 
+def __get_path__(*args, is_file: bool):
+    path = os.path.join(DataConfig.data_path, DataConfig.name, os.path.sep.join(args))
+    if is_file is True:
+        make_path(path, is_file=True)
+    else:
+        if os.path.exists(path):
+            pass
+        else:
+            make_path(path, is_file=False)
+    return path
+
+
 def get_pdict(*args, keep_history=True):
     assert len(args) > 0
     try:
         return load_pickle(*args)
     except FileNotFoundError:
-        return Pdict(
-            os.path.join(DataConfig.data_path, os.path.sep.join(args)),
-            keep_history=keep_history,
-        )
+        return Pdict(__get_path__(*args, is_file=False), keep_history=keep_history)
+
+
+def get_plist(*args, keep_history=True):
+    return Plist(__get_path__(*args, is_file=False), keep_history=keep_history)
 
 
 def convert_pdict_to_dict(*args):
     assert len(args) > 0
-    name = os.path.sep.join(args)
+    path = __get_path__(*args, is_file=False)
     save_pickle(
-        Pdict(os.path.join(DataConfig.data_path, name), keep_history=True).copy(),
-        os.path.join(DataConfig.data_path, name)
+        Pdict(path, keep_history=True).copy(),
+        path.split(os.path.sep)[-1],
     )
 
 
 def init_pdict(inst, *args, load_optimize=False):
     new_pdict = Pdict.init_from(
         inst,
-        os.path.join(DataConfig.data_path, os.path.sep.join(args)),
+        __get_path__(*args, is_file=False),
         keep_history=False,
     )
     if load_optimize is True:
@@ -42,7 +55,7 @@ def init_pdict(inst, *args, load_optimize=False):
 def get_pseries(*args, keep_history=True):
     assert len(args) > 0
     return Pseries(
-        os.path.join(DataConfig.data_path, os.path.sep.join(args)),
+        __get_path__(*args, is_file=False),
         keep_history=keep_history
     )
 
@@ -50,9 +63,23 @@ def get_pseries(*args, keep_history=True):
 def init_pseries(inst, *args, index_tag='index'):
     return Pseries.init_from(
             inst,
-            os.path.join(DataConfig.data_path, os.path.sep.join(args)),
+            __get_path__(*args, is_file=False),
             index_tag=index_tag, keep_history=False
         )
+
+
+def make_path(path: str, is_file=True):
+    path_list = path.split(os.path.sep)
+    for i in range(len(path_list)):
+        if i + 1 == len(path_list) and is_file is True:  # file path
+            continue
+        sub_path = os.path.sep.join(path_list[:i + 1])
+        if sub_path == '':
+            continue
+        if os.path.exists(sub_path):
+            continue
+        else:
+            os.mkdir(sub_path)
 
 
 def __check_type__(file_path: str, file_type: str):
@@ -68,21 +95,21 @@ def __check_type__(file_path: str, file_type: str):
 def load_pickle(*args):
     """BytesSupport.load(file_path) -> object"""
     assert len(args) > 0
-    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'pick')
+    file_path = __check_type__(__get_path__(*args, is_file=True), 'pick')
     logging.debug('pickle file {} loading.'.format(file_path))
     return pickle.load(open(file_path, 'rb'))
 
 
 def save_pickle(content, *args):
     assert len(args) > 0
-    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'pick')
+    file_path = __check_type__(__get_path__(*args, is_file=True), 'pick')
     pickle.dump(content, open(file_path, 'wb'))
     logging.debug('pickle file {} dumped.'.format(file_path))
 
 
 def load_csv(*args, **kwargs):
     assert len(args) > 0
-    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'csv')
+    file_path = __check_type__(__get_path__(*args, is_file=True), 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')
@@ -105,46 +132,25 @@ def load_csv(*args, **kwargs):
 
 
 def save_csv(content, *args, **kwargs):
+    """
+    save csv
+    :param content: list of str in lists
+    :param args: path
+    :param kwargs: encoding
+    :return:
+    """
 
     assert len(args) > 0
-    file_path = __check_type__(os.path.join(DataConfig.data_path, os.path.sep.join(args)), 'csv')
+    file_path = __check_type__(__get_path__(*args, is_file=True), 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')
     assert isinstance(file_encoding, str), repr(TypeError)
 
-    content_to_file = list()
-    if isinstance(content, (list, Plist, set)):
-        for item in content:
-            if isinstance(item, (list, Plist, set)):
-                content_to_file.append([var for var in item])
-            elif isinstance(item, (dict, Pdict)):
-                line_to_file = list()
-                for k, v in item.items():
-                    line_to_file.append(k)
-                    line_to_file.append(v)
-                content_to_file.append(line_to_file)
-            else:
-                raise TypeError
-    elif isinstance(content, (dict, Pdict)):
-        for tag, item in content.items():
-            line_to_file = list()
-            line_to_file.append(tag)
-            if isinstance(item, (list, Plist, set)):
-                line_to_file.extend([var for var in item])
-            elif isinstance(item, (dict, Pdict)):
-                for k, v in item.items():
-                    line_to_file.append(k)
-                    line_to_file.append(v)
-            else:
-                raise ValueError()
-            content_to_file.append(line_to_file)
-    else:
-        raise TypeError
-
+    # saving data
     csv_file = open(file_path, 'w', newline='', encoding=file_encoding)
     spam_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    spam_writer.writerows(content_to_file)
+    spam_writer.writerows(content)
     csv_file.close()
     logging.debug('csv file {} saved.'.format(file_path))
 

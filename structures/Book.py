@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import datetime
+import re
 
 from Interface import AbstractDataObject
 from utils.String import attributes_repr
@@ -36,6 +37,10 @@ class Book(AbstractDataObject):
         self.year = year
         self.publisher = publisher
         self.op_dt = op_dt
+
+    @property
+    def book_name(self):
+        return re.sub(r'\W', ' ', self.name).strip()
 
     @property
     def update_date(self):

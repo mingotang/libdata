@@ -83,8 +83,8 @@ def index_events(events_bag):
     else:
         raise TypeError
 
-    init_pdict(books_group_by_readers, 'temp', 'books_group_by_readers', load_optimize=True)
-    init_pdict(readers_group_by_books, 'temp', 'readers_group_by_books', load_optimize=True)
+    init_pdict(books_group_by_readers, 'books_group_by_readers', load_optimize=True)
+    init_pdict(readers_group_by_books, 'readers_group_by_books', load_optimize=True)
 
 
 def induct_events(events_bag):
@@ -111,8 +111,9 @@ def induct_events(events_bag):
 def collect_baskets(events_bag, book_tag: str):
 
     from algorithm.Apriori import BasketCollector
+    from utils.FileSupport import get_pdict, init_pdict
 
-    books = Pdict(os.path.join(DataConfig.data_path, 'books'), keep_history=True)
+    books = get_pdict('books', keep_history=True)
 
     new_basket = BasketCollector()
     if isinstance(events_bag, (list, Plist)):
@@ -129,6 +130,10 @@ def collect_baskets(events_bag, book_tag: str):
     else:
         raise TypeError
 
+    # new_dict = new_basket.to_dict()
+    # for key in new_dict.keys():
+    #     print(key, new_dict[key])
+    # print(len(new_dict))
     return new_basket
 
 
@@ -137,9 +142,7 @@ def collect_reader_attributes(events, **kwargs):
     from collections import defaultdict
     from structures.SparseVector import SparseVector
     from tqdm import tqdm
-    from utils.FileSupport import get_pdict
-
-    assert isinstance(events, (list, Plist))
+    from utils.FileSupport import get_pdict, init_pdict
 
     reader_attributes = defaultdict(SparseVector)
 
@@ -159,6 +162,7 @@ def collect_reader_attributes(events, **kwargs):
     for reader_id in reader_attributes:
         reader_attributes[reader_id].set_length(total_books)
 
+    init_pdict(reader_attributes, 'reader_attributes')
     return reader_attributes
 
 
@@ -168,6 +172,6 @@ if __name__ == '__main__':
     LogInfo.initiate_time_counter()
     set_logging()
 
-    induct_events(load_pickle('events.pick'))
+    collect_reader_attributes(get_pdict('events'))
 
     print(LogInfo.time_passed())
