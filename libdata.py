@@ -16,10 +16,10 @@ __i__ = logging.debug
 # -------- storing data --------
 from modules.DataStore import store_record_data
 from utils.FileSupport import convert_pdict_to_dict, get_pdict
-# store_record_data()
-# convert_pdict_to_dict('books')
-# convert_pdict_to_dict('events')
-# convert_pdict_to_dict('readers')
+store_record_data()
+convert_pdict_to_dict('books')
+convert_pdict_to_dict('events')
+convert_pdict_to_dict('readers')
 
 # -------- process data --------
 from modules.Functions import group_by

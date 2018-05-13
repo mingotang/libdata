@@ -76,7 +76,7 @@ def induct_events():
 
 
 class DataInduction(object):
-    def __init__(self, folder_path: str):
+    def __init__(self):
         self.__path__ = folder_path
 
     def __pjoin__(self, name: str):

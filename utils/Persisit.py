@@ -536,7 +536,7 @@ class PqueueLIFO(PqueueFIFO):
         return q_value
 
 
-class Pseries(BasePersisit, Mapping):
+class Pseries(BasePersisit):
     __ptype__ = 'series'
 
     def __init__(self, data_path=None, keep_history=False):

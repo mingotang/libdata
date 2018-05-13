@@ -20,16 +20,20 @@ def __get_path__(*args, is_file: bool):
     return path
 
 
-def get_pdict(*args, keep_history=True):
+def get_pdict(*args, keep_history=True, in_memory=True):
     assert len(args) > 0
-    try:
+    if in_memory is True:
         return load_pickle(*args)
-    except FileNotFoundError:
+    else:
         return Pdict(__get_path__(*args, is_file=False), keep_history=keep_history)
 
 
-def get_plist(*args, keep_history=True):
-    return Plist(__get_path__(*args, is_file=False), keep_history=keep_history)
+def get_plist(*args, keep_history=True, in_memory=True):
+    assert len(args) > 0
+    if in_memory is True:
+        return load_pickle(*args)
+    else:
+        return Plist(__get_path__(*args, is_file=False), keep_history=keep_history)
 
 
 def convert_pdict_to_dict(*args):
