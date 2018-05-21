@@ -83,13 +83,11 @@ class RawDataProcessor(object):
                 if RawDataProcessor.__check_data_line__(line_content):
                     data_object = DataObject(line_content)
                     yield data_object
-                    # data_list.append(data_object)
                 elif len(line_content) == 0:
                     logging.debug('RawDataProcessor: empty line')
                 else:
                     logging.warning("Unqualified data :  {0:s}".format(str(line_content)))
                 text_line = data_file.readline()
-        # return data_list
 
     @staticmethod
     def __check_data_line__(content: list):
@@ -143,9 +141,6 @@ class RawDataProcessor(object):
             else:
                 logging.warning('Unqualified data : {0:s}'.format(str(cont)))
                 return list()
-
-
-# --------------------------------------------------------
 
 
 if __name__ == '__main__':

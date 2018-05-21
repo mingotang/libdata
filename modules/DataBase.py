@@ -1,22 +1,20 @@
 # -*- encoding: UTF-8 -*-
 import logging
+import shelve
 
-from sqlalchemy import create_engine
-from sqlalchemy import Table, MetaData
-from sqlalchemy.orm import mapper, sessionmaker, create_session
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import IntegrityError
 
 from Config import DataBaseConfig
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
-from utils.Logger import LogInfo
 
 
 class SqliteWrapper(object):
     def __init__(self, db_path=DataBaseConfig.file_path,
                  clear_db=False, exist_optimize=True, action_limit=True):
+        from sqlalchemy import create_engine, MetaData
+        from sqlalchemy.orm import sessionmaker
         self.engine = create_engine('sqlite:///{host}'.format(host=db_path), echo=False)
         self.metadata = MetaData(bind=self.engine)
         self.__table_definition__()
@@ -33,6 +31,7 @@ class SqliteWrapper(object):
         self.__optimize_check__ = exist_optimize
         self.__action_limit__ = action_limit
         self.optimize()
+        # from sqlalchemy.orm import create_session
         # self.session = create_session(bind=self.engine)
         if self.__action_limit__ is True:
             self.__init_action_limit__()
@@ -46,6 +45,7 @@ class SqliteWrapper(object):
         self.events_table = define_event_table(self.metadata)
 
     def __table_mapping__(self):
+        from sqlalchemy.orm import mapper
         mapper(Reader, self.user_table)
         mapper(Book, self.book_table)
         mapper(Event, self.events_table)
@@ -86,7 +86,7 @@ class SqliteWrapper(object):
         self.session.add(obj)
         self.session.commit()
         if self.__optimize_check__ is True:
-            if isinstance(obj, Book):  # updating exsiting_optimation
+            if isinstance(obj, Book):   # updating exsiting_optimation
                 self.__book_dict__[obj.index] = None
             elif isinstance(obj, Reader):
                 self.__reader_dict__[obj.index] = None
@@ -95,7 +95,9 @@ class SqliteWrapper(object):
             else:
                 raise TypeError
 
-    def drop_tables(self, table: Table):
+    def drop_tables(self, table):
+        from sqlalchemy import Table
+        assert isinstance(table, Table), str(TypeError('table should be of type sqlalchemy.Table'))
         self.metadata.remove(table)
 
     def clear_db(self):
@@ -172,5 +174,63 @@ class SqliteWrapper(object):
             raise TypeError
 
 
+class ShelveWrapper(object):
+
+    def __init__(self, db_path: str, writeback=False):
+        if '.' in db_path:
+            if db_path.split('.')[-1] == 'db':
+                path = db_path
+            else:
+                path = '.'.join([db_path, 'db'])
+        else:
+            path = '.'.join([db_path, 'db'])
+
+        self.__path__ = path
+        self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
+        logging.debug('Connected to shelve database {}'.format(path))
+
+    def __getitem__(self, key: str):
+        return self.__db__[key]
+
+    def __setitem__(self, key: str, value):
+        self.__db__[key] = value
+
+    def __contains__(self, key: str):
+        return self.__db__.__contains__(key)
+
+    def __delitem__(self, key):
+        del self.__db__[key]
+
+    def __del__(self):
+        logging.debug('shelve database {} closed.'.format(self.__path__))
+        self.close()
+        del self.__db__
+        del self.__path__
+
+    def keys(self):
+        return self.__db__.keys()
+
+    def values(self):
+        return self.__db__.values()
+
+    def items(self):
+        return self.__db__.items()
+
+    def get(self, key, default=None):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+
+    def flush(self):
+        self.__db__.sync()
+
+    def clear(self):
+        self.__db__.clear()
+
+    def close(self):
+        self.__db__.close()
+
+
 if __name__ == '__main__':
-    pass
+    shelve_db = ShelveWrapper('/Users/mingo/Downloads/persisted_libdata/test.db')

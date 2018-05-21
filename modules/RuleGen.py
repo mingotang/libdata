@@ -12,7 +12,6 @@ from utils.Constants import BaseEnum
 __i__ = logging.debug
 
 
-# --------------------------------------------------------
 class AprioriMethods(BaseEnum):
     Basic = 'ReaderIDAsBuyer_BookIDAsGoods'
     GroupByReaderCollege = 'ReaderIDAsBuyer_BookIDAsGoods-GroupByReaderCollege'

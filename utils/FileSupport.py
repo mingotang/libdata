@@ -2,88 +2,6 @@
 import csv
 import logging
 import pickle
-import os
-
-from Config import DataConfig
-from utils.Persisit import Pdict, Pseries, Plist
-
-
-def __get_path__(*args, is_file: bool):
-    path = os.path.join(DataConfig.data_path, DataConfig.name, os.path.sep.join(args))
-    if is_file is True:
-        make_path(path, is_file=True)
-    else:
-        if os.path.exists(path):
-            pass
-        else:
-            make_path(path, is_file=False)
-    return path
-
-
-def get_pdict(*args, keep_history=True, in_memory=True):
-    assert len(args) > 0
-    if in_memory is True:
-        return load_pickle(*args)
-    else:
-        return Pdict(__get_path__(*args, is_file=False), keep_history=keep_history)
-
-
-def get_plist(*args, keep_history=True, in_memory=True):
-    assert len(args) > 0
-    if in_memory is True:
-        return load_pickle(*args)
-    else:
-        return Plist(__get_path__(*args, is_file=False), keep_history=keep_history)
-
-
-def convert_pdict_to_dict(*args):
-    assert len(args) > 0
-    path = __get_path__(*args, is_file=False)
-    save_pickle(
-        Pdict(path, keep_history=True).copy(),
-        path.split(os.path.sep)[-1],
-    )
-
-
-def init_pdict(inst, *args, load_optimize=False):
-    new_pdict = Pdict.init_from(
-        inst,
-        __get_path__(*args, is_file=False),
-        keep_history=False,
-    )
-    if load_optimize is True:
-        convert_pdict_to_dict(*args)
-    return new_pdict
-
-
-def get_pseries(*args, keep_history=True):
-    assert len(args) > 0
-    return Pseries(
-        __get_path__(*args, is_file=False),
-        keep_history=keep_history
-    )
-
-
-def init_pseries(inst, *args, index_tag='index'):
-    return Pseries.init_from(
-            inst,
-            __get_path__(*args, is_file=False),
-            index_tag=index_tag, keep_history=False
-        )
-
-
-def make_path(path: str, is_file=True):
-    path_list = path.split(os.path.sep)
-    for i in range(len(path_list)):
-        if i + 1 == len(path_list) and is_file is True:  # file path
-            continue
-        sub_path = os.path.sep.join(path_list[:i + 1])
-        if sub_path == '':
-            continue
-        if os.path.exists(sub_path):
-            continue
-        else:
-            os.mkdir(sub_path)
 
 
 def __check_type__(file_path: str, file_type: str):
@@ -96,24 +14,22 @@ def __check_type__(file_path: str, file_type: str):
         return '.'.join([file_path, file_type])
 
 
-def load_pickle(*args):
+def load_pickle(path: str):
     """BytesSupport.load(file_path) -> object"""
-    assert len(args) > 0
-    file_path = __check_type__(__get_path__(*args, is_file=True), 'pick')
+    file_path = __check_type__(path, 'pick')
     logging.debug('pickle file {} loading.'.format(file_path))
     return pickle.load(open(file_path, 'rb'))
 
 
-def save_pickle(content, *args):
-    assert len(args) > 0
-    file_path = __check_type__(__get_path__(*args, is_file=True), 'pick')
+def save_pickle(content, path: str):
+    file_path = __check_type__(path, 'pick')
     pickle.dump(content, open(file_path, 'wb'))
     logging.debug('pickle file {} dumped.'.format(file_path))
 
 
 def load_csv(*args, **kwargs):
     assert len(args) > 0
-    file_path = __check_type__(__get_path__(*args, is_file=True), 'csv')
+    file_path = __check_type__(args[0], 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')
@@ -145,7 +61,7 @@ def save_csv(content, *args, **kwargs):
     """
 
     assert len(args) > 0
-    file_path = __check_type__(__get_path__(*args, is_file=True), 'csv')
+    file_path = __check_type__(args[0], 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')
@@ -160,5 +76,4 @@ def save_csv(content, *args, **kwargs):
 
 
 if __name__ == '__main__':
-    convert_pdict_to_dict('books_group_by_readers')
-    convert_pdict_to_dict('readers_group_by_books')
+    pass

@@ -31,14 +31,12 @@ class BasePersisit(object):
                     assert keep_history is False, repr(FileExistsError)
             except FileNotFoundError:
                 pass
-            # for file in self.__file_list__():
-            #     assert os.path.isfile(self.__pjoin__(file)), str('Not valid data_path - subdir exists.')
             if keep_history is True:
                 pass
             else:
                 self.clear()
         else:
-            os.mkdir(data_path)
+            os.makedirs(data_path)
         pickle.dump(self.__ptype__, open(__ptype_path__, 'wb'))
 
     @classmethod
