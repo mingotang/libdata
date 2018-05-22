@@ -534,64 +534,6 @@ class PqueueLIFO(PqueueFIFO):
         return q_value
 
 
-class Pseries(BasePersisit):
-    __ptype__ = 'series'
-
-    def __init__(self, data_path=None, keep_history=False):
-        BasePersisit.__init__(self, data_path, keep_history)
-        self.__index__ = Plist(data_path=self.__pjoin__('index'), keep_history=keep_history)
-        self.__data__ = Pdict(data_path=self.__pjoin__('data'), keep_history=keep_history)
-
-    @classmethod
-    def init_from(cls, inst, data_path=None, keep_history=False, **kwargs):
-        from collections import Iterable, Mapping
-        new_cls = cls(data_path, keep_history)
-        if isinstance(inst, Mapping):
-            for key in inst:
-                new_cls.__setitem__(key, inst[key])
-        elif isinstance(inst, Iterable):
-            index_tag = kwargs.get('index_tag', 'index')
-            for value in inst:
-                new_cls.__setitem__(getattr(value, index_tag), value)
-        else:
-            raise TypeError('inst is not mapping.')
-        return new_cls
-
-    def __setitem__(self, key, value):
-        self.__data__.__setitem__(key, value)
-        for index in range(self.__index__.__len__()):
-            if self.__index__.__getitem__(index) >= key:
-                self.__index__.insert(index, key)
-                return
-        self.__index__.append(key)
-
-    def __getitem__(self, key: str):
-        self.__data__.__getitem__(key)
-
-    def __delitem__(self, key: str):
-        self.__index__.remove(self.__data__.__getitem__(key))
-        self.__data__.__delitem__(key)
-
-    def __contains__(self, key: str):
-        return self.__data__.__contains__(key)
-
-    def __len__(self):
-        return self.__index__.__len__()
-
-    def keys(self):
-        for i in range(self.__index__.__len__()):
-            yield self.__index__.__getitem__(i)
-
-    def values(self):
-        for i in range(self.__index__.__len__()):
-            yield self.__data__.__getitem__(self.__index__.__getitem__(i))
-
-    def items(self):
-        for i in range(self.__index__.__len__()):
-            key = self.__index__.__getitem__(i)
-            yield key, self.__data__.__getitem__(key)
-
-
 if __name__ == '__main__':
     p = Pdict('/Users/mingo/Downloads/test')
     p['list'] = [i for i in range(10)]

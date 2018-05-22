@@ -65,6 +65,119 @@ class CountingDict(dict):
         return self
 
 
-class ResultStore(object):
-    def __init__(self):
-        self.data = dict()
+class OrderedList(object):
+    def __init__(self, obj_type: type, sort_attribute: str):
+        self.__type__ = obj_type
+        self.__stag__ = sort_attribute
+        self.__data__ = list()
+
+    def __get_sorted_index__(self, p_object):
+        return getattr(p_object, self.__stag__)
+
+    def __find_index__(self, p_object):
+        this_index = self.__get_sorted_index__(p_object)
+        for i in range(self.__data__.__len__()):
+            if self.__get_sorted_index__(self.__data__.__getitem__(i)) <= this_index:
+                continue
+            else:
+                return i
+        return self.__data__.__len__()
+
+    @classmethod
+    def init_from(cls, inst, obj_type: type, sort_attribute: str):
+        from collections import Iterable, Mapping
+        new_obj = cls(obj_type, sort_attribute)
+        if isinstance(inst, Iterable):
+            for item in inst:
+                new_obj.append(item)
+        elif isinstance(inst, Mapping):
+            for item in inst.values():
+                new_obj.append(item)
+        else:
+            raise TypeError('inst is not iterable/mapping')
+        return new_obj
+
+    def append(self, p_object):
+        if isinstance(p_object, self.__type__):
+            self.__data__.insert(self.__find_index__(p_object), p_object)
+        else:
+            raise TypeError('param p_object should be of type {} but got type {}'.format(self.__type__, type(p_object)))
+
+    def copy(self):
+        return [var for var in self.__data__]
+
+    def count(self, p_object):
+        if isinstance(p_object, self.__type__):
+            count = 0
+            for i in range(self.__data__.__len__()):
+                if self.__data__.__getitem__(i) == p_object:
+                    count += 1
+            return count
+        else:
+            return 0
+
+    def extend(self, iterable):
+        for item in iterable:
+            try:
+                self.append(item)
+            except TypeError:
+                pass
+
+    def index(self, value, start=None, stop=None):
+        """
+        L.index(value, [start, [stop]]) -> integer -- return first index of value.
+        Raises ValueError if the value is not present.
+        """
+        s = start if isinstance(start, int) else 0
+        e = stop if isinstance(stop, int) else self.__data__.__len__()
+        for i in range(s, e):
+            if self.__data__.__getitem__(i) == value:
+                return i
+        raise ValueError
+
+    def pop(self, index=None):
+        """
+        L.pop([index]) -> item -- remove and return item at index (default last).
+        Raises IndexError if list is empty or index is out of range.
+        """
+        return self.__data__.pop(index)
+
+    def remove(self, value):
+        """
+        L.remove(value) -> None -- remove first occurrence of value.
+        Raises ValueError if the value is not present.
+        """
+        self.__data__.remove(value)
+
+    def get(self, k: int, d=None):
+        try:
+            return self.__getitem__(k)
+        except IndexError:
+            return d
+
+    def __delitem__(self, index: int):
+        self.__data__.__delitem__(index)
+
+    def __eq__(self, value):
+        """ Return self==value. """
+        if isinstance(value, (list, type(self))):
+            if self.__len__() == len(value):
+                for i in range(self.__len__()):
+                    if self[i] != value[i]:
+                        return False
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def __len__(self):
+        return self.__data__.__len__()
+
+    def __getitem__(self, y: int):
+        self.__data__.__getitem__(y)
+
+    def __reversed__(self):
+        """ L.__reversed__() -- return a reverse iterator over the list """
+        for i in range(0, self.__data__.__len__(), -1):
+            yield self.__data__.__getitem__(i)

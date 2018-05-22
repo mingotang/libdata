@@ -5,6 +5,7 @@ class DataConfig(object):
     name = 'test'
     raw_data_folder = '/Users/mingo/Downloads/persisted_libdata/raw_data'
     data_path = '/Users/mingo/Downloads/persisted_libdata'
+    operation_path = '/Users/mingo/Downloads/persisted_libdata/this_operation'
 
 
 class DataBaseConfig(object):

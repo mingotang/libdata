@@ -17,27 +17,24 @@ from structures.Reader import Reader
 __i__ = logging.debug
 
 
-def group_by(group_tag: str, by_tag: str, in_memory=True):
+def group_by(data_dict, group_tag: str, by_tag: str, auto_save=False):
     """
 
-    :param group_tag: 'readers'/'books'
+    :param group_tag:
     :param by_tag: related attribute
-    :param in_memory: bool
-    :return: None
+    :return: dict( key: set())
     """
-    from utils.FileSupport import get_pdict, init_pdict
+    from tqdm import tqdm
+    from modules.DataBase import ShelveWrapper
+    from utils.FileSupport import save_pickle
+    assert isinstance(data_dict, ShelveWrapper)
 
-    __i__(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'begin'))
+    logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'begin'))
 
-    pdata = get_pdict(group_tag)
+    grouped_dict = dict()
 
-    if in_memory is True:
-        grouped_dict = dict()
-    else:
-        grouped_dict = init_pdict(dict(), '{}_group_by_{}'.format(group_tag, by_tag))
-
-    for index in tqdm(pdata.keys(), desc='grouping {} by {}'.format(group_tag, by_tag)):
-        obj = pdata[index]
+    for index in tqdm(data_dict.keys(), desc='grouping {} by {}'.format(group_tag, by_tag)):
+        obj = data_dict[index]
         by_value = getattr(obj, by_tag)
 
         if by_value is None:
@@ -56,16 +53,19 @@ def group_by(group_tag: str, by_tag: str, in_memory=True):
         stored.add(index)
         grouped_dict[by_value] = stored
 
-    if in_memory is True:
-        init_pdict(grouped_dict, '{}_group_by_{}'.format(group_tag, by_tag), load_optimize=True)
+    if auto_save is True:
+        save_pickle(
+            grouped_dict,
+            os.path.join(DataConfig.operation_path, '{}_group_by_{}'.format(group_tag, by_tag))
+        )
+    logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'end'))
+    return grouped_dict
 
-    __i__(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'end'))
 
-
-def index_events(events_bag):
+def index_books2readers_in_events(events_bag, auto_save=False, books2readers_first=True):
     from collections import defaultdict, Mapping, Iterable
     from tqdm import tqdm
-    from utils.FileSupport import init_pdict
+    from utils.FileSupport import save_pickle
 
     books_group_by_readers = defaultdict(set)
     readers_group_by_books = defaultdict(set)
@@ -83,8 +83,20 @@ def index_events(events_bag):
     else:
         raise TypeError
 
-    init_pdict(books_group_by_readers, 'books_group_by_readers', load_optimize=True)
-    init_pdict(readers_group_by_books, 'readers_group_by_books', load_optimize=True)
+    if auto_save is True:
+        save_pickle(
+            books_group_by_readers,
+            os.path.join(DataConfig.operation_path, 'books_group_by_readers')
+        )
+        save_pickle(
+            readers_group_by_books,
+            os.path.join(DataConfig.operation_path, 'readers_group_by_books')
+        )
+
+    if books2readers_first is True:
+        return books_group_by_readers, readers_group_by_books
+    else:
+        return readers_group_by_books, books_group_by_readers
 
 
 def induct_events(events_bag):

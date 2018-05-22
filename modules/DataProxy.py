@@ -2,23 +2,25 @@
 # ---------------------------------import------------------------------------
 import logging
 import os
-import shelve
 
 from Config import DataConfig
 from Interface import AbstractDataManager
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
-from utils.Persisit import Pdict, Pseries
+from utils.Persisit import Pdict
 
 
 class DataProxy(AbstractDataManager):
 
-    def __init__(self, writeback=False):
+    def __init__(self, writeback=False, data_path=DataConfig.data_path):
         from modules.DataBase import ShelveWrapper
-        self.__books__ = ShelveWrapper(os.path.join(DataConfig.data_path, 'books'), writeback=writeback)
-        self.__readers__ = ShelveWrapper(os.path.join(DataConfig.data_path, 'readers'), writeback=writeback)
-        self.__events__ = ShelveWrapper(os.path.join(DataConfig.data_path, 'events'), writeback=writeback)
+        if not os.path.exists(data_path):
+            os.makedirs(data_path)
+        self.__path__ = data_path
+        self.__books__ = ShelveWrapper(os.path.join(self.__path__, 'books'), writeback=writeback)
+        self.__readers__ = ShelveWrapper(os.path.join(self.__path__, 'readers'), writeback=writeback)
+        self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback)
 
     def include(self, value):
         if isinstance(value, Book):
@@ -53,17 +55,17 @@ class DataProxy(AbstractDataManager):
             except TypeError:
                 pass
 
+    @property
     def readers(self):
-        for reader in self.__readers__.values():
-            yield reader
+        return self.__readers__
 
+    @property
     def books(self):
-        for book in self.__books__.values():
-            yield book
+        return self.__books__
 
+    @property
     def events(self):
-        for event in self.__events__.values():
-            yield event
+        return self.__events__
 
     def close(self):
         self.__books__.close()
@@ -82,47 +84,33 @@ def store_record_data():
     data_proxy.close()
 
 
-def induct_events():
-    from tqdm import tqdm
-    from utils.FileSupport import get_pdict, load_pickle
-    readers = get_pdict('readers')
-    events = load_pickle('events')
+class DataManager(object):
 
-    for reader_id in readers.keys():
-        logging.debug(LogInfo.running('inducting', reader_id))
-        sum_list = list()
-        for event in tqdm(events.values(), desc='collecting events'):
-            assert isinstance(event, Event)
-            if event.reader_id == reader_id:
-                sum_list.append(event)
-        Pseries.init_from(
-            sum_list,
-            os.path.join(DataConfig.data_path, 'inducted_events', reader_id),
-            index_tag='event_date'
-        )
+    def __init__(self, writeback=False):
+        self.data = DataProxy(writeback=writeback)
 
+    def group_by(self, group_tag: type, by_tag: str):
+        """
 
-class DataInduction(object):
-    def __init__(self):
-        self.__path__ = folder_path
-
-    def __pjoin__(self, name: str):
-        return os.path.join(self.__path__, name)
-
-    def get(self, key: str):
-        if os.path.exists(self.__pjoin__(key)):
-            return Pseries(self.__pjoin__(key), keep_history=True)
+        :param group_tag: 'readers'/'books'
+        :param by_tag: related attribute
+        :return: key: set())
+        """
+        from modules.Functions import group_by
+        if group_tag == Reader:
+            return group_by(self.data.readers, group_tag=group_tag.__name__, by_tag=by_tag)
+        elif group_tag == Book:
+            return group_by(self.data.books, group_tag=group_tag.__name__, by_tag=by_tag)
         else:
-            return Pseries(self.__pjoin__(key), keep_history=False)
+            raise ValueError('group_tag should be readers/books.')
 
 
-# --------------------------------------------------------
 if __name__ == '__main__':
     from utils.Logger import LogInfo, set_logging
     set_logging()
     LogInfo.initiate_time_counter()
     # ------------------------------
-
-
+    data_manager = DataManager(writeback=False)
+    print(data_manager.group_by(group_tag=Reader, by_tag='college'))
     # ------------------------------
     print(LogInfo.time_passed())
