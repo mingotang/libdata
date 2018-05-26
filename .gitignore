@@ -109,3 +109,4 @@ ENV/
 # Project local data
 data/*.libdata
 data/*.txt
+test.py
