@@ -2,7 +2,7 @@
 import logging
 import shelve
 
-from sqlalchemy.orm.exc import NoResultFound
+from collections import Iterable, Mapping
 
 from Config import DataBaseConfig
 from structures.Book import Book
@@ -111,6 +111,7 @@ class SqliteWrapper(object):
         return self.session.query(obj_type).filter_by(**filter_by).one()
 
     def exists_book(self, value: Book):
+        from sqlalchemy.orm.exc import NoResultFound
         try:
             return value.index in self.__book_dict__
         except TypeError:
@@ -121,6 +122,7 @@ class SqliteWrapper(object):
                 return False
 
     def exists_reader(self, value: Reader):
+        from sqlalchemy.orm.exc import NoResultFound
         try:
             return value.index in self.__reader_dict__
         except TypeError:
@@ -131,6 +133,7 @@ class SqliteWrapper(object):
                 return False
 
     def exists_event(self, event: Event):
+        from sqlalchemy.orm.exc import NoResultFound
         try:
             return event.hashable_key in self.__event_dict__
         except TypeError:
@@ -174,9 +177,10 @@ class SqliteWrapper(object):
             raise TypeError
 
 
-class ShelveWrapper(object):
+class ShelveWrapper(Mapping):
 
     def __init__(self, db_path: str, writeback=False):
+        Mapping.__init__(self)
         if '.' in db_path:
             if db_path.split('.')[-1] == 'db':
                 path = db_path
@@ -189,6 +193,10 @@ class ShelveWrapper(object):
         self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
         logging.debug('Connected to shelve database {}'.format(path))
 
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
     def __getitem__(self, key: str):
         return self.__db__[key]
 
@@ -200,6 +208,9 @@ class ShelveWrapper(object):
 
     def __delitem__(self, key):
         del self.__db__[key]
+
+    def __len__(self):
+        self.__db__.__len__()
 
     def __del__(self):
         logging.debug('shelve database {} closed.'.format(self.__path__))

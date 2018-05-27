@@ -13,18 +13,25 @@ RunTimeCounter.get_instance()
 __i__ = logging.debug
 
 
-# -------- storing data --------
-from modules.DataProxy import store_record_data
-store_record_data()
+if __name__ == '__main__':
+    # -------- storing data --------
+    # from modules.DataProxy import store_record_data
+    # store_record_data()
 
-# -------- process data --------
-# group_by(group_tag='books', by_tag='year')
-# group_by(group_tag='readers', by_tag='college')
-# group_by(group_tag='readers', by_tag='register_year')
-# group_by(group_tag='readers', by_tag='rtype')
+    # -------- get data --------
+    from modules.DataProxy import DataProxy
+    data = DataProxy()
 
+    # -------- process data --------
+    # from modules.Functions import group_by
+    # group_by(group_tag='books', by_tag='year')
+    # group_by(data_dict=data.readers, group_tag='readers', by_tag='college', auto_save=True)
+    # group_by(group_tag='readers', by_tag='register_year')
+    # group_by(group_tag='readers', by_tag='rtype')
+    from modules.Functions import index_books2readers
+    index_books2readers(data.events, auto_save=True)
 
-# -------- clean data --------
+    # -------- clean data --------
 
-
-print(LogInfo.time_passed())
+    LogInfo.time_sleep(1)
+    print(LogInfo.time_passed())

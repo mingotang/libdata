@@ -24,16 +24,16 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save=False):
     :param by_tag: related attribute
     :return: dict( key: set())
     """
+    from collections import Mapping
     from tqdm import tqdm
-    from modules.DataBase import ShelveWrapper
     from utils.FileSupport import save_pickle
-    assert isinstance(data_dict, ShelveWrapper)
+    assert isinstance(data_dict, Mapping)
 
     logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'begin'))
 
     grouped_dict = dict()
 
-    for index in tqdm(data_dict.keys(), desc='grouping {} by {}'.format(group_tag, by_tag)):
+    for index in tqdm([var for var in data_dict.keys()], desc='grouping {} by {}'.format(group_tag, by_tag)):
         obj = data_dict[index]
         by_value = getattr(obj, by_tag)
 
@@ -62,7 +62,31 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save=False):
     return grouped_dict
 
 
-def index_books2readers_in_events(events_bag, auto_save=False, books2readers_first=True):
+def trim_range(data_bag, attr_tag: str, range_start, range_end, include_start=True, include_end=False):
+    from collections import Iterable, Mapping
+    if isinstance(data_bag, Mapping):
+        result = dict()
+        for d_k, d_v in data_bag.items():
+            if include_start is True and include_end is True:
+                if range_start <= getattr(d_v, attr_tag) <= range_end:
+                    result[d_k] = d_v
+            elif include_start is True and include_end is False:
+                if range_start <= getattr(d_v, attr_tag) < range_end:
+                    result[d_k] = d_v
+            elif include_start is False and include_end is True:
+                if range_start < getattr(d_v, attr_tag) <= range_end:
+                    result[d_k] = d_v
+            else:
+                if range_start < getattr(d_v, attr_tag) < range_end:
+                    result[d_k] = d_v
+        return result
+    elif isinstance(data_bag, Iterable):
+        raise NotImplemented
+    else:
+        raise TypeError('data_tag should be Iterable/Mapping.')
+
+
+def index_books2readers(events_bag, auto_save=False, books2readers_first=True):
     from collections import defaultdict, Mapping, Iterable
     from tqdm import tqdm
     from utils.FileSupport import save_pickle
@@ -71,7 +95,8 @@ def index_books2readers_in_events(events_bag, auto_save=False, books2readers_fir
     readers_group_by_books = defaultdict(set)
 
     if isinstance(events_bag, Mapping):
-        for event in tqdm(events_bag.values(), desc='grouping events'):
+        for e_key in tqdm(events_bag.keys(), desc='grouping events'):
+            event = events_bag[e_key]
             assert isinstance(event, Event)
             books_group_by_readers[event.reader_id].add(event.book_id)
             readers_group_by_books[event.book_id].add(event.reader_id)

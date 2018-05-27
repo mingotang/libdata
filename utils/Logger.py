@@ -32,6 +32,10 @@ class LogInfo(object):
         )
 
     @staticmethod
+    def time_sleep(seconds):
+        time.sleep(seconds)
+
+    @staticmethod
     def time_passed():
         return '\nRunning time: {0:s}'.format(RunTimeCounter.get_instance().tp_str)
 

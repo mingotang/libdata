@@ -84,33 +84,13 @@ def store_record_data():
     data_proxy.close()
 
 
-class DataManager(object):
-
-    def __init__(self, writeback=False):
-        self.data = DataProxy(writeback=writeback)
-
-    def group_by(self, group_tag: type, by_tag: str):
-        """
-
-        :param group_tag: 'readers'/'books'
-        :param by_tag: related attribute
-        :return: key: set())
-        """
-        from modules.Functions import group_by
-        if group_tag == Reader:
-            return group_by(self.data.readers, group_tag=group_tag.__name__, by_tag=by_tag)
-        elif group_tag == Book:
-            return group_by(self.data.books, group_tag=group_tag.__name__, by_tag=by_tag)
-        else:
-            raise ValueError('group_tag should be readers/books.')
-
-
 if __name__ == '__main__':
     from utils.Logger import LogInfo, set_logging
     set_logging()
     LogInfo.initiate_time_counter()
     # ------------------------------
-    data_manager = DataManager(writeback=False)
-    print(data_manager.group_by(group_tag=Reader, by_tag='college'))
+    store_record_data()
+    # data_manager = DataManager(writeback=False)
     # ------------------------------
+    LogInfo.time_sleep(1)
     print(LogInfo.time_passed())
