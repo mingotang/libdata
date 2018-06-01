@@ -74,7 +74,7 @@ class DataProxy(AbstractDataManager):
     @staticmethod
     def get_shelve_db(db_name: str):
         from utils.DataBase import ShelveWrapper
-        return ShelveWrapper(db_name)
+        return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
 
 
 def store_record_data():

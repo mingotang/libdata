@@ -9,7 +9,7 @@ from types import FunctionType
 from utils.Constants import BaseEnum
 
 
-__i__ = logging.debug
+__ = logging.debug
 
 
 class AprioriMethods(BaseEnum):
@@ -36,22 +36,22 @@ def apply_apriori(method: AprioriMethods, **kwargs):
     from utils.FileSupport import load_pickle, get_pdict
     from utils.Persisit import Pdict
     if method == AprioriMethods.Basic:
-        __i__(LogInfo.running('AprioriMethods.Basic', 'start'))
+        __(LogInfo.running('AprioriMethods.Basic', 'start'))
 
         events_dict = get_pdict('events')
 
-        __i__(LogInfo.running('collecting baskets', 'begin'))
+        __(LogInfo.running('collecting baskets', 'begin'))
         basket = collect_baskets(events_dict, 'index')  # '/Users/mingo/Downloads/basket_dict'
-        __i__(LogInfo.running('collecting baskets', 'end'))
+        __(LogInfo.running('collecting baskets', 'end'))
 
-        __i__(LogInfo.running('initiate apriori', 'begin'))
+        __(LogInfo.running('initiate apriori', 'begin'))
         apri_inst = Apriori(basket, force_origin=True)
-        __i__(LogInfo.running('initiate apriori', 'end'))
+        __(LogInfo.running('initiate apriori', 'end'))
 
         while True:
             min_support = kwargs.get('min_support', 0.1)
 
-            __i__(LogInfo.running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support)))
+            __(LogInfo.running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support)))
             result = apri_inst.run(min_support=min_support)
 
             while True:
@@ -74,7 +74,7 @@ def apply_apriori(method: AprioriMethods, **kwargs):
             else:
                 continue
     elif method == AprioriMethods.GroupByReaderCollege:
-        __i__(LogInfo.running('AprioriMethods.GroupByReaderCollege', 'start'))
+        __(LogInfo.running('AprioriMethods.GroupByReaderCollege', 'start'))
 
         # events_dict = Pdict(os.path.join(DataConfig.persisted_data_path, 'events'), keep_history=True)
         readers_in_college = get_pdict('readers_group_by_college')
@@ -83,7 +83,7 @@ def apply_apriori(method: AprioriMethods, **kwargs):
         for college in readers_in_college.keys():
             reader_set = readers_in_college[college]
 
-            __i__(LogInfo.running('collecting baskets for {}'.format(college), 'begin'))
+            __(LogInfo.running('collecting baskets for {}'.format(college), 'begin'))
             events_list = list()
             for event in events_dict.values():
                 assert isinstance(event, Event)
@@ -91,11 +91,11 @@ def apply_apriori(method: AprioriMethods, **kwargs):
                     events_list.append(event)
             basket = collect_baskets(events_list, 'book_name')  # '/Users/mingo/Downloads/basket_dict'
             del events_list
-            __i__(LogInfo.running('collecting baskets for {}'.format(college), 'end'))
+            __(LogInfo.running('collecting baskets for {}'.format(college), 'end'))
 
-            __i__(LogInfo.running('initiate apriori for {}'.format(college), 'begin'))
+            __(LogInfo.running('initiate apriori for {}'.format(college), 'begin'))
             apri_inst = Apriori(basket, force_origin=True, depth=2)
-            __i__(LogInfo.running('initiate apriori for {}'.format(college), 'end'))
+            __(LogInfo.running('initiate apriori for {}'.format(college), 'end'))
 
             min_support = kwargs.get('min_support', 0.5)
             min_conf = kwargs.get('min_conf', 0.6)
@@ -104,7 +104,7 @@ def apply_apriori(method: AprioriMethods, **kwargs):
             for min_support in [
                 0.5, 0.4, 0.3, 0.2, 0.15,  # 0.1,  # 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01,
             ]:
-                __i__(LogInfo.running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support)))
+                __(LogInfo.running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support)))
                 tp_01 = time.time()
                 result = apri_inst.run(min_support=min_support)
                 result.generate_rules(min_conf=min_conf)

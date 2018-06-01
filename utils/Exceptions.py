@@ -1,7 +1,7 @@
 # -*- encoding: UTF-8 -*-
 
 
-class ParamTypeError(Exception):
+class ParamTypeError(TypeError):
     def __init__(self, param_name: str, param_target_type, param):
         self.name = param_name
         self.got_type = str(type(param))
@@ -16,7 +16,7 @@ class ParamTypeError(Exception):
                     raise NotImplementedError()
             self.target_type = '/'.join(target_type_list)
         else:
-            raise TypeError()
+            raise TypeError
 
     def __repr__(self):
         return 'param {0:s} expect type {1:s} but got type {2:s}'.format(
@@ -24,7 +24,7 @@ class ParamTypeError(Exception):
         )
 
 
-class ParamOutOfRangeError(Exception):
+class ParamOutOfRangeError(ValueError):
     def __init__(self, param_name: str, value_range, param):
         self.name = param_name
         if isinstance(value_range, tuple):
@@ -44,7 +44,7 @@ class ParamOutOfRangeError(Exception):
         )
 
 
-class ParamNoContentError(Exception):
+class ParamNoContentError(ValueError):
     def __init__(self, param_name: str):
         self.name = param_name
 
@@ -52,12 +52,9 @@ class ParamNoContentError(Exception):
         return 'param {0:s} gets no content'.format(self.name)
 
 
-class ParamMissingError(Exception):
+class ParamMissingError(KeyError):
     def __init__(self, param_name: str):
         self.name = param_name
 
     def __repr__(self):
         return 'param {0:s} missing'.format(self.name)
-
-
-

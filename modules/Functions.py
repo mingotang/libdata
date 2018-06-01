@@ -6,10 +6,10 @@ import os
 from tqdm import tqdm
 
 from Config import DataConfig
+from structures.Book import Book
+from structures.Event import Event
 from utils.Logger import LogInfo
 from utils.Persisit import Pdict, Plist
-
-from structures.Event import Event
 
 __i__ = logging.debug
 
@@ -17,8 +17,10 @@ __i__ = logging.debug
 def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
     """
 
+    :param data_dict:
     :param group_tag:
     :param by_tag: related attribute
+    :param auto_save: bool
     :return: dict( key: set())
     """
     from collections import Mapping
@@ -80,13 +82,13 @@ def trim_range(data_bag, attr_tag: str, range_start, range_end, include_start: b
     elif isinstance(data_bag, Iterable):
         raise NotImplemented
     else:
-        raise TypeError('data_tag should be Iterable/Mapping.')
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('data_bag', 'Iterable/Mapping', data_bag)
 
 
 def index_books2readers(events_bag, auto_save: bool=False, books2readers_first: bool=True):
     from collections import defaultdict, Mapping, Iterable
     from tqdm import tqdm
-    from utils.FileSupport import save_pickle
 
     books_group_by_readers = defaultdict(set)
     readers_group_by_books = defaultdict(set)
@@ -103,7 +105,8 @@ def index_books2readers(events_bag, auto_save: bool=False, books2readers_first: 
             books_group_by_readers[event.reader_id].add(event.book_id)
             readers_group_by_books[event.book_id].add(event.reader_id)
     else:
-        raise TypeError
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('events_bag', 'Mapping/Iterable', events_bag)
 
     if auto_save is True:
         from utils.DataBase import ShelveWrapper
@@ -154,34 +157,36 @@ def induct_events_by_date(events_bag, auto_save: bool=False):
     return result
 
 
-# ---------------- [depreciated] ---------------- #
 def collect_baskets(events_bag, book_tag: str):
-
+    from collections import Iterable, Mapping
     from algorithm.Apriori import BasketCollector
-    from utils.FileSupport import get_pdict
+    from modules.DataProxy import DataProxy
 
-    books = get_pdict('books', keep_history=True)
+    __i__(LogInfo.running('collect_baskets', 'start'))
+
+    books = DataProxy().books
 
     new_basket = BasketCollector()
-    if isinstance(events_bag, (list, Plist)):
-        for i in range(len(events_bag)):
-            event = events_bag[i]
-            # assert isinstance(event, Event)
+    if isinstance(events_bag, Iterable):
+        for event in events_bag:
+            assert isinstance(event, Event)
             book = books[event.book_id]
-            # assert isinstance(book, Book)
+            assert isinstance(book, Book)
             new_basket.add(event.reader_id, getattr(book, book_tag))
-    elif isinstance(events_bag, (dict, Pdict)):
+    elif isinstance(events_bag, Mapping):
         for event in events_bag.values():
             book = books[event.book_id]
             new_basket.add(event.reader_id, getattr(book, book_tag))
     else:
-        raise TypeError
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('events_bag', '', events_bag)
 
-    # new_dict = new_basket.to_dict()
-    # for key in new_dict.keys():
-    #     print(key, new_dict[key])
-    # print(len(new_dict))
+    __i__(LogInfo.running('collect_baskets', 'end'))
+
     return new_basket
+
+
+# ---------------- [depreciated] ---------------- #
 
 
 def collect_reader_attributes(events, **kwargs):
