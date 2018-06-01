@@ -28,10 +28,14 @@ if __name__ == '__main__':
     # group_by(data_dict=data.readers, group_tag='readers', by_tag='college', auto_save=True)
     # group_by(group_tag='readers', by_tag='register_year')
     # group_by(group_tag='readers', by_tag='rtype')
-    from modules.Functions import index_books2readers
-    index_books2readers(data.events, auto_save=True)
+
+    # from modules.Functions import index_books2readers
+    # index_books2readers(data.events, auto_save=True)
+
+    from modules.Functions import induct_events_by_date
+    induct_events_by_date(data.events, auto_save=True)
 
     # -------- clean data --------
 
     LogInfo.time_sleep(1)
-    print(LogInfo.time_passed())
+    logging.info(LogInfo.time_passed())

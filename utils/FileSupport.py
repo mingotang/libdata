@@ -3,6 +3,13 @@ import csv
 import logging
 import pickle
 
+from Config import DataConfig
+
+
+def get_shelve_db(db_name: str):
+    from utils.DataBase import ShelveWrapper
+    return ShelveWrapper(DataConfig.operation_path, db_name)
+
 
 def __check_type__(file_path: str, file_type: str):
     if '.' in file_path:

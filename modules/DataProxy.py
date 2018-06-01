@@ -8,13 +8,12 @@ from Interface import AbstractDataManager
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
-from utils.Persisit import Pdict
 
 
 class DataProxy(AbstractDataManager):
 
     def __init__(self, writeback=False, data_path=DataConfig.data_path):
-        from modules.DataBase import ShelveWrapper
+        from utils.DataBase import ShelveWrapper
         if not os.path.exists(data_path):
             os.makedirs(data_path)
         self.__path__ = data_path
@@ -71,6 +70,11 @@ class DataProxy(AbstractDataManager):
         self.__books__.close()
         self.__readers__.close()
         self.__events__.close()
+
+    @staticmethod
+    def get_shelve_db(db_name: str):
+        from utils.DataBase import ShelveWrapper
+        return ShelveWrapper(db_name)
 
 
 def store_record_data():

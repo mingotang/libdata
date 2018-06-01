@@ -9,15 +9,12 @@ from Config import DataConfig
 from utils.Logger import LogInfo
 from utils.Persisit import Pdict, Plist
 
-from structures.Book import Book
 from structures.Event import Event
-from structures.Reader import Reader
-
 
 __i__ = logging.debug
 
 
-def group_by(data_dict, group_tag: str, by_tag: str, auto_save=False):
+def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
     """
 
     :param group_tag:
@@ -26,7 +23,6 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save=False):
     """
     from collections import Mapping
     from tqdm import tqdm
-    from utils.FileSupport import save_pickle
     assert isinstance(data_dict, Mapping)
 
     logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'begin'))
@@ -54,15 +50,16 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save=False):
         grouped_dict[by_value] = stored
 
     if auto_save is True:
-        save_pickle(
+        from utils.DataBase import ShelveWrapper
+        ShelveWrapper.init_from(
             grouped_dict,
             os.path.join(DataConfig.operation_path, '{}_group_by_{}'.format(group_tag, by_tag))
-        )
+        ).close()
     logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'end'))
     return grouped_dict
 
 
-def trim_range(data_bag, attr_tag: str, range_start, range_end, include_start=True, include_end=False):
+def trim_range(data_bag, attr_tag: str, range_start, range_end, include_start: bool=True, include_end: bool=False):
     from collections import Iterable, Mapping
     if isinstance(data_bag, Mapping):
         result = dict()
@@ -86,7 +83,7 @@ def trim_range(data_bag, attr_tag: str, range_start, range_end, include_start=Tr
         raise TypeError('data_tag should be Iterable/Mapping.')
 
 
-def index_books2readers(events_bag, auto_save=False, books2readers_first=True):
+def index_books2readers(events_bag, auto_save: bool=False, books2readers_first: bool=True):
     from collections import defaultdict, Mapping, Iterable
     from tqdm import tqdm
     from utils.FileSupport import save_pickle
@@ -95,7 +92,7 @@ def index_books2readers(events_bag, auto_save=False, books2readers_first=True):
     readers_group_by_books = defaultdict(set)
 
     if isinstance(events_bag, Mapping):
-        for e_key in tqdm(events_bag.keys(), desc='grouping events'):
+        for e_key in tqdm(events_bag.keys(), desc='indexing book2reader from events'):
             event = events_bag[e_key]
             assert isinstance(event, Event)
             books_group_by_readers[event.reader_id].add(event.book_id)
@@ -109,14 +106,15 @@ def index_books2readers(events_bag, auto_save=False, books2readers_first=True):
         raise TypeError
 
     if auto_save is True:
-        save_pickle(
+        from utils.DataBase import ShelveWrapper
+        ShelveWrapper.init_from(
             books_group_by_readers,
             os.path.join(DataConfig.operation_path, 'books_group_by_readers')
-        )
-        save_pickle(
+        ).close()
+        ShelveWrapper.init_from(
             readers_group_by_books,
             os.path.join(DataConfig.operation_path, 'readers_group_by_books')
-        )
+        ).close()
 
     if books2readers_first is True:
         return books_group_by_readers, readers_group_by_books
@@ -124,31 +122,43 @@ def index_books2readers(events_bag, auto_save=False, books2readers_first=True):
         return readers_group_by_books, books_group_by_readers
 
 
-def induct_events(events_bag):
-    from collections import defaultdict, Mapping, Iterable
-    from utils.FileSupport import init_pseries
+def induct_events_by_date(events_bag, auto_save: bool=False):
+    from collections import Mapping, Iterable
+    from structures.Extended import OrderedList
 
-    sum_dict = defaultdict(list)
+    result = dict()
 
     if isinstance(events_bag, Mapping):
         for event in tqdm(events_bag.values(), desc='inducting events'):
             assert isinstance(event, Event)
-            sum_dict[event.reader_id].append(event)
+            if event.reader_id not in result:
+                result[event.reader_id] = OrderedList(Event, 'date')
+            result[event.reader_id].append(event)
     elif isinstance(events_bag, Iterable):
         for event in tqdm(events_bag, desc='inducting events'):
             assert isinstance(event, Event)
-            sum_dict[event.reader_id].append(event)
+            if event.reader_id not in result:
+                result[event.reader_id] = OrderedList(Event, 'date')
+            result[event.reader_id].append(event)
     else:
-        raise TypeError
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('events_bag', 'Iterable/Mapping', events_bag)
 
-    for reader_id in sum_dict.keys():
-        init_pseries(sum_dict[reader_id], 'temp', 'inducted_events', reader_id, index_tag='event_date')
+    if auto_save is True:
+        from utils.DataBase import ShelveWrapper
+        ShelveWrapper.init_from(
+            result,
+            os.path.join(DataConfig.operation_path, 'inducted_events')
+        ).close()
+
+    return result
 
 
+# ---------------- [depreciated] ---------------- #
 def collect_baskets(events_bag, book_tag: str):
 
     from algorithm.Apriori import BasketCollector
-    from utils.FileSupport import get_pdict, init_pdict
+    from utils.FileSupport import get_pdict
 
     books = get_pdict('books', keep_history=True)
 
@@ -204,7 +214,7 @@ def collect_reader_attributes(events, **kwargs):
 
 
 if __name__ == '__main__':
-    from utils.FileSupport import save_pickle, load_pickle, get_pdict
+    from utils.FileSupport import save_pickle, get_pdict
     from utils.Logger import set_logging, LogInfo
     LogInfo.initiate_time_counter()
     set_logging()

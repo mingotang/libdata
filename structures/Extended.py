@@ -181,3 +181,59 @@ class OrderedList(object):
         """ L.__reversed__() -- return a reverse iterator over the list """
         for i in range(0, self.__data__.__len__(), -1):
             yield self.__data__.__getitem__(i)
+
+    def find_next(self, p_object, count: int=1):
+        """find object next to p_object, raise ValueError if no result found."""
+        if isinstance(p_object, self.__type__):
+            for index in range(len(self.__data__)):
+                if getattr(p_object, self.__stag__) < getattr(self.__data__[index], self.__stag__):
+                    if count == 1:
+                        return self.__data__[index]
+                    elif count > 1:
+                        if index + count <= len(self.__data__):
+                            return self.__data__[index:index + count - 1]
+                        else:
+                            return self.__data__[index:]
+                    else:
+                        from utils.Exceptions import ParamOutOfRangeError
+                        raise ParamOutOfRangeError('count', (1, 'infinite'), count)
+            raise ValueError
+
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('p_object', self.__type__.__name__, p_object)
+
+    def trim(self, attr_tag: str, range_start, range_end,
+             include_start: bool=True, include_end: bool=False, resort_tag=None):
+
+        trimed_list = list()
+        for d_v in self.__data__:
+            if include_start is True and include_end is True:
+                if range_start <= getattr(d_v, attr_tag) <= range_end:
+                    trimed_list.append(d_v)
+            elif include_start is True and include_end is False:
+                if range_start <= getattr(d_v, attr_tag) < range_end:
+                    trimed_list.append(d_v)
+            elif include_start is False and include_end is True:
+                if range_start < getattr(d_v, attr_tag) <= range_end:
+                    trimed_list.append(d_v)
+            else:
+                if range_start < getattr(d_v, attr_tag) < range_end:
+                    trimed_list.append(d_v)
+
+        if resort_tag is None:
+            return OrderedList.init_from(trimed_list, self.__type__, self.__stag__)
+        elif isinstance(resort_tag, str):
+            return OrderedList.init_from(trimed_list, self.__type__, resort_tag)
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('resort_tag', 'str/NoneType', resort_tag)
+
+    def to_list(self):
+        return self.__data__
+
+    def to_dict(self, index_tag: str):
+        new_dict = dict()
+        for value in self.__data__:
+            new_dict[getattr(value, index_tag)] = value
+        return new_dict

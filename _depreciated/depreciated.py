@@ -275,7 +275,7 @@ class EventActionList(object):
 
 
 class DataManagerByDB(AbstractDataManager):
-    from modules.DataBase import SqliteWrapper
+    from utils.DataBase import SqliteWrapper
     """[Depreciated]"""
 
     def __init__(self, db: SqliteWrapper):

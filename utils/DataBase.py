@@ -2,7 +2,7 @@
 import logging
 import shelve
 
-from collections import Iterable, Mapping
+from collections import Mapping
 
 from Config import DataBaseConfig
 from structures.Book import Book
@@ -191,7 +191,19 @@ class ShelveWrapper(Mapping):
 
         self.__path__ = path
         self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
+        self.__closed__ = False   # tag whether db is closed
         logging.debug('Connected to shelve database {}'.format(path))
+
+    @classmethod
+    def init_from(cls, data, db_path: str, writeback=False):
+        if isinstance(data, Mapping):
+            new_db = cls(db_path=db_path, writeback=writeback)
+            for k, v in data.items():
+                new_db[k] = v
+            return new_db
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('data', 'Mapping', data)
 
     def __iter__(self):
         for key in self.keys():
@@ -213,10 +225,12 @@ class ShelveWrapper(Mapping):
         self.__db__.__len__()
 
     def __del__(self):
-        logging.debug('shelve database {} closed.'.format(self.__path__))
-        self.close()
+        if self.__closed__ is False:
+            logging.warning('shelve database {} auto closed.'.format(self.__path__))
+            self.close()
         del self.__db__
         del self.__path__
+        del self.__closed__
 
     def keys(self):
         return self.__db__.keys()
@@ -241,7 +255,25 @@ class ShelveWrapper(Mapping):
 
     def close(self):
         self.__db__.close()
+        self.__closed__ = True
+
+    @property
+    def is_active(self):
+        return not self.__closed__
+
+    def to_list(self):
+        return [var for var in self.values()]
+
+    def to_dict(self):
+        new_dict = dict()
+        for key, value in self.items():
+            new_dict[key] = value
+        return new_dict
 
 
 if __name__ == '__main__':
+    from utils.Logger import set_logging
+    set_logging()
     shelve_db = ShelveWrapper('/Users/mingo/Downloads/persisted_libdata/test.db')
+    logging.debug('status: {}'.format(shelve_db.is_active))
+    shelve_db.close()
