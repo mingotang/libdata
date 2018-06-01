@@ -192,12 +192,13 @@ class ShelveWrapper(Mapping):
         self.__path__ = path
         self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
         self.__closed__ = False   # tag whether db is closed
-        logging.debug('Connected to shelve database {}'.format(path))
+        logging.info('Connected to shelve database {}'.format(path))
 
     @classmethod
     def init_from(cls, data, db_path: str, writeback=False):
         if isinstance(data, Mapping):
             new_db = cls(db_path=db_path, writeback=writeback)
+            new_db.clear()
             for k, v in data.items():
                 new_db[k] = v
             return new_db
@@ -252,10 +253,12 @@ class ShelveWrapper(Mapping):
 
     def clear(self):
         self.__db__.clear()
+        logging.debug('shelve database {} cleared.'.format(self.__path__))
 
     def close(self):
         self.__db__.close()
         self.__closed__ = True
+        logging.debug('shelve database {} closed.'.format(self.__path__))
 
     @property
     def is_active(self):
