@@ -6,8 +6,12 @@ from collections import defaultdict
 from enum import Enum
 
 from Interface import AbstractCollector
-from structures.Extended import CountingDict, SparseVector
+from structures.Extended import CountingDict
+from structures.SparseVector import SparseVector
 from utils.Logger import LogInfo
+
+
+__ = logging.debug
 
 
 class NeighborType(Enum):
@@ -30,6 +34,8 @@ class CollaborativeFiltering(object):
         self.data = data
 
     def run(self, **kwargs):
+        __(LogInfo.running('CollaborativeFiltering.run', 'start'))
+
         calcu_type = kwargs.get('type', NeighborType.All)
         if isinstance(calcu_type, NeighborType):
             pass
@@ -37,6 +43,8 @@ class CollaborativeFiltering(object):
             calcu_type = NeighborType(calcu_type)
         else:
             raise TypeError
+
+        __(LogInfo.running('CollaborativeFiltering.run', 'end'))
 
     def __calculate_neighbors__(self, ui_tag: str, simi_type: SimilarityType):
         simi = CountingDict()

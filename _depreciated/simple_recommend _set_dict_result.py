@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+# -*- encoding: UTF-8 -*-
 import os
 import math
 import time
@@ -18,13 +17,13 @@ user_list = list(user_set)
 book_list = list(book_set)
 n_users = len(user_list)
 n_books = len(book_list)
-print 'Number of users = ' + str(n_users) + ' | Number of books = ' + str(n_books)
+# print 'Number of users = ' + str(n_users) + ' | Number of books = ' + str(n_books)
 
 user_dict = {}
 book_dict = {}
-for i in xrange(n_users):
+for i in range(n_users):
     user_dict[user_list[i]] = i
-for i in xrange(n_books):
+for i in range(n_books):
     book_dict[book_list[i]] = i
 
 import time
@@ -58,7 +57,7 @@ def sumof(dic):
     for k,v in dic.iteritems():
         s += len(v)
     return s
-print "train_data_matrix is done with valid value",sumof(train_data_matrix)
+# print "train_data_matrix is done with valid value",sumof(train_data_matrix)
 
 def set_threshhold(dic,t):
     for k, v in dic.items():
@@ -169,13 +168,13 @@ def predict(ratings, user_similarity, item_similarity, type='user'):#n*n矩阵�
             #     N = topn  # 推荐书目量
             #     keep_top(predictions[u], N)  # 很重要，不然内存空间不够放。
             #     recommendations[u] = recommendations[u] & set([k for k, v in sorted(predictions[u].items(), key=itemgetter(1), reverse=True)[0:N-l]])
-        print 'there are',count1,'users have no recommendations'
+        # print 'there are',count1,'users have no recommendations'
         return predictions,recommendations
 
 start = time.clock()
 predictions, recommendations = predict(train_data_matrix,user_similarity,item_similarity)
 end = time.clock()
-print "predictions is done"+" with time spent ",end-start
+# print "predictions is done"+" with time spent ",end-start
 
 def recommend(user_predictions, item_predictions): # 混合算法，在user-based上层叠item-based
     recommendations = {}
@@ -188,14 +187,14 @@ def recommend(user_predictions, item_predictions): # 混合算法，在user-base
         #if l < N:# 实际的预测评分项都少于N
         #    count1 +=1
         #    recommendations[u] = recommendations[u]&set([k for k, v in sorted(item_predictions[u].items(), key=itemgetter(1), reverse=True)[0:N-l]])
-    print count1
+    # print count1
     return recommendations
 #recommendations = recommend(user_predictions, item_predictions)
 
 def random_reco():
     N = topn  # 推荐书目量
     random_recommendations = {}#{user:set(books)}
-    for i in xrange(n_users):
+    for i in range(n_users):
         random_recommendations[i] = set([random.randint(0,n_books-1) for x in xrange(N)])
     return random_recommendations
 #　random_recommendations = random_reco()
@@ -203,19 +202,19 @@ def random_reco():
 def popular_reco():
     N = topn
     book_popularity = {}
-    for k, v in train_data_matrixT.iteritems():
+    for k, v in train_data_matrixT.items():
         book_popularity[k] = len(v)
     popular_books = [k for k,v in sorted(book_popularity.items() , key = itemgetter(1) ,reverse=True)[0:N]]
     return popular_books
 
 def records(id):
     row = user_list.index(id)
-    print 'train_data of',id,' as follow'
-    for book in train_data_matrix[row]:
-        print book_list[book]
-    print 'test_data of',id,'as follow'
-    for book in test_data_matrix[row]:
-        print book_list[book]
+    # print 'train_data of',id,' as follow'
+    # for book in train_data_matrix[row]:
+    #     print book_list[book]
+    # print 'test_data of',id,'as follow'
+    # for book in test_data_matrix[row]:
+    #     print book_list[book]
     return 
 
 
@@ -290,8 +289,8 @@ for user in xrange(n_users):
     elif b <= 100: u5.append(user)
     else: u6.append(user)
 if 1:
-    print 'there are ',len(u2+u3+u4+u5+u6),'users in this subset'
-    print evaluation(u2+u3+u4+u5+u6)
+    # print 'there are ',len(u2+u3+u4+u5+u6),'users in this subset'
+    # print evaluation(u2+u3+u4+u5+u6)
 
 
 
@@ -309,4 +308,4 @@ if 1:
 # print 'precision rate of ',id, 'is ', precision_matrix[user_dict['5130209358']]
 
 t2 = time.clock()
-print 'whole program spends',t2-t1,'before evaluation'
+# print 'whole program spends',t2-t1,'before evaluation'

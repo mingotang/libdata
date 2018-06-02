@@ -2,6 +2,11 @@
 from abc import ABCMeta, abstractmethod
 
 
+def get_root_path():
+    from os import path
+    return path.abspath(path.dirname(__file__))
+
+
 class AbstractDataManager:
     __metaclass__ = ABCMeta
 

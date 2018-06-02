@@ -29,12 +29,9 @@ def apply_apriori(method: AprioriMethods, **kwargs):
     :param method:
     :return:
     """
-    from Config import DataConfig
     from algorithm.Apriori import Apriori
     from modules.Functions import collect_baskets
     from structures.Event import Event
-    from utils.FileSupport import load_pickle, get_pdict
-    from utils.Persisit import Pdict
     if method == AprioriMethods.Basic:
         __(LogInfo.running('AprioriMethods.Basic', 'start'))
 

@@ -4,17 +4,19 @@ import shelve
 
 from collections import Mapping
 
-from Config import DataBaseConfig
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
 
 
 class SqliteWrapper(object):
-    def __init__(self, db_path=DataBaseConfig.file_path,
+    def __init__(self, db_path='',
                  clear_db=False, exist_optimize=True, action_limit=True):
         from sqlalchemy import create_engine, MetaData
         from sqlalchemy.orm import sessionmaker
+        from Config import DataBaseConfig
+        if db_path == '':
+            db_path = DataBaseConfig.file_path
         self.engine = create_engine('sqlite:///{host}'.format(host=db_path), echo=False)
         self.metadata = MetaData(bind=self.engine)
         self.__table_definition__()
@@ -206,6 +208,10 @@ class ShelveWrapper(Mapping):
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('data', 'Mapping', data)
 
+    @classmethod
+    def connect(cls, db_path: str, writeback=False):
+        return cls(db_path=db_path, writeback=writeback)
+
     def __iter__(self):
         for key in self.keys():
             yield key
@@ -223,15 +229,13 @@ class ShelveWrapper(Mapping):
         del self.__db__[key]
 
     def __len__(self):
-        self.__db__.__len__()
+        return self.__db__.__len__()
 
     def __del__(self):
         if self.__closed__ is False:
             logging.warning('shelve database {} auto closed.'.format(self.__path__))
             self.close()
-        del self.__db__
-        del self.__path__
-        del self.__closed__
+        del self.__closed__, self.__db__, self.__path__
 
     def keys(self):
         return self.__db__.keys()
@@ -259,6 +263,13 @@ class ShelveWrapper(Mapping):
         self.__db__.close()
         self.__closed__ = True
         logging.debug('shelve database {} closed.'.format(self.__path__))
+
+    def delete(self):
+        from os import remove
+        self.__db__.clear()
+        self.__db__.close()
+        self.__closed__ = True
+        remove(self.__path__)
 
     @property
     def is_active(self):

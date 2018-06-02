@@ -26,6 +26,4 @@ fbook.writelines(book_name_set)
 fstu.close()
 fbook.close()
 ftrain.close()
-print len(stu_id_set)
-
-
+# print len(stu_id_set)

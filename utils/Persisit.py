@@ -288,6 +288,7 @@ class Pdict(BasePersisit, Mapping):
     __ptype__ = 'pdict'
 
     def __init__(self, data_path=None, keep_history=True):
+        Mapping.__init__(self)
         BasePersisit.__init__(self, data_path, keep_history)
 
     @classmethod

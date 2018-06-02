@@ -1,12 +1,12 @@
 # -*- encoding: UTF-8 -*-
 import datetime
+import logging
 import time
 
 
-def set_logging():
-    import logging
+def set_logging(level: int=logging.DEBUG):
     logging.basicConfig(
-        level=logging.DEBUG,  # 定义输出到文件的log级别，
+        level=level,  # 定义输出到文件的log级别，
         format='%(asctime)s  %(filename)s : %(levelname)s  %(message)s',  # 定义输出log的格式
         datefmt='%Y-%m-%d %A %H:%M:%S',  # 时间
         # filename=param.log_file_name,  # log文件名
