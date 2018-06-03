@@ -98,6 +98,7 @@ class Apriori(object):
         :param float min_support:
         :param kwargs: depth int, temp_path str
         """
+        from modules.DataProxy import DataConfig
         from utils.Persisit import Pdict, Plist
 
         if isinstance(data_sets, BasketCollector):
@@ -134,9 +135,7 @@ class Apriori(object):
                     dict(zip([str(i) for i in range(len(data_sets))], [set(var) for var in data_sets.values()])),
                     local_path, writeback=False)
             elif isinstance(data_sets, ShelveWrapper):
-                self.data_sets = ShelveWrapper.init_from(
-                    dict(zip([str(i) for i in range(len(data_sets))], [set(var) for var in data_sets.values()])),
-                    local_path, writeback=False)
+                self.data_sets = data_sets
                 self.__origin_db__ = True
             else:
                 from utils.Exceptions import ParamTypeError
