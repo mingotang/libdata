@@ -7,12 +7,12 @@ import sys
 
 from collections import defaultdict
 
-from Config import DataConfig
 from Interface import AbstractCollector
 from utils.DataBase import ShelveWrapper
-from utils.Logger import LogInfo
+from utils.Logger import get_logger
 
-__ = logging.debug
+
+logger = get_logger(level=logging.DEBUG, module_name='apriori')
 
 
 # -------------------------------------------------------------------------------- #
@@ -157,7 +157,7 @@ class Apriori(object):
         # 频繁项超集数据
         while freq_set_level <= self.depth and len(freq_sets_k) > 0:
             freq_set_level += 1
-            __(LogInfo.running('running at frequent set level {}'.format(freq_set_level), 'begin'))
+            logger.debug_running('running at frequent set level {}'.format(freq_set_level), 'begin')
             freq_sets_k = self.generate_super_frequent_sets(freq_sets_k)
             freq_sets_k, freq_sets_support = self.collect_freq_support(freq_sets_k, this_result)
             this_result.add_freq_set(freq_set_level, freq_sets_k)
@@ -177,7 +177,7 @@ class Apriori(object):
 
     def find_primary_freq_goods(self, result: AprioriResult):
         """ frozensets in list, support of frozenset in dict """
-        __(LogInfo.running('finding_primary_goods', 'begin'))
+        logger.debug_running('finding_primary_goods', 'begin')
 
         # 收集频繁度数据
         basic_freq = defaultdict(int)
@@ -203,13 +203,13 @@ class Apriori(object):
                 support_dict[item] = support
         ret_list.sort()
 
-        __(LogInfo.running('finding_primary_goods', 'end'))
+        logger.debug_running('finding_primary_goods', 'end')
 
         return ret_list, support_dict
 
     def collect_freq_support(self, freq_sets: list, result: AprioriResult):
         """ frozensets in list, support of frozenset in dict """
-        __(LogInfo.running('collect_freq_support', 'begin'))
+        logger.debug_running('collect_freq_support', 'begin')
 
         # 收集频繁度数据
         freq_count = defaultdict(int)
@@ -234,7 +234,8 @@ class Apriori(object):
             if support >= result.min_support:  # 将满足最小支持度的项集，加入retList
                 ret_list.append(can)
                 support_dict[can] = support  # 汇总支持度数据
-        __(LogInfo.running('collect_freq_support', 'end'))
+
+        logger.debug_running('collect_freq_support', 'end')
         return ret_list, support_dict
 
     def generate_super_frequent_sets(self, old_freq_sets: list):
@@ -301,12 +302,8 @@ class BasketCollector(AbstractCollector):
 
 
 if __name__ == '__main__':
-    # ------------------------------
-    from utils.Logger import set_logging, RunTimeCounter
-    set_logging(logging.INFO)
-    import time
-    RunTimeCounter.get_instance()
-    time.sleep(3)
+    logger.initiate_time_counter()
+
     # Test Apriori
     my_dat = [[1, 3, 4, 5],
               [2, 3, 5],
@@ -317,4 +314,5 @@ if __name__ == '__main__':
     result1 = apri_1.run(0.2)
     result1.show_results(0.1)
     apri_1.delete_data_set()
-    __(LogInfo.time_passed())
+
+    logger.print_time_passed()

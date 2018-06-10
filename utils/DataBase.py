@@ -246,6 +246,15 @@ class ShelveWrapper(Mapping):
     def items(self):
         return self.__db__.items()
 
+    def copy(self):
+        new_d = dict()
+        for key, value in self.items():
+            new_d[key] = value
+        return new_d
+
+    def set(self, key: str, value):
+        self.__setitem__(key, value)
+
     def get(self, key, default=None):
         try:
             return self.__getitem__(key)

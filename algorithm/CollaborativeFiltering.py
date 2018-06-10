@@ -12,10 +12,10 @@ from structures.Extended import CountingDict
 from structures.Reader import Reader
 from structures.SparseVector import SparseVector
 from utils.DataBase import ShelveWrapper
-from utils.Logger import LogInfo
+from utils.Logger import get_logger
 
 
-__ = logging.debug
+logger = get_logger(level=logging.DEBUG, module_name='cf')
 
 
 class NeighborType(Enum):
@@ -35,7 +35,18 @@ class SimilarityType(Enum):
     Tanimoto = TanimotoCoefficient
 
 
+class CFResult(dict):
+    def __init__(self):
+        super(CFResult, self).__init__()
+
+    def add_list(self, key: str, value: list):
+        self.__setitem__(key, value)
+
+
 class CollaborativeFiltering(object):
+    """
+    CF: finding neighbors
+    """
     def __init__(self, data, attr_belong: type, **kwargs):
         import datetime
         from Config import DataConfig
@@ -49,12 +60,12 @@ class CollaborativeFiltering(object):
         # indexing data in order to speed up calculation
         if kwargs.get('book2reader', None) is None and kwargs.get('reader2book', None) is None:
             try:
-                self.book2reader = DataProxy.get_shelve_db('readers_group_by_books')
-                self.reader2book = DataProxy.get_shelve_db('books_group_by_readers')
-                __(LogInfo.running('CollaborativeFiltering.init', 'start with GENERAL searching mode'))
+                self.book2reader = DataProxy.get_shelve('readers_group_by_books')
+                self.reader2book = DataProxy.get_shelve('books_group_by_readers')
+                logger.debug_running('CollaborativeFiltering.init', 'start with GENERAL searching mode')
             except FileNotFoundError:
                 self.book2reader, self.reader2book = None, None
-                __(LogInfo.running('CollaborativeFiltering.init', 'start with STUPID searching mode'))
+                logger.debug_running('CollaborativeFiltering.init', 'start with STUPID searching mode')
         elif kwargs.get('book2reader', None) is not None and kwargs.get('reader2book', None) is not None:
             self.book2reader, self.reader2book = kwargs.get('book2reader'), kwargs.get('reader2book')
             if not isinstance(self.book2reader, Mapping):
@@ -63,7 +74,7 @@ class CollaborativeFiltering(object):
             if not isinstance(self.reader2book, Mapping):
                 from utils.Exceptions import ParamTypeError
                 raise ParamTypeError('reader2book', 'Mapping', self.reader2book)
-            __(LogInfo.running('CollaborativeFiltering.init', 'start with BEST searching mode'))
+            logger.debug_running('CollaborativeFiltering.init', 'start with BEST searching mode')
         else:
             raise RuntimeError('parameter book2reader and reader2book should be set at the same time')
 
@@ -111,7 +122,6 @@ class CollaborativeFiltering(object):
                 from utils.Exceptions import ValueTypeError
                 raise ValueTypeError('data', 'dict/SparseVector', value)
 
-
     def delete_data(self):
         if self.__in_memory__ is True:
             assert isinstance(self.data, dict)
@@ -121,12 +131,46 @@ class CollaborativeFiltering(object):
             if self.__origin_db__ is False:
                 self.data.delete()
 
-    def run(self, neighbor_type: NeighborType=NeighborType.All, sim_type: SimilarityType=SimilarityType.Cosine,
+    def run(self,
+            neighbor_type: NeighborType=NeighborType.All,
+            sim_type: SimilarityType=SimilarityType.Cosine,
             **kwargs):
-        __(LogInfo.running('CollaborativeFiltering.run', 'start'))
+        """
 
+        :param neighbor_type:
+        :param sim_type:
+        :param kwargs:
+            size:
+            limit:
+        :return:
+        """
+        logger.debug_running('CollaborativeFiltering.run', 'start')
 
-        __(LogInfo.running('CollaborativeFiltering.run', 'end'))
+        result = CFResult()
+        if neighbor_type == NeighborType.All:
+            for u_i in self.data.keys():
+                result.add_list(u_i, self.find_all_neighbors(u_i, sim_type))
+        elif neighbor_type == NeighborType.FixSize:
+            if 'size' in kwargs:
+                size = kwargs['size']
+            else:
+                from utils.Exceptions import ParamMissingError
+                raise ParamMissingError('size')
+            for u_i in self.data.keys():
+                result.add_list(u_i, self.find_k_neighbors(u_i, size, sim_type))
+        elif neighbor_type == NeighborType.ThresholdBased:
+            if 'limit' in kwargs:
+                limit = kwargs['limit']
+            else:
+                from utils.Exceptions import ParamMissingError
+                raise ParamMissingError('limit')
+            for u_i in self.data.keys():
+                result.add_list(u_i, self.find_limited_neighbors(u_i, limit, sim_type))
+        else:
+            raise ValueError
+
+        logger.debug_running('CollaborativeFiltering.run', 'end')
+        return result
 
     def __calculate_neighbors__(self, ui_tag: str, sim_type: SimilarityType):
         result = CountingDict()
@@ -196,10 +240,8 @@ class PreferenceCollector(AbstractCollector):
 
 
 if __name__ == '__main__':
-    from utils.Logger import set_logging, RunTimeCounter
-    RunTimeCounter(back_run=True)
+    logger.initiate_time_counter()
     # ------------------------------
-    set_logging()
 
     # ------------------------------
-    print('Running time: {}'.format(RunTimeCounter.get_instance().tp_str))
+    logger.print_time_passed()

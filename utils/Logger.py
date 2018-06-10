@@ -14,30 +14,76 @@ def set_logging(level: int=logging.DEBUG):
     )
 
 
-class LogInfo(object):
+class LogWrapper(object):
+
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
+
     @staticmethod
     def initiate_time_counter():
         RunTimeCounter.get_instance()
-
-    @staticmethod
-    def running(running: str, status: str):
-        return '[running]: {0:s} - now {1:s}'.format(
-            running, status,
-        )
-
-    @staticmethod
-    def variable_detail(variable):
-        return '[variable]: {0:s} got type {1:s} and content {2:s}'.format(
-            str(id(variable)), str(type(variable)), str(variable)
-        )
 
     @staticmethod
     def time_sleep(seconds):
         time.sleep(seconds)
 
     @staticmethod
-    def time_passed():
-        return '\nRunning time: {0:s}'.format(RunTimeCounter.get_instance().tp_str)
+    def print_time_passed():
+        print('\nRunning time: {0:s}'.format(RunTimeCounter.get_instance().tp_str))
+
+    def debug(self, msg: str, *args, **kwargs):
+        self.logger.debug(msg, *args, **kwargs)
+
+    def debug_if(self, check: bool, msg: str, *args, **kwargs):
+        if check is True:
+            self.debug(msg, *args, **kwargs)
+
+    def debug_running(self, running: str, status: str):
+        self.debug('[running]: {0:s} - now {1:s}'.format(running, status))
+
+    def debug_variable(self, variable):
+        self.debug('[variable]: {0:s} got type {1:s} and content {2:s}'.format(
+                str(id(variable)), str(type(variable)), str(variable)
+            ))
+
+    def info(self, msg: str, *args, **kwargs):
+        self.logger.info(msg, *args, **kwargs)
+
+    def info_if(self, check: bool, msg: str, *args, **kwargs):
+        if check is True:
+            self.info(msg, *args, **kwargs)
+
+    def warning(self, msg: str, *args, **kwargs):
+        self.logger.warning(msg, *args, **kwargs)
+
+    def warning_if(self, check: bool, msg: str, *args, **kwargs):
+        if check is True:
+            self.warning(msg, *args, **kwargs)
+
+    def error(self, msg: str, *args, **kwargs):
+        self.logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg: str, *args, **kwargs):
+        self.logger.critical(msg, *args, **kwargs)
+
+
+def get_logger(level: int=logging.DEBUG, module_name: str=''):
+    """
+
+    :param level: logging level
+    :return: :class:`~logging.Logger`
+    """
+    if module_name == '':
+        logger = logging.getLogger()
+    else:
+        logger = logging.getLogger(module_name)
+    logger.setLevel(level)
+
+    screen_handler = logging.StreamHandler()
+    screen_handler.setFormatter(logging.Formatter('%(asctime)s %(filename)s:  %(levelname)s, %(message)s'))
+    logger.addHandler(screen_handler)
+
+    return LogWrapper(logger)
 
 
 class RunTimeCounter(object):

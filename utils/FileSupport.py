@@ -2,8 +2,15 @@
 import csv
 import logging
 import pickle
+import os
+
+import pandas as pd
 
 from Config import DataConfig
+from utils.Logger import get_logger
+
+
+logger = get_logger()
 
 
 def get_shelve_db(db_name: str):
@@ -58,28 +65,34 @@ def load_csv(*args, **kwargs):
         raise NotImplementedError
 
 
-def save_csv(content, *args, **kwargs):
+def save_csv(content, *path, **kwargs):
     """
     save csv
     :param content: list of str in lists
-    :param args: path
+    :param path: path
     :param kwargs: encoding
     :return:
     """
-
-    assert len(args) > 0
-    file_path = __check_type__(args[0], 'csv')
+    assert len(path) > 0
+    file_path = __check_type__(os.path.sep.join(path), 'csv')
 
     # optional parameters
     file_encoding = kwargs.get('encoding', 'utf-8')
     assert isinstance(file_encoding, str), repr(TypeError)
 
     # saving data
-    csv_file = open(file_path, 'w', newline='', encoding=file_encoding)
-    spam_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    spam_writer.writerows(content)
-    csv_file.close()
-    logging.debug('csv file {} saved.'.format(file_path))
+    if isinstance(content, list):
+        csv_file = open(file_path, 'w', newline='', encoding=file_encoding)
+        spam_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        spam_writer.writerows(content)
+        csv_file.close()
+    elif isinstance(content, pd.DataFrame):
+        content.to_csv(file_path, encoding=file_encoding)
+    else:
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('content', 'list(list)/pd.DataFrame', content)
+
+    logger.debug('csv file {} saved.'.format(file_path))
 
 
 if __name__ == '__main__':

@@ -8,10 +8,11 @@ from tqdm import tqdm
 from Config import DataConfig
 from structures.Book import Book
 from structures.Event import Event
-from utils.Logger import LogInfo
+from utils.Logger import get_logger
 from utils.Persisit import Pdict, Plist
 
-__i__ = logging.debug
+
+logger = get_logger()
 
 
 def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):

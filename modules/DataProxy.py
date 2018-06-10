@@ -72,9 +72,26 @@ class DataProxy(AbstractDataManager):
         self.__events__.close()
 
     @staticmethod
-    def get_shelve_db(db_name: str):
+    def get_shelve(db_name: str, new=False):
         from utils.DataBase import ShelveWrapper
-        return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
+        if new is False:
+            if os.path.exists(os.path.join(DataConfig.operation_path, db_name)):
+                return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
+            else:
+                raise FileNotFoundError(
+                    'Shelve database {} not exists.'.format(os.path.join(DataConfig.operation_path, db_name))
+                )
+        else:
+            return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
+
+    @staticmethod
+    def get_shelve_temp():
+        import datetime
+        from utils.DataBase import ShelveWrapper
+        return ShelveWrapper(os.path.join(
+            DataConfig.operation_path,
+            '__temp_{}__'.format(datetime.datetime.now().strftime('%Y%m%d %H%M%S.%f'))
+        ))
 
 
 def store_record_data():
