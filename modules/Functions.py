@@ -12,7 +12,7 @@ from utils.Logger import get_logger
 from utils.Persisit import Pdict, Plist
 
 
-logger = get_logger()
+logger = get_logger(logging.DEBUG, '')
 
 
 def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
@@ -28,7 +28,7 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
     from tqdm import tqdm
     assert isinstance(data_dict, Mapping)
 
-    logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'begin'))
+    logger.debug_running('group {} by {}'.format(group_tag, by_tag), 'begin')
 
     grouped_dict = dict()
 
@@ -163,7 +163,7 @@ def collect_baskets(events_bag, book_tag: str):
     from algorithm.Apriori import BasketCollector
     from modules.DataProxy import DataProxy
 
-    __i__(LogInfo.running('collect_baskets', 'start'))
+    logger.debug_running('collect_baskets', 'start')
 
     books = DataProxy().books
 
@@ -182,20 +182,18 @@ def collect_baskets(events_bag, book_tag: str):
         from utils.Exceptions import ParamTypeError
         raise ParamTypeError('events_bag', '', events_bag)
 
-    __i__(LogInfo.running('collect_baskets', 'end'))
+    logger.debug_running('collect_baskets', 'end')
 
     return new_basket
 
 
-# ---------------- [depreciated] ---------------- #
-
-
 def collect_reader_attributes(events, **kwargs):
 
-    from collections import defaultdict
-    from structures.SparseVector import SparseVector
     from tqdm import tqdm
-    from utils.FileSupport import get_pdict, init_pdict
+    from collections import defaultdict
+    from modules.DataProxy import DataProxy
+    from structures.SparseVector import SparseVector
+    from utils.DataBase import ShelveWrapper
 
     reader_attributes = defaultdict(SparseVector)
 
@@ -204,27 +202,31 @@ def collect_reader_attributes(events, **kwargs):
             event = events[i]
             assert isinstance(event, Event)
             reader_attributes[event.reader_id][event.book_id] = event.times
-    elif isinstance(events, (dict, Pdict)):
+    elif isinstance(events, (dict, Pdict, ShelveWrapper)):
         for event in tqdm(events.values(), desc='checking events'):
             reader_attributes[event.reader_id][event.book_id] = event.times
     else:
-        raise TypeError
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('events', 'list/Plist/dict/Pdict/ShelveWrapper', events)
 
-    total_books = kwargs.get('length', len(get_pdict('books')))
+    total_books = kwargs.get('length', DataProxy.get_shelve('books').__len__())
 
     for reader_id in reader_attributes:
         reader_attributes[reader_id].set_length(total_books)
 
-    init_pdict(reader_attributes, 'reader_attributes')
+    auto_save = kwargs.get('auto_save', False)
+    if auto_save is True:
+        ShelveWrapper.init_from(
+            reader_attributes,
+            db_path=os.path.join(DataConfig.operation_path, 'reader_attributes')
+        ).close()
+
     return reader_attributes
 
 
 if __name__ == '__main__':
-    from utils.FileSupport import save_pickle, get_pdict
-    from utils.Logger import set_logging, LogInfo
-    LogInfo.initiate_time_counter()
-    set_logging()
+    logger.initiate_time_counter()
 
-    collect_reader_attributes(get_pdict('events'))
+    # collect_reader_attributes()
 
-    print(LogInfo.time_passed())
+    logger.print_time_passed()

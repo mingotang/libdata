@@ -2,18 +2,13 @@
 # ---------------------------------import------------------------------------
 import logging
 
-from utils.Logger import LogInfo, RunTimeCounter, set_logging
+from utils.Logger import get_logger
 
-
-set_logging()
-
-RunTimeCounter.get_instance()
-
-
-__i__ = logging.debug
+logger = get_logger(logging.DEBUG, '')
 
 
 if __name__ == '__main__':
+    logger.initiate_time_counter()
     # -------- storing data --------
     # from modules.DataProxy import store_record_data
     # store_record_data()
@@ -40,5 +35,4 @@ if __name__ == '__main__':
     # -------- finishing --------
     data.close()
 
-    LogInfo.time_sleep(1)
-    print(LogInfo.time_passed())
+    logger.print_time_passed()
