@@ -221,12 +221,14 @@ class ShelveWrapper(Mapping):
 
     def __setitem__(self, key: str, value):
         self.__db__[key] = value
+        self.__closed__ = False
 
     def __contains__(self, key: str):
         return self.__db__.__contains__(key)
 
     def __delitem__(self, key):
         del self.__db__[key]
+        self.__closed__ = False
 
     def __len__(self):
         return self.__db__.__len__()
@@ -263,9 +265,11 @@ class ShelveWrapper(Mapping):
 
     def flush(self):
         self.__db__.sync()
+        self.__closed__ = False
 
     def clear(self):
         self.__db__.clear()
+        self.__closed__ = False
         logging.debug('shelve database {} cleared.'.format(self.__path__))
 
     def close(self):
