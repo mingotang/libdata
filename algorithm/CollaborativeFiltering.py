@@ -15,7 +15,7 @@ from utils.DataBase import ShelveWrapper
 from utils.Logger import get_logger
 
 
-logger = get_logger(level=logging.DEBUG, module_name='cf')
+logger = get_logger(module_name=__file__)
 
 
 class NeighborType(Enum):
@@ -131,8 +131,7 @@ class CollaborativeFiltering(object):
             if self.__origin_db__ is False:
                 self.data.delete()
 
-    def run(self,
-            neighbor_type: NeighborType=NeighborType.All,
+    def run(self, neighbor_type: NeighborType=NeighborType.All,
             sim_type: SimilarityType=SimilarityType.Cosine,
             **kwargs):
         """

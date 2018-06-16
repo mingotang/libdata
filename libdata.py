@@ -4,7 +4,9 @@ import logging
 
 from utils.Logger import get_logger
 
-logger = get_logger(logging.DEBUG, '')
+DEFAULT_LOG_LEVEL = logging.DEBUG
+
+logger = get_logger(module_name=__file__)
 
 
 if __name__ == '__main__':

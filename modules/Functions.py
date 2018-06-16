@@ -12,7 +12,7 @@ from utils.Logger import get_logger
 from utils.Persisit import Pdict, Plist
 
 
-logger = get_logger(logging.DEBUG, '')
+logger = get_logger(module_name=__file__)
 
 
 def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):

@@ -3,6 +3,8 @@ import datetime
 import logging
 import time
 
+from libdata import DEFAULT_LOG_LEVEL
+
 
 def set_logging(level: int=logging.DEBUG):
     logging.basicConfig(
@@ -62,7 +64,7 @@ class LogWrapper(logging.Logger):
             self._log(logging.WARNING, msg, args, **kwargs)
 
 
-def get_logger(level: int=logging.DEBUG, module_name: str=''):
+def get_logger(module_name: str='', level: int=DEFAULT_LOG_LEVEL):
     """
 
     :param level: logging level

@@ -12,7 +12,7 @@ from utils.DataBase import ShelveWrapper
 from utils.Logger import get_logger
 
 
-logger = get_logger(level=logging.DEBUG, module_name='apriori')
+logger = get_logger(module_name=__file__)
 
 
 # -------------------------------------------------------------------------------- #
