@@ -3,7 +3,7 @@ import datetime
 import logging
 import time
 
-from libdata import DEFAULT_LOG_LEVEL
+from Config import DEFAULT_LOG_LEVEL
 
 
 def set_logging(level: int=logging.DEBUG):

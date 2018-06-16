@@ -8,6 +8,10 @@ from Interface import AbstractDataManager
 from structures.Book import Book
 from structures.Event import Event
 from structures.Reader import Reader
+from utils.Logger import get_logger
+
+
+logger = get_logger(module_name=__file__)
 
 
 class DataProxy(AbstractDataManager):
@@ -22,6 +26,11 @@ class DataProxy(AbstractDataManager):
         self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback)
 
     def include(self, value):
+        """
+        add value to shelve DB
+        :param value: Book/Reader/Event
+        :return: None
+        """
         if isinstance(value, Book):
             if value.index in self.__books__:
                 stored = self.__books__[value.index]
@@ -44,15 +53,21 @@ class DataProxy(AbstractDataManager):
             else:
                 self.__events__[value.hashable_key] = value
         else:
-            logging.debug(LogInfo.variable_detail(value))
-            raise TypeError
+            logger.debug_variable(value)
+            raise TypeError('value should be of type Book/Event/Reader but got'.format(type(value)))
 
     def extend(self, iterable):
-        for item in iterable:
-            try:
-                self.include(item)
-            except TypeError:
-                pass
+        from collections import Iterable
+        if not isinstance(iterable, Iterable):
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('iterable', 'Iterable', iterable)
+        else:
+            for item in iterable:
+                try:
+                    self.include(item)
+                except TypeError as e:
+                    logger.error('elements of iterable should be Book/Event/Reader but got {}'.format(type(item)))
+                    raise e
 
     @property
     def readers(self):

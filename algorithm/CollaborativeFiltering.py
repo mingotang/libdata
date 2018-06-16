@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import logging
 import os
 
 from collections import defaultdict, Mapping

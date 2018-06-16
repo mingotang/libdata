@@ -2,26 +2,13 @@
 # ---------------------------------import------------------------------------
 import time
 
-from types import FunctionType
-
+from algorithm import AprioriMethods, CollaborativeFilteringMethods
 from algorithm.CollaborativeFiltering import NeighborType, SimilarityType
 from modules.DataProxy import DataProxy
-from utils.Constants import BaseEnum
 from utils.Logger import get_logger
 
 
 logger = get_logger()
-
-
-# --------------------------------------------------------
-class AprioriMethods(BaseEnum):
-    Basic = 'ReaderIDAsBuyer_BookIDAsGoods'
-    GroupByReaderCollege = 'ReaderIDAsBuyer_BookIDAsGoods-GroupByReaderCollege'
-
-
-class CollaborativeFilteringMethods(BaseEnum):
-    ReaderBase = 'ReaderBase'
-    BookBase = 'BookBase'
 
 
 # --------------------------------------------------------

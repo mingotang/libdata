@@ -1,10 +1,7 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import logging
-
 from utils.Logger import get_logger
 
-DEFAULT_LOG_LEVEL = logging.DEBUG
 
 logger = get_logger(module_name=__file__)
 

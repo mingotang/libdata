@@ -1,4 +1,8 @@
 # -*- encoding: UTF-8 -*-
+import logging
+
+
+DEFAULT_LOG_LEVEL = logging.DEBUG
 
 
 class DataConfig(object):

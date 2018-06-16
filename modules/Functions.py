@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import logging
 import os
 
 from tqdm import tqdm
@@ -18,7 +17,7 @@ logger = get_logger(module_name=__file__)
 def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
     """
 
-    :param data_dict:
+    :param data_dict: Mapping
     :param group_tag:
     :param by_tag: related attribute
     :param auto_save: bool
@@ -58,7 +57,7 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
             grouped_dict,
             os.path.join(DataConfig.operation_path, '{}_group_by_{}'.format(group_tag, by_tag))
         ).close()
-    logging.debug(LogInfo.running('group {} by {}'.format(group_tag, by_tag), 'end'))
+    logger.debug_running('group {} by {}'.format(group_tag, by_tag), 'end')
     return grouped_dict
 
 

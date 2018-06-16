@@ -1,7 +1,6 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import datetime
-import logging
 import os
 import sys
 
