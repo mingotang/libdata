@@ -47,6 +47,12 @@ class CollaborativeFiltering(object):
     CF: finding neighbors
     """
     def __init__(self, data, attr_belong: type, **kwargs):
+        """
+
+        :param data: dict/Pdict/ShelveWrapper/PreferenceCollector
+        :param attr_belong:
+        :param kwargs: in_memory bool/book2reader dict/reader2book dict
+        """
         import datetime
         from Config import DataConfig
         from modules.DataProxy import DataProxy
@@ -55,6 +61,12 @@ class CollaborativeFiltering(object):
         if not len(data) > 0:
             from utils.Exceptions import ParamNoContentError
             raise ParamNoContentError('data')
+
+        if attr_belong in (Book, Reader):
+            self.__attr_belong__ = attr_belong
+        else:
+            from utils.Exceptions import ParamOutOfRangeError
+            raise ParamOutOfRangeError('attr_belong', ('Book', 'Reader'), attr_belong)
 
         # indexing data in order to speed up calculation
         if kwargs.get('book2reader', None) is None and kwargs.get('reader2book', None) is None:
@@ -67,6 +79,7 @@ class CollaborativeFiltering(object):
                 logger.debug_running('CollaborativeFiltering.init', 'start with STUPID searching mode')
         elif kwargs.get('book2reader', None) is not None and kwargs.get('reader2book', None) is not None:
             self.book2reader, self.reader2book = kwargs.get('book2reader'), kwargs.get('reader2book')
+            # checking book2reader and reader2book Mapping
             if not isinstance(self.book2reader, Mapping):
                 from utils.Exceptions import ParamTypeError
                 raise ParamTypeError('book2reader', 'Mapping', self.book2reader)
@@ -76,12 +89,6 @@ class CollaborativeFiltering(object):
             logger.debug_running('CollaborativeFiltering.init', 'start with BEST searching mode')
         else:
             raise RuntimeError('parameter book2reader and reader2book should be set at the same time')
-
-        if attr_belong in (Book, Reader):
-            self.__attr_belong__ = attr_belong
-        else:
-            from utils.Exceptions import ParamOutOfRangeError
-            raise ParamOutOfRangeError('attr_belong', ('Book', 'Reader'), attr_belong)
 
         self.__in_memory__ = kwargs.get('in_memory', True)  # tag whether record goods in memory
         self.__origin_db__ = False  # tag whether input data_sets is db

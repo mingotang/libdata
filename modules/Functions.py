@@ -8,7 +8,6 @@ from Config import DataConfig
 from structures.Book import Book
 from structures.Event import Event
 from utils.Logger import get_logger
-from utils.Persisit import Pdict, Plist
 
 
 logger = get_logger(module_name=__file__)
@@ -184,43 +183,6 @@ def collect_baskets(events_bag, book_tag: str):
     logger.debug_running('collect_baskets', 'end')
 
     return new_basket
-
-
-def collect_reader_attributes(events, **kwargs):
-
-    from tqdm import tqdm
-    from collections import defaultdict
-    from modules.DataProxy import DataProxy
-    from structures.SparseVector import SparseVector
-    from utils.DataBase import ShelveWrapper
-
-    reader_attributes = defaultdict(SparseVector)
-
-    if isinstance(events, (list, Plist)):
-        for i in tqdm(range(len(events)), desc='checking events'):
-            event = events[i]
-            assert isinstance(event, Event)
-            reader_attributes[event.reader_id][event.book_id] = event.times
-    elif isinstance(events, (dict, Pdict, ShelveWrapper)):
-        for event in tqdm(events.values(), desc='checking events'):
-            reader_attributes[event.reader_id][event.book_id] = event.times
-    else:
-        from utils.Exceptions import ParamTypeError
-        raise ParamTypeError('events', 'list/Plist/dict/Pdict/ShelveWrapper', events)
-
-    total_books = kwargs.get('length', DataProxy.get_shelve('books').__len__())
-
-    for reader_id in reader_attributes:
-        reader_attributes[reader_id].set_length(total_books)
-
-    auto_save = kwargs.get('auto_save', False)
-    if auto_save is True:
-        ShelveWrapper.init_from(
-            reader_attributes,
-            db_path=os.path.join(DataConfig.operation_path, 'reader_attributes')
-        ).close()
-
-    return reader_attributes
 
 
 if __name__ == '__main__':

@@ -133,7 +133,6 @@ def apply_collaborative_filtering(
 ):
     from tqdm import tqdm
     from algorithm.CollaborativeFiltering import CollaborativeFiltering
-    from modules.Functions import collect_reader_attributes
     from structures.Book import Book
     from structures.Reader import Reader
     from utils.FileSupport import save_csv

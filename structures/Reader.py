@@ -94,3 +94,42 @@ class Reader(AbstractDataObject):
                 return None
         else:
             return None
+
+
+def collect_reader_attributes(events, **kwargs):
+    import os
+    from tqdm import tqdm
+    from collections import defaultdict, Iterable, Mapping
+    from Config import DataConfig
+    from modules.DataProxy import DataProxy
+    from structures.Event import Event
+    from structures.SparseVector import SparseVector
+    from utils.DataBase import ShelveWrapper
+
+    reader_attributes = defaultdict(SparseVector)
+
+    if isinstance(events, Iterable):
+        for event in tqdm(events, desc='checking events'):
+            # event = events[i]
+            assert isinstance(event, Event)
+            reader_attributes[event.reader_id][event.book_id] = event.times
+    elif isinstance(events, Mapping):
+        for event in tqdm(events.values(), desc='checking events'):
+            reader_attributes[event.reader_id][event.book_id] = event.times
+    else:
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('events', 'list/Plist/dict/Pdict/ShelveWrapper', events)
+
+    total_books = kwargs.get('length', DataProxy.get_shelve('books').__len__())
+
+    for reader_id in reader_attributes:
+        reader_attributes[reader_id].set_length(total_books)
+
+    auto_save = kwargs.get('auto_save', False)
+    if auto_save is True:
+        ShelveWrapper.init_from(
+            reader_attributes,
+            db_path=os.path.join(DataConfig.operation_path, 'reader_attributes')
+        ).close()
+
+    return reader_attributes

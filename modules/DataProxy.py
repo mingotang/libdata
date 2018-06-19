@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import logging
 import os
 
 from Config import DataConfig

@@ -86,5 +86,28 @@ class Book(AbstractDataObject):
             raise NotImplementedError
 
 
+def collect_book_attributes(events, **kwargs):
+    import os
+    from tqdm import tqdm
+    from collections import defaultdict, Iterable, Mapping
+    from Config import DataConfig
+    from modules.DataProxy import DataProxy
+    from structures.Event import Event
+    from structures.SparseVector import SparseVector
+    from utils.DataBase import ShelveWrapper
+
+    books = DataProxy.get_shelve('books')
+    book_attributes = defaultdict(SparseVector)
+
+    auto_save = kwargs.get('auto_save', False)
+    if auto_save is True:
+        ShelveWrapper.init_from(
+            book_attributes,
+            db_path=os.path.join(DataConfig.operation_path, 'book_attributes')
+        ).close()
+
+    return book_attributes
+
+
 if __name__ == '__main__':
     pass
