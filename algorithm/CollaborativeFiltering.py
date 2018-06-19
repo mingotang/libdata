@@ -51,7 +51,10 @@ class CollaborativeFiltering(object):
 
         :param data: dict/Pdict/ShelveWrapper/PreferenceCollector
         :param attr_belong:
-        :param kwargs: in_memory bool/book2reader dict/reader2book dict
+        :param kwargs:
+            in_memory: bool,
+            book2reader: dict,
+            reader2book: dict,
         """
         import datetime
         from Config import DataConfig
