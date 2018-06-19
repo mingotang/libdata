@@ -99,6 +99,8 @@ def collect_book_attributes(events, **kwargs):
     books = DataProxy.get_shelve('books')
     book_attributes = defaultdict(SparseVector)
 
+    # TODO: finish collecting book attributes
+
     auto_save = kwargs.get('auto_save', False)
     if auto_save is True:
         ShelveWrapper.init_from(
