@@ -156,38 +156,52 @@ def induct_events_by_date(events_bag, auto_save: bool=False):
     return result
 
 
-def collect_baskets(events_bag, book_tag: str):
-    from collections import Iterable, Mapping
-    from algorithm.Apriori import BasketCollector
+def extract_reader_event_set(events_bag, auto_save: bool=False, reader_first: bool=True):
+    from collections import Mapping, Iterable
     from modules.DataProxy import DataProxy
 
-    logger.debug_running('collect_baskets', 'start')
-
-    books = DataProxy().books
-
-    new_basket = BasketCollector()
-    if isinstance(events_bag, Iterable):
-        for event in events_bag:
+    reader_set, book_set = set(), set()
+    logger.debug_running('extract_reader_event_set', 'extracting book/reader')
+    if isinstance(events_bag, Mapping):
+        for event in tqdm(events_bag.values(), desc='extracting book/reader'):
             assert isinstance(event, Event)
-            book = books[event.book_id]
-            assert isinstance(book, Book)
-            new_basket.add(event.reader_id, getattr(book, book_tag))
-    elif isinstance(events_bag, Mapping):
-        for event in events_bag.values():
-            book = books[event.book_id]
-            new_basket.add(event.reader_id, getattr(book, book_tag))
+            reader_set.add(event.reader_id)
+            book_set.add(event.book_id)
+    elif isinstance(events_bag, Iterable):
+        for event in tqdm(events_bag, desc='extracting book/reader'):
+            assert isinstance(event, Event)
+            reader_set.add(event.reader_id)
+            book_set.add(event.book_id)
     else:
         from utils.Exceptions import ParamTypeError
-        raise ParamTypeError('events_bag', '', events_bag)
+        raise ParamTypeError('events_bag', 'Iterable/Mapping', events_bag)
 
-    logger.debug_running('collect_baskets', 'end')
+    data = DataProxy(writeback=False)
+    reader_db = data.get_shelve('readers')
+    book_db = data.get_shelve('books')
 
-    return new_basket
+    if auto_save is True:
+        logger.debug_running('extract_reader_event_set', 'saving books/readers')
+        for r_id in reader_set:
+            reader_db[r_id] = data.readers[r_id]
+        for b_id in book_set:
+            book_db[b_id] = data.books[b_id]
+
+    if reader_first is True:
+        return reader_set, book_set
+    else:
+        return book_set, reader_set
 
 
 if __name__ == '__main__':
+    from modules.DataProxy import DataProxy
+
     logger.initiate_time_counter()
 
+    data = DataProxy(writeback=False)
+
+    event_bag = trim_range(data.events, 'date', )
     # collect_reader_attributes()
+
 
     logger.print_time_passed()

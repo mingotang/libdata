@@ -19,7 +19,7 @@ def apply_apriori(method: AprioriMethods, **kwargs):
     :return:
     """
     from algorithm.Apriori import Apriori
-    from modules.Functions import collect_baskets
+    from algorithm.Functions import collect_baskets
     from structures.Event import Event
 
     if method == AprioriMethods.Basic:

@@ -300,6 +300,36 @@ class BasketCollector(AbstractCollector):
             return self.data
 
 
+def collect_baskets(events_bag, book_tag: str):
+    from collections import Iterable, Mapping
+    from modules.DataProxy import DataProxy
+    from modules.DataProxy import Book
+    from structures.Event import Event
+
+    logger.debug_running('collect_baskets', 'start')
+
+    books = DataProxy().books
+
+    new_basket = BasketCollector()
+    if isinstance(events_bag, Iterable):
+        for event in events_bag:
+            assert isinstance(event, Event)
+            book = books[event.book_id]
+            assert isinstance(book, Book)
+            new_basket.add(event.reader_id, getattr(book, book_tag))
+    elif isinstance(events_bag, Mapping):
+        for event in events_bag.values():
+            book = books[event.book_id]
+            new_basket.add(event.reader_id, getattr(book, book_tag))
+    else:
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('events_bag', '', events_bag)
+
+    logger.debug_running('collect_baskets', 'end')
+
+    return new_basket
+
+
 if __name__ == '__main__':
     logger.initiate_time_counter()
 
