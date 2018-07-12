@@ -5,8 +5,7 @@ import os
 from tqdm import tqdm
 
 from Config import DataConfig
-from structures.Book import Book
-from structures.Event import Event
+from modules.structures.Event import Event
 from utils.Logger import get_logger
 
 
@@ -15,7 +14,7 @@ logger = get_logger(module_name=__file__)
 
 def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
     """
-
+    把 data_dict 内容（group_tag）按照 by_tag 属性分组，得到 { by_tag: {obj1, obj2, }}
     :param data_dict: Mapping
     :param group_tag:
     :param by_tag: related attribute
@@ -46,9 +45,9 @@ def group_by(data_dict, group_tag: str, by_tag: str, auto_save: bool=False):
         if by_value not in grouped_dict:
             grouped_dict[by_value] = set()
 
-        stored = grouped_dict[by_value]
-        stored.add(index)
-        grouped_dict[by_value] = stored
+        stored_set = grouped_dict[by_value]
+        stored_set.add(index)
+        grouped_dict[by_value] = stored_set
 
     if auto_save is True:
         from utils.DataBase import ShelveWrapper
@@ -126,7 +125,7 @@ def index_books2readers(events_bag, auto_save: bool=False, books2readers_first: 
 
 def induct_events_by_date(events_bag, auto_save: bool=False):
     from collections import Mapping, Iterable
-    from structures.Extended import OrderedList
+    from modules.structures import OrderedList
 
     result = dict()
 
@@ -200,8 +199,7 @@ if __name__ == '__main__':
 
     data = DataProxy(writeback=False)
 
-    event_bag = trim_range(data.events, 'date', )
+    # event_bag = trim_range(data.events, 'date', )
     # collect_reader_attributes()
-
 
     logger.print_time_passed()

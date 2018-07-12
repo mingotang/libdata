@@ -1,12 +1,6 @@
 # -*- encoding: UTF-8 -*-
-import logging
-import shelve
 
-from collections import Mapping
-
-from structures.Book import Book
-from structures.Event import Event
-from structures.Reader import Reader
+from modules.structures import Book, Event, Reader
 
 
 class SqliteWrapper(object):
@@ -39,9 +33,9 @@ class SqliteWrapper(object):
             self.__init_action_limit__()
 
     def __table_definition__(self):
-        from structures.Book import define_book_table
-        from structures.Event import define_event_table
-        from structures.Reader import define_reader_table
+        from modules.structures.Book import define_book_table
+        from modules.structures.Event import define_event_table
+        from modules.structures.Reader import define_reader_table
         self.user_table = define_reader_table(self.metadata)
         self.book_table = define_book_table(self.metadata)
         self.events_table = define_event_table(self.metadata)
@@ -179,128 +173,5 @@ class SqliteWrapper(object):
             raise TypeError
 
 
-class ShelveWrapper(Mapping):
-
-    def __init__(self, db_path: str, writeback=False):
-        Mapping.__init__(self)
-        if '.' in db_path:
-            if db_path.split('.')[-1] == 'db':
-                path = db_path
-            else:
-                path = '.'.join([db_path, 'db'])
-        else:
-            path = '.'.join([db_path, 'db'])
-
-        self.__path__ = path
-        self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
-        self.__closed__ = False   # tag whether db is closed
-        logging.info('Connected to shelve database {}'.format(path))
-
-    @classmethod
-    def init_from(cls, data, db_path: str, writeback=False):
-        if isinstance(data, Mapping):
-            new_db = cls(db_path=db_path, writeback=writeback)
-            new_db.clear()
-            for k, v in data.items():
-                new_db[k] = v
-            return new_db
-        else:
-            from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('data', 'Mapping', data)
-
-    @classmethod
-    def connect(cls, db_path: str, writeback=False):
-        return cls(db_path=db_path, writeback=writeback)
-
-    def __iter__(self):
-        for key in self.keys():
-            yield key
-
-    def __getitem__(self, key: str):
-        return self.__db__[key]
-
-    def __setitem__(self, key: str, value):
-        self.__db__[key] = value
-        self.__closed__ = False
-
-    def __contains__(self, key: str):
-        return self.__db__.__contains__(key)
-
-    def __delitem__(self, key):
-        del self.__db__[key]
-        self.__closed__ = False
-
-    def __len__(self):
-        return self.__db__.__len__()
-
-    def __del__(self):
-        if self.__closed__ is False:
-            logging.warning('shelve database {} auto closed.'.format(self.__path__))
-            self.close()
-        del self.__closed__, self.__db__, self.__path__
-
-    def keys(self):
-        return self.__db__.keys()
-
-    def values(self):
-        return self.__db__.values()
-
-    def items(self):
-        return self.__db__.items()
-
-    def copy(self):
-        new_d = dict()
-        for key, value in self.items():
-            new_d[key] = value
-        return new_d
-
-    def set(self, key: str, value):
-        self.__setitem__(key, value)
-
-    def get(self, key, default=None):
-        try:
-            return self.__getitem__(key)
-        except KeyError:
-            return default
-
-    def flush(self):
-        self.__db__.sync()
-        self.__closed__ = False
-
-    def clear(self):
-        self.__db__.clear()
-        self.__closed__ = False
-        logging.debug('shelve database {} cleared.'.format(self.__path__))
-
-    def close(self):
-        self.__db__.close()
-        self.__closed__ = True
-        logging.debug('shelve database {} closed.'.format(self.__path__))
-
-    def delete(self):
-        from os import remove
-        self.__db__.clear()
-        self.__db__.close()
-        self.__closed__ = True
-        remove(self.__path__)
-
-    @property
-    def is_active(self):
-        return not self.__closed__
-
-    def to_list(self):
-        return [var for var in self.values()]
-
-    def to_dict(self):
-        new_dict = dict()
-        for key, value in self.items():
-            new_dict[key] = value
-        return new_dict
-
-
 if __name__ == '__main__':
-    from utils.Logger import set_logging
-    set_logging()
-    shelve_db = ShelveWrapper('/Users/mingo/Downloads/persisted_libdata/test.db')
-    logging.debug('status: {}'.format(shelve_db.is_active))
-    shelve_db.close()
+    pass

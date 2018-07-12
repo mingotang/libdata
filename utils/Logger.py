@@ -31,7 +31,7 @@ class LogWrapper(logging.Logger):
 
     @staticmethod
     def print_time_passed():
-        print('\nRunning time: {0:s}'.format(RunTimeCounter.get_instance().tp_str))
+        print('\nTime passed: {0:s}'.format(RunTimeCounter.get_instance().tp_str))
 
     def debug_running(self, running: str, status: str, *args, **kwargs):
         self.debug('[running]: {0:s} - now {1:s}'.format(running, status))

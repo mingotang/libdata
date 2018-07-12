@@ -1,7 +1,7 @@
 # -*- encoding: UTF-8 -*-
 import math
 
-from structures.SparseVector import SparseVector
+from modules.structures.SparseVector import SparseVector
 
 
 def EuclideanDistance(x, y):

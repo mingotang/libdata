@@ -20,7 +20,7 @@ def apply_apriori(method: AprioriMethods, **kwargs):
     """
     from algorithm.Apriori import Apriori
     from algorithm.Functions import collect_baskets
-    from structures.Event import Event
+    from modules.structures.Event import Event
 
     if method == AprioriMethods.Basic:
         logger.debug_running('AprioriMethods.Basic', 'start')
@@ -133,8 +133,8 @@ def apply_collaborative_filtering(
 ):
     from tqdm import tqdm
     from algorithm.CollaborativeFiltering import CollaborativeFiltering
-    from structures.Book import Book
-    from structures.Reader import Reader
+    from modules.structures.Book import Book
+    from modules.structures.Reader import Reader
     from utils.FileSupport import save_csv
 
     max_length = kwargs.get('max_length', 10)
@@ -209,7 +209,7 @@ def apply_collaborative_filtering(
 
 if __name__ == '__main__':
     from algorithm.CollaborativeFiltering import NeighborType, SimilarityType
-    from functions.Maths import EuclideanSimilarity
+
     logger.initiate_time_counter()
     apply_apriori(AprioriMethods.GroupByReaderCollege)
     apply_collaborative_filtering(

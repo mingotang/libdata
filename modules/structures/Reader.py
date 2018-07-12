@@ -2,7 +2,7 @@
 import datetime
 
 from Interface import AbstractDataObject
-from utils.String import attributes_repr
+from utils.UnicodeStr import attributes_repr
 
 
 NOW_YEAR = datetime.datetime.now().date().year
@@ -102,8 +102,8 @@ def collect_reader_attributes(events, **kwargs):
     from collections import defaultdict, Iterable, Mapping
     from Config import DataConfig
     from modules.DataProxy import DataProxy
-    from structures.Event import Event
-    from structures.SparseVector import SparseVector
+    from modules.structures.Event import Event
+    from modules.structures.SparseVector import SparseVector
     from utils.DataBase import ShelveWrapper
 
     reader_attributes = defaultdict(SparseVector)

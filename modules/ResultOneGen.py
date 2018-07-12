@@ -2,7 +2,6 @@
 from tqdm import tqdm
 
 from algorithm import AprioriMethods, CollaborativeFilteringMethods, RecommendMethods
-from algorithm.Apriori import Apriori
 from algorithm.CollaborativeFiltering import CollaborativeFiltering, NeighborType, SimilarityType
 from modules.DataProxy import DataProxy
 from utils.Logger import get_logger
@@ -38,7 +37,7 @@ def generate_recommend_result(re_method: RecommendMethods, algo_method, **kwargs
         logger.debug_running('RecommendMethods', 'CollaborativeFiltering')
 
         if algo_method == CollaborativeFilteringMethods.ReaderBase:
-            from structures.Reader import Reader
+            from modules.structures.Reader import Reader
             logger.debug_running('CollaborativeFilteringMethods', 'ReaderBase')
 
             reader_attributes = data_proxy.get_shelve('reader_attributes')
@@ -81,7 +80,7 @@ def generate_recommend_result(re_method: RecommendMethods, algo_method, **kwargs
 
         # CollaborativeFilteringMethods.BookBase
         elif algo_method == CollaborativeFilteringMethods.BookBase:
-            from structures.Book import Book
+            from modules.structures.Book import Book
             logger.debug_running('CollaborativeFilteringMethods', 'BookBase')
 
             book_attributes = data_proxy.get_shelve('book_attributes')

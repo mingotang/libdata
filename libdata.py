@@ -1,6 +1,6 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from utils.Logger import get_logger
+from utils import get_logger
 
 
 logger = get_logger(module_name=__file__)

@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from utils.Exceptions import ParamNoContentError
 
 
 class UnicodeStr(object):
@@ -31,6 +30,7 @@ class UnicodeStr(object):
     @staticmethod
     def half_to_full(uchar: str):
         """半角转全角"""
+        from utils.Exceptions import ParamNoContentError
         assert len(uchar) >= 1, repr(ParamNoContentError('uchar'))
 
         char_list = list()
@@ -49,6 +49,7 @@ class UnicodeStr(object):
     @staticmethod
     def full_to_half(uchar: str):
         """全角转半角"""
+        from utils.Exceptions import ParamNoContentError
         assert len(uchar) >= 1, repr(ParamNoContentError('uchar'))
 
         char_list = list()
@@ -63,24 +64,3 @@ class UnicodeStr(object):
             else:
                 char_list.append(chr(inside_code))
         return ''.join(char_list)
-
-
-def attributes_repr(inst):
-    return "{}({})".format(
-        inst.__class__.__name__,
-        ', '.join([str(var) + ': ' + str(getattr(inst, var)) for var in inst.__attributes__])
-    )
-
-
-def slots_repr(inst):
-    return "{}({})".format(
-        inst.__class__.__name__,
-        ', '.join([str(k) + ': ' + str(v) for k, v in slots(inst).items()])
-    )
-
-
-def slots(inst):
-    result = dict()
-    for slot in inst.__slots__:
-        result[slot] = getattr(inst, slot)
-    return result

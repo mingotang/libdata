@@ -6,10 +6,10 @@ from collections import defaultdict, Mapping
 from enum import Enum
 
 from Interface import AbstractCollector
-from structures.Book import Book
-from structures.Extended import CountingDict
-from structures.Reader import Reader
-from structures.SparseVector import SparseVector
+from modules.structures.Book import Book
+from modules.structures import CountingDict
+from modules.structures.Reader import Reader
+from modules.structures.SparseVector import SparseVector
 from utils.DataBase import ShelveWrapper
 from utils.Logger import get_logger
 

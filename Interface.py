@@ -7,45 +7,41 @@ def get_root_path():
     return path.abspath(path.dirname(__file__))
 
 
-class AbstractDataManager:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def include(self, value):
-        """include value to data"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def extend(self, value_list):
-        raise NotImplementedError
-
-
 class AbstractDataObject:
     __metaclass__ = ABCMeta
 
     @abstractmethod
     def update_from(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplemented
 
     @classmethod
     def init_from(cls, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplemented
 
     @abstractmethod
     def compare_by(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplemented
 
 
-class AbstractPersistent:
+class AbstractPersist:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def set_state(self, *args, **kwargs):
-        raise NotImplementedError
+    def set_state(self, type_s: type, state):
+        assert isinstance(state, type_s)
+        raise NotImplemented
 
     @abstractmethod
-    def get_state(self):
-        raise NotImplementedError
+    def get_state(self, type_s: type):
+        raise NotImplemented
+
+
+class AbstractRecordable:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def record(self):
+        raise NotImplemented
 
 
 class AbstractCollector:
@@ -53,4 +49,4 @@ class AbstractCollector:
 
     @abstractmethod
     def add(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplemented

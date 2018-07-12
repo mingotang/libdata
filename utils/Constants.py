@@ -66,7 +66,8 @@ NON_STUDENT_TYPES = ('41', '42', '42', '43', '44', '45', '51', '52')
 
 NONE_INDIVIDUAL_TYPES = ('42', '43', '51', '52')
 
-def get_individual_reader_types():
+
+def individual_reader_types():
     indi_types = list()
     indi_types.extend(STAFF_TYPES)
     indi_types.extend(UNDER_GRADUATE_TYPES)

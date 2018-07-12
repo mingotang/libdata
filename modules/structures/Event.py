@@ -4,7 +4,7 @@ import datetime
 from sqlalchemy import MetaData, Table, Column, String, Integer
 
 from Interface import AbstractDataObject
-from utils.String import attributes_repr
+from utils.UnicodeStr import attributes_repr
 
 
 def define_event_table(meta: MetaData):

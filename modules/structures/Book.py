@@ -3,7 +3,7 @@ import datetime
 import re
 
 from Interface import AbstractDataObject
-from utils.String import attributes_repr
+from utils.UnicodeStr import attributes_repr
 
 
 def define_book_table(meta):
@@ -88,12 +88,10 @@ class Book(AbstractDataObject):
 
 def collect_book_attributes(events, **kwargs):
     import os
-    from tqdm import tqdm
-    from collections import defaultdict, Iterable, Mapping
+    from collections import defaultdict
     from Config import DataConfig
     from modules.DataProxy import DataProxy
-    from structures.Event import Event
-    from structures.SparseVector import SparseVector
+    from modules.structures.SparseVector import SparseVector
     from utils.DataBase import ShelveWrapper
 
     books = DataProxy.get_shelve('books')

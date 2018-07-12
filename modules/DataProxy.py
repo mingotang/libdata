@@ -3,17 +3,16 @@
 import os
 
 from Config import DataConfig
-from Interface import AbstractDataManager
-from structures.Book import Book
-from structures.Event import Event
-from structures.Reader import Reader
+from modules.structures.Book import Book
+from modules.structures.Event import Event
+from modules.structures.Reader import Reader
 from utils.Logger import get_logger
 
 
 logger = get_logger(module_name=__file__)
 
 
-class DataProxy(AbstractDataManager):
+class DataProxy(object):
 
     def __init__(self, writeback=False, data_path=DataConfig.data_path):
         from utils.DataBase import ShelveWrapper
