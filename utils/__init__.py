@@ -1,9 +1,12 @@
 # -*- encoding: UTF-8 -*-
-from .Logger import get_logger
-from .Persisit import Pdict, Plist, PqueueFIFO, PqueueLIFO, Pset
-from .ShelveWrapper import ShelveWrapper
-from .SqliteWrapper import SqliteWrapper
+from .wrapper.Log import LogWrapper
+from .wrapper.Persisit import Pdict, Plist, PqueueFIFO, PqueueLIFO, Pset
+from .wrapper.Shelve import ShelveWrapper
+from .wrapper.Sqlite import SqliteWrapper
+
 from .UnicodeStr import UnicodeStr
+
+from Config import DEFAULT_LOG_LEVEL
 
 
 def attributes_repr(inst):
@@ -25,3 +28,32 @@ def slots(inst):
     for slot in inst.__slots__:
         result[slot] = getattr(inst, slot)
     return result
+
+
+def set_logging(level: int=DEFAULT_LOG_LEVEL):
+    import logging
+    logging.basicConfig(
+        level=level,  # 定义输出到文件的log级别，
+        format='%(asctime)s  %(filename)s : %(levelname)s  %(message)s',  # 定义输出log的格式
+        datefmt='%Y-%m-%d %A %H:%M:%S',  # 时间
+        # filename=param.log_file_name,  # log文件名
+        # filemode='w',
+    )
+
+
+def get_logger(module_name: str='', level: int=DEFAULT_LOG_LEVEL):
+    """
+
+    :param level: logging level
+    :param module_name: str
+    :return: :class:`~logging.Logger`
+    """
+    import logging
+    logger = LogWrapper(module_name, level)
+    logger.setLevel(level)
+
+    screen_handler = logging.StreamHandler()
+    screen_handler.setFormatter(logging.Formatter('%(asctime)s %(filename)s:  %(levelname)s, %(message)s'))
+    logger.addHandler(screen_handler)
+
+    return logger

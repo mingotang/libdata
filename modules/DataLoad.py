@@ -1,12 +1,14 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import logging
 import re
 import os
 
 from Config import DataInfo, DataConfig
 from utils.Constants import event_type_chinese_map
-from utils.Logger import LogInfo
+from utils import get_logger
+
+
+logger = get_logger(__file__)
 
 
 class DataObject(dict):
@@ -41,11 +43,11 @@ class RawDataProcessor(object):
     def derive_raw_data(file_range=DataInfo.raw_text_file_list,
                         splitter='@', text_encoding='gb18030',
                         ):
-        logging.debug(LogInfo.running('derive_raw_data', 'checking file'))
+        logger.debug_running('derive_raw_data', 'checking file')
 
         data_list = list()
         for file_name in file_range:
-            logging.debug(LogInfo.running('derive_raw_data', 'reading file {0}'.format(str(file_name))))
+            logger.debug_running('derive_raw_data', 'reading file {0}'.format(str(file_name)))
             data_file = open(os.path.join(DataConfig.raw_data_folder, file_name), 'r', encoding=text_encoding)
 
             text_line = data_file.readline()
@@ -58,20 +60,20 @@ class RawDataProcessor(object):
                     data_object = DataObject(line_content)
                     data_list.append(data_object)
                 elif len(line_content) == 0:
-                    logging.debug('RawDataProcessor: empty line')
+                    logger.debug('RawDataProcessor: empty line')
                 else:
-                    logging.warning("Unqualified data :  {0:s}".format(str(line_content)))
+                    logger.warning("Unqualified data :  {0:s}".format(str(line_content)))
                 text_line = data_file.readline()
         return data_list
 
     @staticmethod
     def iter_data_object(file_range=DataInfo.raw_text_file_list,
                          splitter='@', text_encoding='gb18030',):
-        logging.debug(LogInfo.running('derive_raw_data', 'checking file'))
+        logger.debug_running('derive_raw_data', 'checking file')
 
         # data_list = list()
         for file_name in file_range:
-            logging.debug(LogInfo.running('derive_raw_data', 'reading file {0}'.format(str(file_name))))
+            logger.debug_running('derive_raw_data', 'reading file {0}'.format(str(file_name)))
             data_file = open(os.path.join(DataConfig.raw_data_folder, file_name), 'r', encoding=text_encoding)
 
             text_line = data_file.readline()
@@ -84,9 +86,9 @@ class RawDataProcessor(object):
                     data_object = DataObject(line_content)
                     yield data_object
                 elif len(line_content) == 0:
-                    logging.debug('RawDataProcessor: empty line')
+                    logger.debug('RawDataProcessor: empty line')
                 else:
-                    logging.warning("Unqualified data :  {0:s}".format(str(line_content)))
+                    logger.warning("Unqualified data :  {0:s}".format(str(line_content)))
                 text_line = data_file.readline()
 
     @staticmethod
@@ -113,7 +115,7 @@ class RawDataProcessor(object):
                     return temp_list
                 else:
                     __temp_list__.clear()
-                    logging.warning('Unqualified data : {0:s}'.format(str(temp_list)))
+                    logger.warning('Unqualified data : {0:s}'.format(str(temp_list)))
                     return list()
             else:
                 __temp_list__.extend(content)
@@ -136,10 +138,10 @@ class RawDataProcessor(object):
                     return cont
                     # print(content)
                 else:
-                    logging.warning('Unqualified data : {0:s}'.format(str(cont)))
+                    logger.warning('Unqualified data : {0:s}'.format(str(cont)))
                     return list()
             else:
-                logging.warning('Unqualified data : {0:s}'.format(str(cont)))
+                logger.warning('Unqualified data : {0:s}'.format(str(cont)))
                 return list()
 
 

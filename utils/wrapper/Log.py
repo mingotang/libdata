@@ -3,18 +3,6 @@ import datetime
 import logging
 import time
 
-from Config import DEFAULT_LOG_LEVEL
-
-
-def set_logging(level: int=logging.DEBUG):
-    logging.basicConfig(
-        level=level,  # 定义输出到文件的log级别，
-        format='%(asctime)s  %(filename)s : %(levelname)s  %(message)s',  # 定义输出log的格式
-        datefmt='%Y-%m-%d %A %H:%M:%S',  # 时间
-        # filename=param.log_file_name,  # log文件名
-        # filemode='w',
-    )
-
 
 class LogWrapper(logging.Logger):
 
@@ -62,23 +50,6 @@ class LogWrapper(logging.Logger):
     def warning_if(self, check: bool, msg: str, *args, **kwargs):
         if check is True and self.isEnabledFor(logging.WARNING):
             self._log(logging.WARNING, msg, args, **kwargs)
-
-
-def get_logger(module_name: str='', level: int=DEFAULT_LOG_LEVEL):
-    """
-
-    :param level: logging level
-    :param module_name: str
-    :return: :class:`~logging.Logger`
-    """
-    logger = LogWrapper(module_name, level)
-    logger.setLevel(level)
-
-    screen_handler = logging.StreamHandler()
-    screen_handler.setFormatter(logging.Formatter('%(asctime)s %(filename)s:  %(levelname)s, %(message)s'))
-    logger.addHandler(screen_handler)
-
-    return logger
 
 
 class RunTimeCounter(object):

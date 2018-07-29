@@ -7,14 +7,14 @@ import os
 import pandas as pd
 
 from Config import DataConfig
-from utils.Logger import get_logger
+from utils import get_logger
 
 
 logger = get_logger()
 
 
 def get_shelve_db(db_name: str):
-    from utils.DataBase import ShelveWrapper
+    from utils import ShelveWrapper
     return ShelveWrapper(DataConfig.operation_path, db_name)
 
 

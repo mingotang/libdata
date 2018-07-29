@@ -1,5 +1,4 @@
 # -*- encoding: UTF-8 -*-
-import logging
 import pickle
 import os
 import time
@@ -13,10 +12,8 @@ class BasePersisit(object):
 
     def __init__(self, data_path=None, keep_history=False):
         if data_path is None:
-            logging.debug('initiating {} into path {}'.format(self.__class__.__name__, os.getcwd()))
             self.__path__ = os.path.join(os.getcwd(), self.__time_index__)
         elif isinstance(data_path, str):
-            logging.debug('initiating {} from path {}'.format(self.__class__.__name__, data_path))
             self.__path__ = data_path
         else:
             raise TypeError
@@ -414,7 +411,7 @@ class Pset(BasePersisit, Iterable):
 
         This has no effect if the element is already present.
         """
-        self.__write__(str(time.time()), element)
+        self.__write__(str(int(time.time() * 100000000)), element)
 
     def copy(self):
         """ Return a shallow copy of a set. """
