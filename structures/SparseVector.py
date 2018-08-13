@@ -3,6 +3,7 @@
 
 
 class SparseVector(object):
+    """稀疏向量 类 defaultdict"""
     def __init__(self, length=None, default_value=0):
         assert isinstance(length, (type(None), int))
         self.__length__ = length

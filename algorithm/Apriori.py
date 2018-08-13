@@ -303,7 +303,7 @@ def collect_baskets(events_bag, book_tag: str):
     from collections import Iterable, Mapping
     from modules.DataProxy import DataProxy
     from modules.DataProxy import Book
-    from modules.structures.Event import Event
+    from structures.Event import Event
 
     logger.debug_running('collect_baskets', 'start')
 

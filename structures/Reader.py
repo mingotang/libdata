@@ -2,7 +2,7 @@
 import datetime
 
 from Interface import AbstractDataObject
-from utils.UnicodeStr import attributes_repr
+from utils import attributes_repr
 
 
 NOW_YEAR = datetime.datetime.now().date().year
@@ -35,18 +35,19 @@ class Reader(AbstractDataObject):
         return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
 
     def update_from(self, value):
-        if type(value) == type(self):
+        if isinstance(value, type(self)):
             if self.update_date >= value.update_date:
-                return
+                return None
+            else:
+                for tag in self.__attributes__:
+                    if tag in value.__dict__:
+                        if value.__dict__[tag] is not None:
+                            if len(self.__dict__[tag]) < len(value.__dict__[tag]):
+                                self.__dict__[tag] = value.__dict__[tag]
+                return self
         else:
-            raise NotImplementedError
-
-        for tag in self.__attributes__:
-            if tag in value.__dict__:
-                if value.__dict__[tag] is not None:
-                    if len(self.__dict__[tag]) < len(value.__dict__[tag]):
-                        self.__dict__[tag] = value.__dict__[tag]
-        return self
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('value', '{}'.format(self.__class__.__name__), value)
 
     def compare_by(self, **kwargs):
         for tag in kwargs:
@@ -67,7 +68,8 @@ class Reader(AbstractDataObject):
                 op_dt=value['event_date'],
             )
         else:
-            raise NotImplementedError
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('value', 'dict/DataObject', value)
 
     @property
     def register_year(self):
@@ -102,9 +104,9 @@ def collect_reader_attributes(events, **kwargs):
     from collections import defaultdict, Iterable, Mapping
     from Config import DataConfig
     from modules.DataProxy import DataProxy
-    from modules.structures.Event import Event
-    from modules.structures.SparseVector import SparseVector
-    from utils.DataBase import ShelveWrapper
+    from structures.Event import Event
+    from structures import SparseVector
+    from utils import ShelveWrapper
 
     reader_attributes = defaultdict(SparseVector)
 
@@ -129,7 +131,7 @@ def collect_reader_attributes(events, **kwargs):
     if auto_save is True:
         ShelveWrapper.init_from(
             reader_attributes,
-            db_path=os.path.join(DataConfig.operation_path, 'reader_attributes')
+            db_name=os.path.join(DataConfig.operation_path, 'reader_attributes')
         ).close()
 
     return reader_attributes

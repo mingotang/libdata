@@ -1,6 +1,6 @@
 # -*- encoding: UTF-8 -*-
 
-from modules.structures import Book, Event, Reader
+from structures import Book, Event, Reader
 
 
 class SqliteWrapper(object):
@@ -33,9 +33,9 @@ class SqliteWrapper(object):
             self.__init_action_limit__()
 
     def __table_definition__(self):
-        from modules.structures.Book import define_book_table
-        from modules.structures.Event import define_event_table
-        from modules.structures.Reader import define_reader_table
+        from structures import define_book_table
+        from structures.Event import define_event_table
+        from structures.Reader import define_reader_table
         self.user_table = define_reader_table(self.metadata)
         self.book_table = define_book_table(self.metadata)
         self.events_table = define_event_table(self.metadata)

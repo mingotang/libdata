@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import shelve
+import tempfile
 
 from collections import Mapping
 
@@ -7,7 +8,7 @@ from collections import Mapping
 class ShelveWrapper(Mapping):
 
     def __init__(self, db_path: str, writeback=False):
-        from utils.Logger import get_logger
+        from utils import get_logger
         Mapping.__init__(self)
         self.__logger__ = get_logger(self.__class__.__name__)
         if '.' in db_path:
@@ -25,15 +26,33 @@ class ShelveWrapper(Mapping):
 
     @classmethod
     def init_from(cls, data, db_path: str, writeback=False):
-        if isinstance(data, Mapping):
+        if data is None:
+            new_db = cls(db_path=db_path, writeback=writeback)
+        elif isinstance(data, Mapping):
             new_db = cls(db_path=db_path, writeback=writeback)
             new_db.clear()
             for k, v in data.items():
                 new_db[k] = v
-            return new_db
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('data', 'Mapping', data)
+        return new_db
+
+    @classmethod
+    def get_temp(cls, db_folder: str=tempfile.gettempdir()):
+        from os import path
+        from datetime import datetime
+        return cls(
+            db_path=path.join(db_folder, '__temp_{}__'.format(datetime.now().strftime('%Y%m%d %H%M%S.%f'))),
+            writeback=False,
+        )
+
+    @classmethod
+    def get_data_dict(cls, db_path):
+        db = cls(db_path=db_path, writeback=False)
+        content_dict = db.to_data_dict()
+        db.close()
+        return content_dict
 
     @classmethod
     def connect(cls, db_path: str, writeback=False):
@@ -75,12 +94,6 @@ class ShelveWrapper(Mapping):
     def items(self):
         return self.__db__.items()
 
-    def copy(self):
-        new_d = dict()
-        for key, value in self.items():
-            new_d[key] = value
-        return new_d
-
     def set(self, key: str, value):
         self.__setitem__(key, value)
 
@@ -119,10 +132,26 @@ class ShelveWrapper(Mapping):
         return [var for var in self.values()]
 
     def to_dict(self):
-        new_dict = dict()
+        new_d = dict()
         for key, value in self.items():
-            new_dict[key] = value
-        return new_dict
+            new_d[key] = value
+        return new_d
+
+    def to_data_dict(self):
+        from structures import DataDict
+        new_d = DataDict()
+        for key, value in self.items():
+            new_d[key] = value
+        return new_d
+
+    def update(self, data):
+        from collections import Mapping
+        if isinstance(data, Mapping):
+            for key, value in data.items():
+                self.__setitem__(key, value)
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('data', 'Mapping', data)
 
 
 if __name__ == '__main__':

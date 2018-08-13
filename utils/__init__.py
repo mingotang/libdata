@@ -1,10 +1,10 @@
 # -*- encoding: UTF-8 -*-
 from .wrapper.Log import LogWrapper
 from .wrapper.Persisit import Pdict, Plist, PqueueFIFO, PqueueLIFO, Pset
+from .wrapper.Recorder import CSVRecorder, TextRecorder
 from .wrapper.Shelve import ShelveWrapper
 from .wrapper.Sqlite import SqliteWrapper
-
-from .UnicodeStr import UnicodeStr
+from .wrapper.UnicodeStr import UnicodeStr
 
 from Config import DEFAULT_LOG_LEVEL
 

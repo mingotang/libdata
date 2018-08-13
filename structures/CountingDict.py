@@ -39,6 +39,7 @@ class CountingDict(dict):
             return stored_list
 
     def weights(self, tag_or_list=None):
+        """根据 tag_or_list 的标签收集权重信息"""
         from collections import Iterable
         total_num = 0
         if isinstance(tag_or_list, Iterable):
@@ -52,6 +53,7 @@ class CountingDict(dict):
         return total_num
 
     def trim(self, lower_limit=None, higher_limit=None):
+        """修剪值不符合要求的标签"""
         if lower_limit is not None:
             for tag in self.keys():
                 if self.__getitem__(tag) < higher_limit:

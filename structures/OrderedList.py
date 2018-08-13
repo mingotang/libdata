@@ -4,17 +4,19 @@
 
 class OrderedList(object):
     def __init__(self, obj_type: type, sort_attribute: str):
+        """
+        根据 sort_attribute 排序的类 list 类型
+        :param obj_type: OrderedList 可以储存的数据类型
+        :param sort_attribute: 排序的标签依据
+        """
         self.__type__ = obj_type
         self.__stag__ = sort_attribute
         self.__data__ = list()
 
-    def __get_sorted_index__(self, p_object):
-        return getattr(p_object, self.__stag__)
-
     def __find_index__(self, p_object):
-        this_index = self.__get_sorted_index__(p_object)
+        this_index = getattr(p_object, self.__stag__)
         for i in range(self.__data__.__len__()):
-            if self.__get_sorted_index__(self.__data__.__getitem__(i)) <= this_index:
+            if getattr(self.__data__.__getitem__(i), self.__stag__) <= this_index:
                 continue
             else:
                 return i
@@ -22,6 +24,7 @@ class OrderedList(object):
 
     @classmethod
     def init_from(cls, inst, obj_type: type, sort_attribute: str):
+        """ create a list according to inst -> OrderedList """
         from collections import Iterable, Mapping
         new_obj = cls(obj_type, sort_attribute)
         if isinstance(inst, Iterable):
@@ -31,19 +34,24 @@ class OrderedList(object):
             for item in inst.values():
                 new_obj.append(item)
         else:
-            raise TypeError('inst is not iterable/mapping')
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('inst', 'Iterable/Mapping', inst)
         return new_obj
 
     def append(self, p_object):
+        """ add p_object to this list -> None """
         if isinstance(p_object, self.__type__):
             self.__data__.insert(self.__find_index__(p_object), p_object)
         else:
-            raise TypeError('param p_object should be of type {} but got type {}'.format(self.__type__, type(p_object)))
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('p_object', '{}'.format(self.__type__), p_object)
 
     def copy(self):
+        """ create a copy of this list -> list"""
         return [var for var in self.__data__]
 
     def count(self, p_object):
+        """ count the appearance time of p_object -> int"""
         if isinstance(p_object, self.__type__):
             count = 0
             for i in range(self.__data__.__len__()):
@@ -54,11 +62,13 @@ class OrderedList(object):
             return 0
 
     def extend(self, iterable):
-        for item in iterable:
-            try:
+        from collections import Iterable
+        if isinstance(iterable, Iterable):
+            for item in iterable:
                 self.append(item)
-            except TypeError:
-                pass
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('iterable', 'Iterable', iterable)
 
     def index(self, value, start=None, stop=None):
         """
@@ -120,7 +130,7 @@ class OrderedList(object):
             yield self.__data__.__getitem__(i)
 
     def find_next(self, p_object, count: int=1):
-        """find object next to p_object, raise ValueError if no result found."""
+        """find object next to p_object, return None if no result found."""
         if isinstance(p_object, self.__type__):
             for index in range(len(self.__data__)):
                 if getattr(p_object, self.__stag__) < getattr(self.__data__[index], self.__stag__):
@@ -134,15 +144,23 @@ class OrderedList(object):
                     else:
                         from utils.Exceptions import ParamOutOfRangeError
                         raise ParamOutOfRangeError('count', (1, 'infinite'), count)
-            raise ValueError
-
+            return None
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('p_object', self.__type__.__name__, p_object)
 
     def trim(self, attr_tag: str, range_start, range_end,
              include_start: bool=True, include_end: bool=False, resort_tag=None):
-
+        """
+        在列表内容中删减出需要的内容
+        :param attr_tag: 删减的标签
+        :param range_start:
+        :param range_end:
+        :param include_start: 是否包含开始值
+        :param include_end: 是否包含结束值
+        :param resort_tag: 是否重新根据另一个标签（而不是原列表排序标签）排序
+        :return: new OrderedList
+        """
         trimed_list = list()
         for d_v in self.__data__:
             if include_start is True and include_end is True:
@@ -167,9 +185,15 @@ class OrderedList(object):
             raise ParamTypeError('resort_tag', 'str/NoneType', resort_tag)
 
     def to_list(self):
+        """将列表内容存入一个新的列表（不排序）中 -> list"""
         return self.__data__
 
     def to_dict(self, index_tag: str):
+        """
+        将列表内容存入一个新的字典中
+        :param index_tag:
+        :return: dict
+        """
         new_dict = dict()
         for value in self.__data__:
             new_dict[getattr(value, index_tag)] = value

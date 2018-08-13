@@ -1,14 +1,47 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+import os
 import time
 
+from Config import DataConfig, DBName
 from algorithm import AprioriMethods, CollaborativeFilteringMethods
 from algorithm.CollaborativeFiltering import NeighborType, SimilarityType
 from modules.DataProxy import DataProxy
-from utils.Logger import get_logger
+from utils import ShelveWrapper
 
 
-logger = get_logger()
+class RuleGenerator(object):
+    def __init__(self, data_path: str=DataConfig.data_path, operation_path: str=DataConfig.operation_path):
+        from modules.DataProxy import DataProxy
+        from structures import InductedEvents
+        from utils import get_logger, TextRecorder
+        self.__logger__ = get_logger(self.__class__.__name__)
+        self.__data_path__ = data_path
+        self.__operation_path__ = operation_path
+        self.__recorder__ = TextRecorder()
+        # self.__persister__ =
+
+        self.__data_proxy__ = DataProxy(data_path=self.__data_path__)
+        self.__inducted_events__ = InductedEvents(DBName.inducted_events)
+
+    def get_shelve(self, db_name: str, new=False):
+        if new is False:
+            if os.path.exists(os.path.join(self.__operation_path__, db_name)):
+                return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
+            else:
+                raise FileNotFoundError(
+                    'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
+                )
+        else:
+            return ShelveWrapper.init_from(None, os.path.join(self.__operation_path__, db_name))
+
+    def get_shelve_dict(self, db_name: str):
+        if os.path.exists(os.path.join(self.__operation_path__, db_name)):
+            return ShelveWrapper.get_dict(os.path.join(self.__operation_path__, db_name))
+        else:
+            raise FileNotFoundError(
+                'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
+            )
 
 
 # --------------------------------------------------------
@@ -19,8 +52,8 @@ def apply_apriori(method: AprioriMethods, **kwargs):
     :return:
     """
     from algorithm.Apriori import Apriori
-    from algorithm.Functions import collect_baskets
-    from modules.structures.Event import Event
+    from algorithm import collect_baskets
+    from structures.Event import Event
 
     if method == AprioriMethods.Basic:
         logger.debug_running('AprioriMethods.Basic', 'start')
@@ -133,8 +166,8 @@ def apply_collaborative_filtering(
 ):
     from tqdm import tqdm
     from algorithm.CollaborativeFiltering import CollaborativeFiltering
-    from modules.structures.Book import Book
-    from modules.structures.Reader import Reader
+    from structures import Book
+    from structures.Reader import Reader
     from utils.FileSupport import save_csv
 
     max_length = kwargs.get('max_length', 10)

@@ -3,10 +3,10 @@
 import os
 
 from Config import DataConfig
-from modules.structures.Book import Book
-from modules.structures.Event import Event
-from modules.structures.Reader import Reader
-from utils.Logger import get_logger
+from structures import Book
+from structures.Event import Event
+from structures.Reader import Reader
+from utils import get_logger
 
 
 logger = get_logger(module_name=__file__)
@@ -15,7 +15,7 @@ logger = get_logger(module_name=__file__)
 class DataProxy(object):
 
     def __init__(self, writeback=False, data_path=DataConfig.data_path):
-        from utils.DataBase import ShelveWrapper
+        from utils import ShelveWrapper
         if not os.path.exists(data_path):
             os.makedirs(data_path)
         self.__path__ = data_path
@@ -86,7 +86,7 @@ class DataProxy(object):
 
     @staticmethod
     def get_shelve(db_name: str, new=False):
-        from utils.DataBase import ShelveWrapper
+        from utils import ShelveWrapper
         if new is False:
             if os.path.exists(os.path.join(DataConfig.operation_path, db_name)):
                 return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
@@ -96,15 +96,6 @@ class DataProxy(object):
                 )
         else:
             return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
-
-    @staticmethod
-    def get_shelve_temp():
-        import datetime
-        from utils.DataBase import ShelveWrapper
-        return ShelveWrapper(os.path.join(
-            DataConfig.operation_path,
-            '__temp_{}__'.format(datetime.datetime.now().strftime('%Y%m%d %H%M%S.%f'))
-        ))
 
 
 def store_record_data():
@@ -119,12 +110,9 @@ def store_record_data():
 
 
 if __name__ == '__main__':
-    from utils.Logger import LogInfo, set_logging
-    set_logging()
-    LogInfo.initiate_time_counter()
+    logger.initiate_time_counter()
     # ------------------------------
     store_record_data()
     # data_manager = DataManager(writeback=False)
     # ------------------------------
-    LogInfo.time_sleep(1)
-    print(LogInfo.time_passed())
+    logger.print_time_passed()
