@@ -5,6 +5,10 @@
 class ISBN(object):
     """国际标准书号（International Standard Book Number）"""
 
+    def __init__(self, data_isbn: str):
+
+        self.__data__ = data_isbn
+
     @staticmethod
     def check_isbn(isbn: str):
         """

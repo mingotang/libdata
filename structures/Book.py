@@ -1,8 +1,8 @@
 # -*- encoding: UTF-8 -*-
 import datetime
-import re
 
 from Interface import AbstractDataObject
+from structures import BookName, ISBN, LibIndex
 from utils import attributes_repr
 
 
@@ -40,11 +40,20 @@ class Book(AbstractDataObject):
 
     @property
     def book_name(self):
-        return re.sub(r'\W', ' ', self.name).strip()
+        return BookName(self.name)
+        # return re.sub(r'\W', ' ', self.name).strip()
 
     @property
     def update_date(self):
         return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
+
+    @property
+    def book_isbn(self):
+        return ISBN(self.isbn)
+
+    @property
+    def book_lib_index(self):
+        return LibIndex(self.lib_index)
 
     def update_from(self, value):
         if isinstance(value, type(self)):
@@ -92,11 +101,9 @@ def collect_book_attributes(events, **kwargs):
     import os
     from collections import defaultdict
     from Config import DataConfig
-    from modules.DataProxy import DataProxy
+    from structures import ShelveWrapper
     from structures import SparseVector
-    from utils import ShelveWrapper
 
-    books = DataProxy.get_shelve('books')
     book_attributes = defaultdict(SparseVector)
 
     # TODO: finish collecting book attributes
@@ -105,7 +112,7 @@ def collect_book_attributes(events, **kwargs):
     if auto_save is True:
         ShelveWrapper.init_from(
             book_attributes,
-            db_name=os.path.join(DataConfig.operation_path, 'book_attributes')
+            db_path=os.path.join(DataConfig.operation_path, 'book_attributes')
         ).close()
 
     return book_attributes

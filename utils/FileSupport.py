@@ -13,11 +13,6 @@ from utils import get_logger
 logger = get_logger()
 
 
-def get_shelve_db(db_name: str):
-    from utils import ShelveWrapper
-    return ShelveWrapper(DataConfig.operation_path, db_name)
-
-
 def __check_type__(file_path: str, file_type: str):
     if '.' in file_path:
         if file_path.split('.')[-1] == file_type:

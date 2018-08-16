@@ -3,9 +3,8 @@
 import os
 
 from Config import DataConfig
-from structures import Book
-from structures.Event import Event
-from structures.Reader import Reader
+from structures import Book, Event, Reader
+from structures import ShelveWrapper
 from utils import get_logger
 
 
@@ -14,11 +13,18 @@ logger = get_logger(module_name=__file__)
 
 class DataProxy(object):
 
-    def __init__(self, writeback=False, data_path=DataConfig.data_path):
-        from utils import ShelveWrapper
+    def __init__(self, writeback: bool=False,
+                 data_path: str=DataConfig.data_path,
+                 operation_path: str=DataConfig.operation_path,
+                 ):
+
         if not os.path.exists(data_path):
             os.makedirs(data_path)
         self.__path__ = data_path
+        if not os.path.exists(operation_path):
+            os.makedirs(operation_path)
+        self.__operation_path__ = operation_path
+
         self.__books__ = ShelveWrapper(os.path.join(self.__path__, 'books'), writeback=writeback)
         self.__readers__ = ShelveWrapper(os.path.join(self.__path__, 'readers'), writeback=writeback)
         self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback)
@@ -84,18 +90,16 @@ class DataProxy(object):
         self.__readers__.close()
         self.__events__.close()
 
-    @staticmethod
-    def get_shelve(db_name: str, new=False):
-        from utils import ShelveWrapper
+    def get_shelve(self, db_name: str, new=False):
         if new is False:
-            if os.path.exists(os.path.join(DataConfig.operation_path, db_name)):
-                return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
+            if os.path.exists(os.path.join(self.__operation_path__, db_name)):
+                return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
             else:
                 raise FileNotFoundError(
-                    'Shelve database {} not exists.'.format(os.path.join(DataConfig.operation_path, db_name))
+                    'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
                 )
         else:
-            return ShelveWrapper(os.path.join(DataConfig.operation_path, db_name))
+            return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
 
 
 def store_record_data():

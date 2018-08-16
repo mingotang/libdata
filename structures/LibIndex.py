@@ -4,6 +4,10 @@
 
 class LibIndex(object):
 
+    def __init__(self, data_lib_index: str):
+
+        self.__data__ = data_lib_index
+
     @staticmethod
     def derive_specified_tag_list(lib_index: str):
         """

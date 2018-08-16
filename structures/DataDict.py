@@ -4,8 +4,26 @@
 
 class DataDict(dict):
 
-    def __init__(self, *args, **kwargs):
-        super(DataDict, self).__init__(*args, **kwargs)
+    def __init__(self, data_type: type=None):
+        super(DataDict, self).__init__()
+
+        self.__data_type__ = data_type
+
+    def copy(self):
+        new_d = DataDict(data_type=self.type)
+        for k, v in self.items():
+            new_d.__setitem__(k, v)
+        return new_d
+
+    @property
+    def type(self):
+        if self.__data_type__ is None:
+            for value in self.values():
+                if value is not None:
+                    return type(value)
+            return None
+        else:
+            return self.__data_type__
 
     def to_dict(self):
         new_d = dict()
@@ -22,9 +40,10 @@ class DataDict(dict):
         :param range_end:
         :param include_start:
         :param include_end:
-        :return: dict
+        :return: DataDict
         """
-        result = dict()
+        result = DataDict(data_type=self.type)
+
         if range_start is None:
             for key, value in self.items():
                 result[key] = value
@@ -53,7 +72,7 @@ class DataDict(dict):
 
     def group_by(self, by_tag: str):
         """
-        把 data_dict 内容对象（group_tag）按照 by_tag 属性分组，得到 { by_tag: {obj1, obj2, }}
+        把内容对象按照 by_tag 属性分组，得到 { by_tag: {obj1, obj2, }}
         :param by_tag: related attribute
         :return: dict( key: set())
         """
@@ -80,3 +99,49 @@ class DataDict(dict):
             grouped_dict[by_value] = stored_set
 
         return grouped_dict
+
+    def group_attr_by(self, group_attr: str, by_attr: str):
+        """
+        建立属性之间映射的快速索引字典 -> dict( key: set())
+        :param group_attr:
+        :param by_attr:
+        :return: dict( key: set())
+        """
+        grouped_dict = dict()
+
+        for obj in self.values():
+            key = getattr(obj, by_attr)
+            if key not in grouped_dict:
+                grouped_dict[key] = set()
+
+            value = getattr(obj, group_attr)
+            grouped_dict[key].add(value)
+
+        return grouped_dict
+
+    def collect_attr(self, attr_tag: str):
+        """
+        收集出现过的属性内容
+        :param attr_tag: str
+        :return: set()
+        """
+        collected_set = set()
+
+        for obj in self.values():
+            collected_set.add(getattr(obj, attr_tag))
+
+        return collected_set
+
+    def count_attr(self, attr_tag: str):
+        """
+        对出现过的属性内容计数
+        :param attr_tag: str
+        :return: CountingDict
+        """
+        from .CountingDict import CountingDict
+        counted_dict = CountingDict()
+
+        for obj in self.values():
+            counted_dict.count(getattr(obj, attr_tag))
+
+        return counted_dict
