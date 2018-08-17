@@ -7,7 +7,8 @@ import sys
 from collections import defaultdict
 
 from Interface import AbstractCollector
-from utils import get_logger, ShelveWrapper
+from structures import ShelveWrapper
+from utils import get_logger
 
 
 logger = get_logger(module_name=__file__)
@@ -97,7 +98,6 @@ class Apriori(object):
         :param kwargs: depth int, temp_path str
         """
         from modules.DataProxy import DataConfig
-        from utils.Persisit import Pdict, Plist
 
         if isinstance(data_sets, BasketCollector):
             data_sets = data_sets.to_list()
@@ -111,9 +111,9 @@ class Apriori(object):
 
         # pre operation
         if self.__in_memory__ is True:
-            if isinstance(data_sets, (list, Plist)):
+            if isinstance(data_sets, list):
                 self.data_sets = [set(var) for var in data_sets.copy()]
-            elif isinstance(data_sets, (dict, Pdict, ShelveWrapper)):
+            elif isinstance(data_sets, (dict, ShelveWrapper)):
                 self.data_sets = [set(var) for var in data_sets.values()]
             else:
                 from utils.Exceptions import ParamTypeError
@@ -123,12 +123,12 @@ class Apriori(object):
                 DataConfig.operation_path,
                 '__aprioi_temp_{}__'.format(datetime.datetime.now().strftime('%Y%m%d %H%M%S.%f'))
             )
-            if isinstance(data_sets, (list, Plist)):
+            if isinstance(data_sets, list):
                 self.data_sets = ShelveWrapper.init_from(
                     dict(zip([str(i) for i in range(len(data_sets))], [set(var) for var in data_sets])),
                     local_path, writeback=False
                 )
-            elif isinstance(data_sets, (dict, Pdict)):
+            elif isinstance(data_sets, dict):
                 self.data_sets = ShelveWrapper.init_from(
                     dict(zip([str(i) for i in range(len(data_sets))], [set(var) for var in data_sets.values()])),
                     local_path, writeback=False)
@@ -267,14 +267,11 @@ class Apriori(object):
 
 
 class BasketCollector(AbstractCollector):
-    def __init__(self, *args):
-        from utils.Persisit import Pdict
-        if len(args) == 0:
+    def __init__(self, in_memory=True):
+        if in_memory is True:
             self.data = dict()
         else:
-            assert len(args) == 1
-            assert isinstance(args[0], str)
-            self.data = Pdict(args[0])
+            self.data = ShelveWrapper.get_temp()
 
     def add(self, customer: str, good):
         if customer not in self.data:
@@ -286,17 +283,16 @@ class BasketCollector(AbstractCollector):
     def to_list(self):
         return [set(self.data[var]) for var in self.data.keys()]
 
-    def to_plist(self, *args):
-        from utils.Persisit import Plist
-        assert len(args) == 1, 'to_plist takes one and only one param data_path'
-        return Plist.init_from(self.to_list(), args[0])
-
     def to_dict(self):
-        from utils.Persisit import Pdict
-        if isinstance(self.data, Pdict):
-            return self.data.copy()
+        if isinstance(self.data, ShelveWrapper):
+            return self.data.to_dict()
         else:
             return self.data
+
+    def delete(self):
+        if isinstance(self.data, ShelveWrapper):
+            self.data.delete()
+        del self.data
 
 
 def collect_baskets(events_bag, book_tag: str):

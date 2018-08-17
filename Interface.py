@@ -72,3 +72,7 @@ class AbstractCollector:
     @abstractmethod
     def add(self, *args, **kwargs):
         raise NotImplemented
+
+    @abstractmethod
+    def delete(self):
+        raise NotImplemented

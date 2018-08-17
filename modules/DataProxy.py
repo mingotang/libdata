@@ -103,6 +103,7 @@ class DataProxy(object):
 
 
 def store_record_data():
+    """把txt文件的数据记录到 shelve 数据库中"""
     from tqdm import tqdm
     from modules.DataLoad import RawDataProcessor
     data_proxy = DataProxy()

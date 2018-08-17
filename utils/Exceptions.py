@@ -17,6 +17,8 @@ class ParamTypeError(TypeError):
                 else:
                     raise NotImplementedError()
             self.target_type = '/'.join(target_type_list)
+        elif isinstance(param_target_type, type):
+            self.target_type = param_target_type.__name__
         else:
             raise TypeError
 

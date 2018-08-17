@@ -6,12 +6,10 @@ from collections import defaultdict, Mapping
 from enum import Enum
 
 from Interface import AbstractCollector
-from structures import Book
-from structures import CountingDict
-from structures.Reader import Reader
-from structures import SparseVector
-from utils.DataBase import ShelveWrapper
-from utils.Logger import get_logger
+from structures import Book, Reader
+from structures import CountingDict, SparseVector
+from structures import ShelveWrapper
+from utils import get_logger
 
 
 logger = get_logger(module_name=__file__)
@@ -46,22 +44,27 @@ class CollaborativeFiltering(object):
     """
     CF: finding neighbors
     """
-    def __init__(self, data, attr_belong: type, **kwargs):
+    def __init__(self, data_dict, attr_belong: type, in_memory: bool=False, **kwargs):
         """
 
-        :param data: dict/Pdict/ShelveWrapper/PreferenceCollector
+        :param data_dict: dict/ShelveWrapper/PreferenceCollector
         :param attr_belong:
+        :param in_memory: bool
         :param kwargs:
-            in_memory: bool,
             book2reader: dict,
             reader2book: dict,
         """
-        import datetime
+        from collections import Mapping
         from Config import DataConfig
         from modules.DataProxy import DataProxy
-        from utils.Persisit import Pdict
+        from structures import DataDict
 
-        if not len(data) > 0:
+        # 检查参数
+        if not isinstance(data_dict, Mapping):
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('data_dict', Mapping, data_dict)
+
+        if not len(data_dict) > 0:
             from utils.Exceptions import ParamNoContentError
             raise ParamNoContentError('data')
 
@@ -93,37 +96,37 @@ class CollaborativeFiltering(object):
         else:
             raise RuntimeError('parameter book2reader and reader2book should be set at the same time')
 
-        self.__in_memory__ = kwargs.get('in_memory', True)  # tag whether record goods in memory
         self.__origin_db__ = False  # tag whether input data_sets is db
 
-        now = datetime.datetime.now()
-
+        # 运行数据是否储存在内存中
+        if in_memory is True:
+            self.data =
         # pre operation
         if self.__in_memory__ is True:
-            if isinstance(data, dict):
-                self.data = data  # dict
-            elif isinstance(data, Pdict):
-                self.data = data.copy()
-            elif isinstance(data, (ShelveWrapper, PreferenceCollector)):
-                self.data = data.to_dict()
+            if isinstance(data_dict, dict):
+                self.data = data_dict  # dict
+            elif isinstance(data_dict, Pdict):
+                self.data = data_dict.copy()
+            elif isinstance(data_dict, (ShelveWrapper, PreferenceCollector)):
+                self.data = data_dict.to_dict()
             else:
                 from utils.Exceptions import ParamTypeError
-                raise ParamTypeError('data_sets', 'dict/Pdict/ShelveWrapper/PreferenceCollector', data)
+                raise ParamTypeError('data_sets', 'dict/Pdict/ShelveWrapper/PreferenceCollector', data_dict)
         else:
             local_path = os.path.join(
                 DataConfig.operation_path,
                 '__cofilter_temp_{}__'.format(now.strftime('%Y%m%d %H%M%S.%f'))
             )
-            if isinstance(data, (dict, Pdict)):
-                self.data = ShelveWrapper.init_from(data, local_path, writeback=False)
-            elif isinstance(data, PreferenceCollector):
-                self.data_sets = ShelveWrapper.init_from(data.to_dict(), local_path, writeback=False)
-            elif isinstance(data, ShelveWrapper):
-                self.data = data
+            if isinstance(data_dict, (dict, Pdict)):
+                self.data = ShelveWrapper.init_from(data_dict, local_path, writeback=False)
+            elif isinstance(data_dict, PreferenceCollector):
+                self.data_sets = ShelveWrapper.init_from(data_dict.to_dict(), local_path, writeback=False)
+            elif isinstance(data_dict, ShelveWrapper):
+                self.data = data_dict
                 self.__origin_db__ = True
             else:
                 from utils.Exceptions import ParamTypeError
-                raise ParamTypeError('data_sets', 'dict/Pdict/ShelveWrapper/PreferenceCollector', data)
+                raise ParamTypeError('data_sets', 'dict/Pdict/ShelveWrapper/PreferenceCollector', data_dict)
 
         # check data
         for value in self.data.values():

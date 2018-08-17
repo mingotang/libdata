@@ -39,11 +39,16 @@ class ShelveWrapper(Mapping):
         return new_db
 
     @classmethod
-    def get_temp(cls, db_folder: str=tempfile.gettempdir()):
+    def get_temp(cls):
         from os import path
         from datetime import datetime
+        from Config import DataConfig
+        if path.exists(DataConfig.operation_path):
+            db_folder = DataConfig.operation_path
+        else:
+            db_folder = tempfile.gettempdir()
         return cls(
-            db_path=path.join(db_folder, '__temp_{}__'.format(datetime.now().strftime('%Y%m%d %H%M%S.%f'))),
+            db_path=path.join(db_folder, '__temp_shelve_{}__'.format(datetime.now().strftime('%Y%m%d %H%M%S.%f'))),
             writeback=False,
         )
 
