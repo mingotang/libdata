@@ -50,7 +50,7 @@ def generate_recommend_result(re_method: RecommendMethods, algo_method, **kwargs
             rule_generator = CollaborativeFiltering(reader_attributes, Reader)
 
             result = rule_generator.run(
-                neighbor_type=neighbor_type, sim_type=sim_type,
+                neighbor_type=neighbor_type, similarity_type=sim_type,
             )
 
             # sorting and selecting books
@@ -88,7 +88,7 @@ def generate_recommend_result(re_method: RecommendMethods, algo_method, **kwargs
             rule_generator = CollaborativeFiltering(book_attributes, Book)
 
             result = rule_generator.run(
-                neighbor_type=NeighborType.All, sim_type=SimilarityType.Euclidean,
+                neighbor_type=NeighborType.All, similarity_type=SimilarityType.Euclidean,
             )
         else:
             raise RuntimeError

@@ -1,10 +1,11 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+from collections import Mapping, Sized
 
 
-class SparseVector(object):
+class SparseVector(Mapping, Sized):
     """稀疏向量 类 defaultdict"""
-    def __init__(self, length=None, default_value=0):
+    def __init__(self, length: int=None, default_value=0):
         assert isinstance(length, (type(None), int))
         self.__length__ = length
         self.data = dict()
@@ -33,8 +34,7 @@ class SparseVector(object):
 
     def __iter__(self):
         assert isinstance(self.__length__, int), str('SparseVector defined without length.')
-        for k in self.data.keys():
-            yield k
+        return self.data.keys()
 
     def __contains__(self, item):
         return item in self.data
@@ -43,16 +43,24 @@ class SparseVector(object):
         """ * """
         if isinstance(other, SparseVector):
             assert self.__len__() == other.__len__() and self.__default_value__ == other.__default_value__
+            tag_set = set(self.keys()).intersection(set(other.keys()))
             result = 0.0
-            for tag in other:
+            for tag in tag_set:
                 result += self.__getitem__(tag) * other.__getitem__(tag)
             return result
         elif isinstance(other, (int, float)):
             new_vector = SparseVector(self.__len__(), default_value=self.__default_value__)
             for tag in self.keys():
                 new_vector[tag] = other * self.__getitem__(tag)
+        elif isinstance(other, Mapping):
+            tag_set = set(self.keys()).intersection(set(other.keys()))
+            result = 0.0
+            for tag in tag_set:
+                result += self.__getitem__(tag) * other.__getitem__(tag)
+            return result
         else:
-            raise NotImplemented
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('other', (SparseVector, int, float, Mapping), other)
 
     def __sub__(self, other):
         """ - """
@@ -64,7 +72,8 @@ class SparseVector(object):
                 new_vector[tag] = self.__getitem__(tag) - other.__getitem__(tag)
             return new_vector
         else:
-            raise NotImplemented
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('other', SparseVector, other)
 
     def __add__(self, other):
         """ + """
@@ -76,11 +85,8 @@ class SparseVector(object):
                 new_vector[tag] = self.__getitem__(tag) + other.__getitem__(tag)
             return new_vector
         else:
-            raise NotImplemented
-
-    def keys(self):
-        for k in self.data.keys():
-            yield k
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('other', SparseVector, other)
 
     def get(self, key):
         return self.__getitem__(key)
@@ -104,3 +110,16 @@ class SparseVector(object):
         for tag in self.data:
             total += self.data[tag] ** 2
         return total
+
+    def keys(self):
+        return self.data.keys()
+
+    def values(self):
+        return self.data.values()
+
+    def items(self):
+        return self.data.items()
+
+    @property
+    def has_size(self):
+        return isinstance(self.__length__, int)

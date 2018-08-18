@@ -195,7 +195,7 @@ def apply_collaborative_filtering(
         cf_generator = CollaborativeFiltering(reader_attributes, Reader)
         simi_result = cf_generator.run(
             neighbor_type=NeighborType.All,
-            sim_type=simi_func,
+            similarity_type=simi_func,
         )
 
         # sorting and selecting books
@@ -228,7 +228,7 @@ def apply_collaborative_filtering(
         cf_generator = CollaborativeFiltering(book_attributes, Book)
         simi_result = cf_generator.run(
             neighbor_type=NeighborType.All,
-            sim_type=simi_func,
+            similarity_type=simi_func,
         )
 
         # sorting and selecting books

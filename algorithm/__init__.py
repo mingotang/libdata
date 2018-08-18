@@ -6,7 +6,7 @@ from .CollaborativeFiltering import (
     CollaborativeFiltering,
     NeighborType,
     SimilarityType,
-    PreferenceCollector
+    SparseVectorCollector
 )
 
 

@@ -2,10 +2,10 @@
 import shelve
 import tempfile
 
-from collections import Mapping
+from collections import Mapping, Sized
 
 
-class ShelveWrapper(Mapping):
+class ShelveWrapper(Mapping, Sized):
 
     def __init__(self, db_path: str, writeback=False):
         from utils import get_logger
