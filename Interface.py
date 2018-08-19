@@ -17,17 +17,41 @@ class AbstractDataObject:
     @abstractmethod
     def update_from(self, *args, **kwargs):
         """以相关信息更新数据对象 -> DataObject/None"""
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def init_from(cls, *args, **kwargs):
         """以相关信息创建数据对象 -> DataObject"""
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     def compare_by(self, *args, **kwargs):
         """根据相关信息进行数据比较 -> DataObject"""
-        raise NotImplemented
+        raise NotImplementedError
+
+
+class AbstractResult:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def add(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_csv(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class AbstractCollector:
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def add(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self):
+        raise NotImplementedError
 
 
 class AbstractPersist:
@@ -42,7 +66,7 @@ class AbstractPersist:
         :return: None
         """
         assert isinstance(state, type_s)
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     def get_state(self, type_s: type):
@@ -51,7 +75,7 @@ class AbstractPersist:
         :param type_s: state 的数据类型
         :return: type_s
         """
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class AbstractRecordable:
@@ -63,16 +87,4 @@ class AbstractRecordable:
         记录相关数据
         :return: dict
         """
-        raise NotImplemented
-
-
-class AbstractCollector:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def add(self, *args, **kwargs):
-        raise NotImplemented
-
-    @abstractmethod
-    def delete(self):
-        raise NotImplemented
+        raise NotImplementedError

@@ -2,7 +2,7 @@
 # ---------------------------------import------------------------------------
 from enum import Enum
 
-from Interface import AbstractCollector
+from Interface import AbstractCollector, AbstractResult
 from structures import CountingDict, SparseVector
 from structures import ShelveWrapper
 
@@ -24,12 +24,12 @@ class SimilarityType(Enum):
     Tanimoto = TanimotoCoefficient
 
 
-class CFResult(dict):
+class CFResult(AbstractResult):
     def __init__(self):
-        super(CFResult, self).__init__()
+        pass
 
     def add_list(self, key: str, value: list):
-        self.__setitem__(key, value)
+        pass
 
 
 class CollaborativeFiltering(object):
