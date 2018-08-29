@@ -7,35 +7,44 @@ from collections import Mapping, Sized
 
 class ShelveWrapper(Mapping, Sized):
 
-    def __init__(self, db_path: str, writeback=False):
+    def __init__(self, db_path: str, writeback: bool=False, new: bool=False):
+        import os
         from utils import get_logger
         Mapping.__init__(self)
         self.__logger__ = get_logger(self.__class__.__name__)
+        self.__closed__ = False   # tag whether db is closed
+
         if '.' in db_path:
             if db_path.split('.')[-1] == 'db':
-                path = db_path
+                self.__path__ = db_path
             else:
-                path = '.'.join([db_path, 'db'])
-        else:
-            path = '.'.join([db_path, 'db'])
+                self.__path__ = '.'.join([db_path, 'db'])
 
-        self.__path__ = path
-        self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
-        self.__closed__ = False   # tag whether db is closed
-        self.__logger__.info('Connected to shelve database {}'.format(path))
+        else:
+            self.__path__ = '.'.join([db_path, 'db'])
+
+        if os.path.exists(self.__path__):
+            if new is True:
+                os.remove(self.__path__)
+            self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
+        else:
+            if new is False:
+                raise FileNotFoundError(self.__path__)
+            self.__db__ = shelve.open(self.__path__, writeback=writeback, protocol=None)
+
+        self.__logger__.info('Connected to shelve database {}'.format(self.__path__))
 
     @classmethod
     def init_from(cls, data, db_path: str, writeback=False):
         if data is None:
-            new_db = cls(db_path=db_path, writeback=writeback)
+            new_db = cls(db_path=db_path, writeback=writeback, new=True)
         elif isinstance(data, Mapping):
-            new_db = cls(db_path=db_path, writeback=writeback)
-            new_db.clear()
+            new_db = cls(db_path=db_path, writeback=writeback, new=True)
             for k, v in data.items():
                 new_db[k] = v
         else:
             from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('data', 'Mapping', data)
+            raise ParamTypeError('data', 'Mapping/NoneType', data)
         return new_db
 
     @classmethod
@@ -84,11 +93,11 @@ class ShelveWrapper(Mapping, Sized):
     def __len__(self):
         return self.__db__.__len__()
 
-    def __del__(self):
-        if self.__closed__ is False:
-            self.__logger__.warning('shelve database {} auto closed.'.format(self.__path__))
-            self.close()
-        del self.__closed__, self.__db__, self.__path__
+    # def __del__(self):
+    #     if self.__closed__ is False:
+    #         self.__logger__.warning('shelve database {} auto closed.'.format(self.__path__))
+    #         self.close()
+    #     del self.__closed__, self.__db__, self.__path__
 
     def keys(self):
         return self.__db__.keys()

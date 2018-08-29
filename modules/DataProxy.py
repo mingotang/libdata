@@ -29,6 +29,11 @@ class DataProxy(object):
         self.__readers__ = ShelveWrapper(os.path.join(self.__path__, 'readers'), writeback=writeback)
         self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback)
 
+        try:
+            self.__inducted_events__ = ShelveWrapper(os.path.join(self.__path__, 'inducted_events'))
+        except FileNotFoundError:
+            self.__inducted_events__ = None
+
     def include(self, value):
         """
         add value to shelve DB
@@ -73,6 +78,28 @@ class DataProxy(object):
                     logger.error('elements of iterable should be Book/Event/Reader but got {}'.format(type(item)))
                     raise e
 
+    def execute_events_induction(self, by_attr: str='date'):
+        from tqdm import tqdm
+        from structures import OrderedList
+
+        inducted_events_dict = dict()
+        # inducted_events_db.clear()
+
+        for event in tqdm(self.events.values(), desc='inducting'):
+            assert isinstance(event, Event)
+            if event.reader_id not in inducted_events_dict:
+                inducted_events_dict[event.reader_id] = OrderedList(Event, by_attr)
+            inducted_events_dict[event.reader_id].append(event)
+
+        inducted_events_db = ShelveWrapper.init_from(
+            inducted_events_dict,
+            os.path.join(self.__path__, 'inducted_events'),
+            writeback=False
+        )
+        self.__inducted_events__ = inducted_events_db
+
+        return inducted_events_db
+
     @property
     def readers(self):
         return self.__readers__
@@ -85,10 +112,19 @@ class DataProxy(object):
     def events(self):
         return self.__events__
 
+    @property
+    def inducted_events(self):
+        if self.__inducted_events__ is None:
+            raise RuntimeError('Events should be inducted before calling inducted events')
+        else:
+            return self.__inducted_events__
+
     def close(self):
         self.__books__.close()
         self.__readers__.close()
         self.__events__.close()
+        if isinstance(self.__inducted_events__, ShelveWrapper):
+            self.__inducted_events__.close()
 
     def get_shelve(self, db_name: str, new=False):
         if new is False:
@@ -117,7 +153,10 @@ def store_record_data():
 if __name__ == '__main__':
     logger.initiate_time_counter()
     # ------------------------------
-    store_record_data()
+    # store_record_data()
     # data_manager = DataManager(writeback=False)
+    data_proxy = DataProxy()
+    data_proxy.execute_events_induction('date')
+    data_proxy.close()
     # ------------------------------
     logger.print_time_passed()

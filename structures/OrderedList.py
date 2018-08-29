@@ -131,6 +131,7 @@ class OrderedList(object):
 
     def find_next(self, p_object, count: int=1):
         """find object next to p_object, return None if no result found."""
+        # check param
         if isinstance(p_object, self.__type__):
             for index in range(len(self.__data__)):
                 if getattr(p_object, self.__stag__) < getattr(self.__data__[index], self.__stag__):
@@ -148,6 +149,9 @@ class OrderedList(object):
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('p_object', self.__type__.__name__, p_object)
+
+    def find_next_by_attr(self, attr_tag: str, attr_data, count: int=1):
+        pass
 
     def trim(self, attr_tag: str, range_start, range_end,
              include_start: bool=True, include_end: bool=False, resort_tag=None):

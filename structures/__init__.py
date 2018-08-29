@@ -4,7 +4,7 @@ from .Book import Book
 from .BookName import BookName
 from .CountingDict import CountingDict
 from .DataDict import DataDict
-from .Event import Event, InductedEvents
+from .Event import Event
 from .ISBN import ISBN
 from .LibIndex import LibIndex
 from .OrderedList import OrderedList
