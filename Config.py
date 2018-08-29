@@ -23,7 +23,7 @@ class DBName():
 #     file_path = '/Users/mingo/Downloads/Libdata.db'
 
 
-class DataInfo(object):
+class ChoiceConfig(object):
     event_date_format = '%Y%m%d'
     raw_text_file_list = [
         '2016-11-16-guanyuan2013.txt',

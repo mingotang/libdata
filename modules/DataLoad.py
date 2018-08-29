@@ -3,7 +3,7 @@
 import re
 import os
 
-from Config import DataInfo, DataConfig
+from Config import ChoiceConfig, DataConfig
 from utils.Constants import event_type_chinese_map
 from utils import get_logger
 
@@ -40,7 +40,7 @@ class DataObject(dict):
 class RawDataProcessor(object):
 
     @staticmethod
-    def derive_raw_data(file_range=DataInfo.raw_text_file_list,
+    def derive_raw_data(file_range=ChoiceConfig.raw_text_file_list,
                         splitter='@', text_encoding='gb18030',
                         ):
         logger.debug_running('derive_raw_data', 'checking file')
@@ -67,8 +67,8 @@ class RawDataProcessor(object):
         return data_list
 
     @staticmethod
-    def iter_data_object(file_range=DataInfo.raw_text_file_list,
-                         splitter='@', text_encoding='gb18030',):
+    def iter_data_object(file_range=ChoiceConfig.raw_text_file_list,
+                         splitter='@', text_encoding='gb18030', ):
         logger.debug_running('derive_raw_data', 'checking file')
 
         # data_list = list()

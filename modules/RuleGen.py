@@ -4,10 +4,8 @@ import os
 import time
 
 from Config import DataConfig, DBName
-from algorithm import AprioriMethods, CollaborativeFilteringMethods, RecommendMethods
-from algorithm.CollaborativeFiltering import NeighborType, SimilarityType
 from modules.DataProxy import DataProxy
-from structures import ShelveWrapper
+from structures import StandardTimeRange, GrowthTimeRange
 
 
 class RuleGenerator(object):
@@ -22,132 +20,66 @@ class RuleGenerator(object):
         self.__operation_path__ = operation_path
 
         self.__recorder__ = TextRecorder()
-        # self.__persister__ =
 
         self.__data_proxy__ = DataProxy(data_path=self.__data_path__)
-        self.__inducted_events__ = InductedEvents(DBName.inducted_events)
+        # self.__inducted_events__ = InductedEvents(DBName.inducted_events)
 
-    def apply(self, method: RecommendMethods, logic_method,
-              **kwargs):
-        if method == RecommendMethods.Apriori:
-            # self.log.debug_running('{}.apply RecommendMethods.Apriori', 'begin')
-            # assert isinstance(logic_method, AprioriMethods)
-            # self.log.debug_running('{}.apply RecommendMethods.Apriori', 'end')
+    def apply_collaborative_filtering(self, base_type, similarity_type, neighbor_type, time_range):
+        from algorithm import CF_BaseType, CF_NeighborType, CF_SimilarityType
+        from algorithm import CollaborativeFiltering, SparseVectorCollector
+        assert isinstance(base_type, CF_BaseType)
+        assert isinstance(neighbor_type, CF_NeighborType)
+        assert isinstance(time_range, (StandardTimeRange, GrowthTimeRange))
+
+        self.log.debug_running('CF_BaseType.{}'.format(base_type.name), 'begin')
+        if base_type == CF_BaseType.ReaderBase:
+            events_data = self.__data_proxy__.events.to_data_dict()
+
+            self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__), 'trimming data')
+            if isinstance(time_range, StandardTimeRange):
+                events_data.trim_between_range(
+                    attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
+                    include_start=True, include_end=False, inline=True
+                )
+            elif isinstance(time_range, GrowthTimeRange):
+                raise NotImplementedError
+            else:
+                raise RuntimeError
+            events_data.trim_by_range('event_type', ('50', '62', '63'))
+
+            self.log.debug_running('collecting possible neighbor data')
+            reader2books_index = events_data.group_attr_by(group_attr='book_id', by_attr='reader_id')
+            book2readers_index = events_data.group_attr_by(group_attr='reader_id', by_attr='book_id')
+            possible_neighbors = dict()
+            for reader_id in reader2books_index:
+                possible_neighbors[reader_id] = set()
+                for book_id in reader2books_index[reader_id]:
+                    possible_neighbors[reader_id].update(book2readers_index[book_id])
+
+            self.log.debug_running('collecting vector data')
+            book_set = events_data.collect_attr('book_id')
+            collector = SparseVectorCollector()
+            for event in events_data.values():
+                from structures import Event
+                assert isinstance(event, Event)
+                collector.add(event.reader_id, event.book_id, times=event.times)
+            collector.finish(with_length=len(book_set))
+        elif base_type == CF_BaseType.BookBase:
             raise NotImplementedError
-        elif method == RecommendMethods.CollaborativeFiltering:
-            self.log.debug_running('{}.apply RecommendMethods.CollaborativeFiltering', 'begin')
-            assert isinstance(logic_method, CollaborativeFilteringMethods)
-            self.log.debug_running('{}.apply RecommendMethods.CollaborativeFiltering', 'end')
         else:
             raise RuntimeError
 
-    def __apply_apriori__(self, logic_method: AprioriMethods):
-        from algorithm.Apriori import Apriori
-        from algorithm import collect_baskets
+        cf_go = CollaborativeFiltering(collector, in_memory=True)
+        cf_result = cf_go.run(
+            neighbor_type=neighbor_type, similarity_type=similarity_type,
+            possible_neighbors=possible_neighbors
+        )
+        cf_result.to_csv()
 
-        if method == AprioriMethods.Basic:
-            events_dict = DataProxy.get_shelve('events')
-
-            logger.debug_running('collecting baskets', 'begin')
-            basket = collect_baskets(events_dict, 'index')  # '/Users/mingo/Downloads/basket_dict'
-            logger.debug_running('collecting baskets', 'end')
-
-            apri_inst = Apriori(basket, force_origin=True)
-
-            while True:
-                min_support = kwargs.get('min_support', 0.1)
-
-                logger.debug_running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support))
-                result = apri_inst.run(min_support=min_support)
-
-                while True:
-                    min_conf = kwargs.get('min_conf', 0.2)
-
-                    result.show_results(min_conf)
-                    print('Max rules: {0:d}'.format(len(result.generate_rules(min_conf=0.0001))))
-                    config = input('Are you satisfied with the result? (y/n)  ')
-                    if config.lower() == 'y':
-                        break
-                    elif config.lower() == 'n':
-                        min_conf = float(input('Please input new min_conf:  '))
-                    else:
-                        continue
-                config = input('Are you satisfied with the results above? (y/n)  ')
-                if config.lower() == 'y':
-                    break
-                elif config.lower() == 'n':
-                    min_support = float(input('Please input new min_support:  '))
-                else:
-                    continue
-        elif method == AprioriMethods.GroupByReaderCollege:
-            logger.debug_running('AprioriMethods.GroupByReaderCollege', 'start')
-
-            readers_in_college = DataProxy.get_shelve('readers_group_by_college')
-            events_dict = DataProxy.get_shelve('events')
-
-            for college in readers_in_college.keys():
-                reader_set = readers_in_college[college]
-
-                logger.debug_running('collecting baskets for {}'.format(college), 'begin')
-                events_list = list()
-                for event in events_dict.values():
-                    assert isinstance(event, Event)
-                    if event.reader_id in reader_set:
-                        events_list.append(event)
-                basket = collect_baskets(events_list, 'book_name')  # '/Users/mingo/Downloads/basket_dict'
-                del events_list
-                logger.debug_running('collecting baskets for {}'.format(college), 'end')
-
-                apri_inst = Apriori(basket, force_origin=True, depth=2)
-
-                min_support = kwargs.get('min_support', 0.5)
-                min_conf = kwargs.get('min_conf', 0.6)
-
-                # while True:
-                for min_support in [
-                    0.5, 0.4, 0.3, 0.2, 0.15,  # 0.1,  # 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01,
-                ]:
-                    logger.debug_running('Apriori rules for', 'min_support={0:.2f}: '.format(min_support))
-
-                    tp_01 = time.time()
-                    result = apri_inst.run(min_support=min_support)
-                    result.generate_rules(min_conf=min_conf)
-                    tp_02 = time.time()
-                    if len(result.generate_rules(min_conf=min_conf)) > 20 or tp_02 - tp_01 > 10:
-                        result.save_rules(min_conf, college)
-                        break
-                    else:
-                        continue
-                # result.save_rules(min_conf, college)
-                del readers_in_college[college]
-                # result.save_rules(min_conf, college)
-                # time.sleep(1)
-                # break
-                # print('rules number: {0:d}'.format(len(result.generate_rules(min_conf=min_conf))))
-
-                # while True:
-                #     result.show_results(min_conf)
-                #     time.sleep(1)
-                #     print('Max rules: {0:d}'.format(len(result.generate_rules(min_conf=0.0001))))
-                # config = input('Are you satisfied with the result? (y/n)  ')
-                # if config.lower() == 'y':
-                #     break
-                # elif config.lower() == 'n':
-                #     min_conf = float(input('Please input new min_conf:  '))
-                # else:
-                #     continue
-                # config = input('Are you satisfied with the results above? (y/n)  ')
-                # if config.lower() == 'y':
-                #     result.save_rules(min_conf, college)
-                #     break
-                # else:
-                #     min_support = float(input('Please input new min_support:  '))
-            logger.debug_running('AprioriMethods.GroupByReaderCollege', 'end')
-        else:
-            raise NotImplementedError
 
     def get_shelve(self, db_name: str, new=False):
         """get shelve db from operation path -> ShelveWrapper"""
+        from structures import ShelveWrapper
         if new is False:
             if os.path.exists(os.path.join(self.__operation_path__, db_name)):
                 return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
@@ -159,6 +91,7 @@ class RuleGenerator(object):
             return ShelveWrapper.init_from(None, os.path.join(self.__operation_path__, db_name))
 
     def get_shelve_dict(self, db_name: str):
+        from structures import ShelveWrapper
         if os.path.exists(os.path.join(self.__operation_path__, db_name)):
             return ShelveWrapper.get_data_dict(os.path.join(self.__operation_path__, db_name))
         else:
@@ -172,9 +105,9 @@ class RuleGenerator(object):
 
 
 def apply_collaborative_filtering(
-        method: CollaborativeFilteringMethods,
-        neighbor_type: NeighborType,
-        simi_func: SimilarityType, **kwargs
+        method,
+        neighbor_type,
+        simi_func, **kwargs
 ):
     from tqdm import tqdm
     from algorithm.CollaborativeFiltering import CollaborativeFiltering
@@ -187,14 +120,14 @@ def apply_collaborative_filtering(
     books_by_reader = DataProxy.get_shelve('books_group_by_readers')
     readers_by_book = DataProxy.get_shelve('readers_group_by_books')
 
-    if method == CollaborativeFilteringMethods.ReaderBase:
+    if method == CF_BaseType.ReaderBase:
         # calculating similarity
         logger.debug_running('CollaborativeFilteringMethods.ReaderBase', 'begin')
         reader_attributes = DataProxy.get_shelve('reader_attributes')
 
         cf_generator = CollaborativeFiltering(reader_attributes, Reader)
         simi_result = cf_generator.run(
-            neighbor_type=NeighborType.All,
+            neighbor_type=CF_NeighborType.All,
             similarity_type=simi_func,
         )
 
@@ -220,14 +153,14 @@ def apply_collaborative_filtering(
         save_csv(result_list, 'CollaborativeFilteringMethods.ReaderBase')
 
         logger.debug_running('CollaborativeFilteringMethods.ReaderBase', 'end')
-    elif method == CollaborativeFilteringMethods.BookBase:
+    elif method == CF_BaseType.BookBase:
         # calculating similarity
         logger.debug_running('CollaborativeFilteringMethods.BookBase', 'begin')
         book_attributes = DataProxy.get_shelve('book_attributes')
 
         cf_generator = CollaborativeFiltering(book_attributes, Book)
         simi_result = cf_generator.run(
-            neighbor_type=NeighborType.All,
+            neighbor_type=CF_NeighborType.All,
             similarity_type=simi_func,
         )
 
@@ -253,14 +186,18 @@ def apply_collaborative_filtering(
 
 
 if __name__ == '__main__':
-    from algorithm.CollaborativeFiltering import NeighborType, SimilarityType
+    import datetime
+    from algorithm import CF_BaseType, CF_NeighborType, CF_SimilarityType
 
-    logger.initiate_time_counter()
-    apply_apriori(AprioriMethods.GroupByReaderCollege)
-    apply_collaborative_filtering(
-        CollaborativeFilteringMethods.ReaderBase,
-        neighbor_type=NeighborType.All,
-        simi_func=SimilarityType.Cosine,
+    rule_generator = RuleGenerator()
+    rule_generator.log.initiate_time_counter()
+
+    rule_generator.apply_collaborative_filtering(
+        base_type=CF_BaseType.ReaderBase,
+        similarity_type=CF_SimilarityType.Cosine,
+        neighbor_type=CF_NeighborType.All,
+        time_range=StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
     )
 
-    logger.print_time_passed()
+    rule_generator.log.time_sleep(1)
+    rule_generator.log.print_time_passed()

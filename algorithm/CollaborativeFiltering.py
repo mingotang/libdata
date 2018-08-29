@@ -1,42 +1,45 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from enum import Enum
-
 from Interface import AbstractCollector, AbstractResult
 from structures import CountingDict, SparseVector
 from structures import ShelveWrapper
 
 
-class NeighborType(Enum):
-    ThresholdBased = 'THRESHOLD'
-    FixSize = 'K'
-    All = 'ALL'
-
-
-class SimilarityType(Enum):
-    from utils.Maths import (
-        CosineSimilarity, EuclideanSimilarity,
-        PearsonCorrelationCoefficient, TanimotoCoefficient
-    )
-    Cosine = CosineSimilarity
-    Euclidean = EuclideanSimilarity
-    Pearson = PearsonCorrelationCoefficient
-    Tanimoto = TanimotoCoefficient
-
-
-class CFResult(AbstractResult):
+class CFResult(AbstractResult, dict):
     def __init__(self):
-        pass
+        dict.__init__(self)
+
+    def add(self, *args, **kwargs):
+        self.add_list(*args, **kwargs)
 
     def add_list(self, key: str, value: list):
-        pass
+        self.__setitem__(key, value)
+
+    def to_csv(self, folder_path: str=None):
+        import os
+        import datetime
+        from Config import DataConfig
+        file_name = 'cf_result_{}.csv'.format(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'))
+        if folder_path is None:
+            target_path = os.path.join(DataConfig.operation_path, file_name)
+        else:
+            if os.path.exists(folder_path) is False:
+                os.makedirs(folder_path)
+            target_path = os.path.join(folder_path, file_name)
+        with open(target_path, 'w', encoding='utf-8') as file:
+            for key, value in self.items():
+                file.write(key)
+                file.write(',')
+                file.write(','.join(value))
+                file.write('\n')
+        file.close()
 
 
 class CollaborativeFiltering(object):
     """
     CF: finding neighbors
     """
-    def __init__(self, vec_data, in_memory: bool=False):
+    def __init__(self, vec_data, in_memory: bool=True):
         """
 
         :param vec_data: dict/ShelveWrapper/PreferenceCollector
@@ -79,7 +82,7 @@ class CollaborativeFiltering(object):
                 from utils.Exceptions import ValueTypeError
                 raise ValueTypeError('value in vec_data', (dict, SparseVector), value)
 
-        self.__logger__.debug_running('{}.__init__'.format(self.__class__.__name__), 'end')
+        self.__possible_neighbor_dict__ = None
 
     def delete_data(self):
         if isinstance(self.data, ShelveWrapper):
@@ -87,9 +90,9 @@ class CollaborativeFiltering(object):
         del self.data
         self.__logger__.debug_running('{}.delete_data'.format(self.__class__.__name__), 'finished')
 
-    def run(self, neighbor_type: NeighborType=NeighborType.All,
-            similarity_type: SimilarityType=SimilarityType.Cosine,
-            fixed_size: int=None, limited_size: int=None,):
+    def run(self, neighbor_type, similarity_type,
+            fixed_size: int=None, limited_size: int=None,
+            possible_neighbors: dict=None, max_recommend_list: int=100):
         """
 
         :param neighbor_type: NeighborType
@@ -98,70 +101,106 @@ class CollaborativeFiltering(object):
         :param limited_size: int
         :return:
         """
+        from . import CF_NeighborType, CF_SimilarityType
+        assert isinstance(neighbor_type, CF_NeighborType)
+        assert max_recommend_list > 0
+        # assert isinstance(similarity_type, CF_SimilarityType)
         self.__logger__.debug_running('{}.run'.format(self.__class__.__name__), 'begin')
 
-        result = CFResult()
-        self.__logger__.debug_running(
-            '{}.run'.format(self.__class__.__name__),
-            'executing {}.{}'.format(NeighborType.__class__.__name__, neighbor_type.name)
-        )
-        if neighbor_type == NeighborType.All:
-            for u_i in self.data.keys():
-                result.add_list(u_i, self.find_all_neighbors(u_i, similarity_type))
+        self.__possible_neighbor_dict__ = possible_neighbors
+        if possible_neighbors is not None:
+            for value in possible_neighbors.values():
+                if not isinstance(value, (set, list, frozenset, tuple)):
+                    from utils.Exceptions import ParamTypeError
+                    ParamTypeError('value in first_level_index_dict', set, value)
 
-        elif neighbor_type == NeighborType.FixSize:
+        self.__logger__.debug_running('collecting similar object')
+        simi_result = CFResult()
+        self.__logger__.debug_running(
+            'executing NeighborType.{}'.format(neighbor_type.name)
+        )
+        if neighbor_type == CF_NeighborType.All:
+            for u_i in self.data.keys():
+                simi_result.add_list(u_i, self.find_all_neighbors(u_i, similarity_type))
+
+        elif neighbor_type == CF_NeighborType.FixSize:
             if fixed_size is None:
                 from utils.Exceptions import ParamMissingError
                 raise ParamMissingError('fixed_size')
 
             if fixed_size > 0:
                 for u_i in self.data.keys():
-                    result.add_list(u_i, self.find_k_neighbors(u_i, fixed_size, similarity_type))
+                    simi_result.add_list(u_i, self.find_k_neighbors(u_i, fixed_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
                 raise ParamOutOfRangeError('fixed_size', (1, 'inf'), fixed_size)
 
-        elif neighbor_type == NeighborType.ThresholdBased:
+        elif neighbor_type == CF_NeighborType.ThresholdBased:
             if limited_size is None:
                 from utils.Exceptions import ParamMissingError
                 raise ParamMissingError('limited_size')
 
             if limited_size > 0:
                 for u_i in self.data.keys():
-                    result.add_list(u_i, self.find_limited_neighbors(u_i, limited_size, similarity_type))
+                    simi_result.add_list(u_i, self.find_limited_neighbors(u_i, limited_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
                 raise ParamOutOfRangeError('limited_size', (1, 'inf'), limited_size)
         else:
             raise RuntimeError
 
+        self.__logger__.debug_running('collecting recommended object')
+        reco_result = CFResult()
+        for u_i, simi_list in simi_result.items():
+            reco_list = list()
+            main_set = set(self.data[u_i].keys())
+            for sub_i in simi_list:
+                sub_set = set(self.data[sub_i].keys())
+                reco_set = sub_set - main_set
+                for item in reco_set:
+                    if len(reco_list) > max_recommend_list:
+                        continue
+                    if item not in reco_list:
+                        reco_list.append(item)
+            reco_result.add_list(u_i, reco_list)
+
         self.__logger__.debug_running('{}.run'.format(self.__class__.__name__), 'end')
-        return result
+        return reco_result
 
-    def __calculate_neighbors__(self, ui_tag: str, sim_type: SimilarityType):
+    def __calculate_neighbors__(self, ui_tag: str, sim_type):
         result = CountingDict()
-        for tag in self.data.keys():
-            if tag == ui_tag:
-                continue
-            result.set(tag, abs(sim_type.value.__call__(self.data[ui_tag], self.data[tag])))
+
+        if self.__possible_neighbor_dict__ is None:
+            for tag in self.data.keys():
+                if tag == ui_tag:
+                    continue
+                result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
+        else:
+            possible_neighbor_set = self.__possible_neighbor_dict__[ui_tag]
+            for tag in self.data.keys():
+                if tag == ui_tag or tag not in possible_neighbor_set:
+                    continue
+                result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
+
         return result
 
-    def find_all_neighbors(self, ui_tag: str, simi_type: SimilarityType):
+    def find_all_neighbors(self, ui_tag: str, simi_type):
         """find all neighborhoods ordered by similarity -> list"""
         return self.__calculate_neighbors__(ui_tag, simi_type).sort(inverse=True)
 
-    def find_k_neighbors(self, ui_tag: str, k_num: int, simi_type: SimilarityType):
+    def find_k_neighbors(self, ui_tag: str, k_num: int, simi_type):
         assert k_num > 0
         return self.find_all_neighbors(ui_tag, simi_type)[:k_num]
 
-    def find_limited_neighbors(self, ui_tag: str, limit: float, simi_type: SimilarityType):
+    def find_limited_neighbors(self, ui_tag: str, limit: float, simi_type):
         simi = self.__calculate_neighbors__(ui_tag, simi_type).trim(lower_limit=limit)
         return simi.sort(inverse=True)
 
 
 class SparseVectorCollector(AbstractCollector):
     def __init__(self):
-        self.data = dict()
+        from collections import defaultdict
+        self.data = defaultdict(SparseVector)
 
     def __getitem__(self, key: str):
         return self.data.__getitem__(key)

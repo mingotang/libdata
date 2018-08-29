@@ -38,6 +38,10 @@ class AbstractResult:
         raise NotImplementedError
 
     @abstractmethod
+    def load_csv(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
     def to_csv(self, *args, **kwargs):
         raise NotImplementedError
 

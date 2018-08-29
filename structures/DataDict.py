@@ -9,6 +9,13 @@ class DataDict(dict):
 
         self.__data_type__ = data_type
 
+    def __repr__(self):
+        content = '{\n'
+        for key, value in self.items():
+            content += '\t{}: {}\n'.format(key, value)
+        content += '}'
+        return content
+
     def copy(self):
         new_d = DataDict(data_type=self.type)
         for k, v in self.items():
@@ -31,8 +38,9 @@ class DataDict(dict):
             new_d[k] = v
         return new_d
 
-    def trim(self, attr_tag: str, range_start, range_end,
-             include_start: bool=True, include_end: bool=False):
+    def trim_between_range(self, attr_tag: str, range_start, range_end,
+                           include_start: bool=True, include_end: bool=False,
+                           inline: bool=False):
         """
         删选合适的数据进入内存 -> dict
         :param attr_tag:
@@ -40,6 +48,7 @@ class DataDict(dict):
         :param range_end:
         :param include_start:
         :param include_end:
+        :param inline: whether modify data in self
         :return: DataDict
         """
         result = DataDict(data_type=self.type)
@@ -68,6 +77,37 @@ class DataDict(dict):
                     value = result[key]
                     if getattr(value, attr_tag) >= range_end:
                         result.pop(key)
+
+        if inline is True:
+            self.clear()
+            self.update(result)
+
+        return result
+
+    def trim_by_range(self, attr_tag: str, range, inline: bool=False):
+        """
+
+        :param attr_tag:
+        :param range:
+        :param inline:
+        :return: DataDict
+        """
+        if isinstance(range, (set, frozenset, list, tuple)):
+            range = frozenset(range)
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('range', (set, frozenset, list, tuple), range)
+
+        result = DataDict(data_type=self.type)
+
+        for key, value in self.items():
+            if getattr(value, attr_tag) in range:
+                result[key] = value
+
+        if inline is True:
+            self.clear()
+            self.update(result)
+
         return result
 
     def group_by(self, by_tag: str):

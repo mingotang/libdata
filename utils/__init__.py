@@ -4,14 +4,6 @@ import logging
 from Config import DEFAULT_LOG_LEVEL
 
 
-__all__ = (
-    'attributes_repr',
-    'slots_repr',
-    'set_logging',
-    'get_logger',
-)
-
-
 def attributes_repr(inst):
     return "{}({})".format(
         inst.__class__.__name__,
@@ -105,23 +97,29 @@ class LogWrapper(logging.Logger):
     def print_time_passed():
         print('\nTime passed: {0:s}'.format(RunTimeCounter.get_instance().tp_str))
 
-    def debug_running(self, running: str, status: str, *args, **kwargs):
-        self.debug('[running]: {0:s} - now {1:s}'.format(running, status))
+    def debug_running(self, *args, **kwargs):
+        # self.debug('[running]: {0:s} - now {1:s}'.format(running, status))
         if self.isEnabledFor(logging.DEBUG):
-            self._log(
-                logging.DEBUG,
-                '[running]: {0:s} - now {1:s}'.format(running, status),
-                args, **kwargs
-            )
+            if len(args) == 2:
+                self._log(
+                    logging.DEBUG,
+                    '[running]: {0:s} - now {1:s}'.format(args[0], args[1]),
+                    tuple(), **kwargs
+                )
+            elif len(args) == 1:
+                self._log(logging.DEBUG, '[running]: {0:s}'.format(args[0]), tuple(), **kwargs)
+            else:
+                self._log(logging.DEBUG, *args, **kwargs)
 
     def debug_variable(self, variable, *args, **kwargs):
+        from collections import Sized
+        log_info = '[variable]: {0:s} has content {1:s} and of type {2:s} '.format(
+                    str(id(variable)), str(variable), str(type(variable)),
+                )
+        if isinstance(variable, Sized):
+            log_info += ', of size {}'.format(len(variable))
         if self.isEnabledFor(logging.DEBUG):
-            self._log(
-                logging.DEBUG,
-                '[variable]: {0:s} got type {1:s} and content {2:s}'.format(
-                    str(id(variable)), str(type(variable)), str(variable)
-                ), args, **kwargs
-            )
+            self._log(logging.DEBUG, log_info, args, **kwargs)
 
     def debug_if(self, check: bool, msg: str, *args, **kwargs):
         if check is True and self.isEnabledFor(logging.DEBUG):
@@ -148,7 +146,9 @@ def get_logger(module_name: str='', level: int=DEFAULT_LOG_LEVEL):
     logger.setLevel(level)
 
     screen_handler = logging.StreamHandler()
-    screen_handler.setFormatter(logging.Formatter('%(asctime)s %(filename)s:  %(levelname)s, %(message)s'))
+    screen_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(filename)s %(funcName)s %(lineno)d:  %(levelname)s, %(message)s'
+    ))
     logger.addHandler(screen_handler)
 
     return logger

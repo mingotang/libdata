@@ -87,7 +87,7 @@ class Event(AbstractDataObject):
 
 class InductedEvents(object):
     def __init__(self, db_path: str):
-        from utils import ShelveWrapper
+        from structures import ShelveWrapper
         self.__db__ = ShelveWrapper(db_path=db_path, writeback=False)
 
     def keys(self):
@@ -108,11 +108,11 @@ class InductedEvents(object):
         assert isinstance(ordered_list, OrderedList)
         return ordered_list
 
-    def get(self, reader_id: str, default=OrderedList(Event, 'date')):
+    def get(self, reader_id: str):
         try:
             return self.__getitem__(reader_id)
         except KeyError:
-            return default
+            return OrderedList(Event, 'date')
 
     def do_induct(self, events_bag):
         """把数据集中的行为数据按照某种顺序排列归类"""
