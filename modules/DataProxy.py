@@ -83,7 +83,6 @@ class DataProxy(object):
         from structures import OrderedList
 
         inducted_events_dict = dict()
-        # inducted_events_db.clear()
 
         for event in tqdm(self.events.values(), desc='inducting'):
             assert isinstance(event, Event)

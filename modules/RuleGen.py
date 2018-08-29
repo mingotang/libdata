@@ -3,7 +3,7 @@
 import os
 import time
 
-from Config import DataConfig, DBName
+from Config import DataConfig
 from modules.DataProxy import DataProxy
 from structures import StandardTimeRange, GrowthTimeRange
 
@@ -11,7 +11,6 @@ from structures import StandardTimeRange, GrowthTimeRange
 class RuleGenerator(object):
     def __init__(self, data_path: str=DataConfig.data_path, operation_path: str=DataConfig.operation_path):
         from modules.DataProxy import DataProxy
-        from structures import InductedEvents
         from structures import TextRecorder
         from utils import get_logger
         self.__logger__ = get_logger(self.__class__.__name__)
@@ -22,10 +21,9 @@ class RuleGenerator(object):
         self.__recorder__ = TextRecorder()
 
         self.__data_proxy__ = DataProxy(data_path=self.__data_path__)
-        # self.__inducted_events__ = InductedEvents(DBName.inducted_events)
 
     def apply_collaborative_filtering(self, base_type, similarity_type, neighbor_type, time_range):
-        from algorithm import CF_BaseType, CF_NeighborType, CF_SimilarityType
+        from algorithm import CF_BaseType, CF_NeighborType
         from algorithm import CollaborativeFiltering, SparseVectorCollector
         assert isinstance(base_type, CF_BaseType)
         assert isinstance(neighbor_type, CF_NeighborType)
@@ -75,7 +73,6 @@ class RuleGenerator(object):
             possible_neighbors=possible_neighbors
         )
         cf_result.to_csv()
-
 
     def get_shelve(self, db_name: str, new=False):
         """get shelve db from operation path -> ShelveWrapper"""

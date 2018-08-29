@@ -12,13 +12,6 @@ class DataConfig(object):
     operation_path = '/Users/mingo/Downloads/persisted_libdata/this_operation'
 
 
-class DBName():
-    inducted_events = 'inducted_events'
-    readers_group_by_books = 'readers_group_by_books'
-    readers_group_by_college = 'readers_group_by_college'
-    books_group_by_readers = 'books_group_by_readers'
-
-
 # class DataBaseConfig(object):
 #     file_path = '/Users/mingo/Downloads/Libdata.db'
 
