@@ -3,6 +3,11 @@ import datetime
 
 from Interface import AbstractDataObject
 from utils import attributes_repr
+from utils.Constants import (
+    GRADUATE_TYPES, UNDER_GRADUATE_TYPES, STUDENT_TYPES,
+    STAFF_TYPES, OTHER_INDIVIDUAL_TYPES, NONE_INDIVIDUAL_TYPES,
+    # MICHIGAN_TYPES,
+)
 
 
 NOW_YEAR = datetime.datetime.now().date().year
@@ -32,6 +37,7 @@ class Reader(AbstractDataObject):
 
     @property
     def update_date(self):
+        """check the update date of reader info which is derived from events list"""
         return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
 
     def update_from(self, value):
@@ -74,39 +80,75 @@ class Reader(AbstractDataObject):
     @property
     def register_year(self):
         if len(self.index) == 10:
-            if self.index.startswith('5'):  # 本科生学号
-                r_y = int(self.index[1:3]) + 2000
-            elif self.index.startswith('0'):   # 博士生学号
-                r_y = int(self.index[1:3]) + 2000
-            elif self.index.startswith('1'):  # 研究生学号
-                r_y = int(self.index[1:3]) + 2000
-            elif self.index.startswith('7'):  # 医学院本科生学号
-                r_y = int(self.index[1:3]) + 2000
-            elif self.index.startswith('S'):
-                r_y = int(self.index[1:3]) + 2000
-            elif self.index.startswith('J'):
-                r_y = int(self.index[2:4]) + 2000
-            elif self.index.startswith('T'):  # 博士后
-                r_y = int(self.index[2:4]) + 2000
+            if self.is_outer_reader:
+                return None
+            elif self.is_student:
+                if self.index[0] in ('0', '1', '3', '4', '5', '7', 'S'):
+                    r_y = int(self.index[1:3]) + 2000
+                elif self.index[0] in ('J', 'T', ):
+                    r_y = int(self.index[2:4]) + 2000
+                elif self.index[0] in ('X', ):
+                    r_y = int(self.index[1:5])
+                elif self.index.startswith('HY'):
+                    r_y = int(self.index[2:4]) + 2000
+                else:
+                    return None  # Exception: Reader(index: 3205821979, rtype: 21, college: )
+            elif self.is_college_staff or not self.is_individual_reader:
+                return None
             else:
                 return None
+
             if r_y <= NOW_YEAR:
                 return r_y
             else:
+                # Exception :   Reader(index: 3965589366, rtype: 35, college: )
+                #               Reader(index: 3205821979, rtype: 21, college: )
                 return None
         else:
             return None
 
+    def growth_index(self, ref_date: datetime.date):
+        """calculate the growth index of a student, return None if not known"""
+        if self.register_year is None:
+            return None
+
+        begin_date = datetime.date(self.register_year, 9, 1)
+        if begin_date >= ref_date:
+            return None
+        else:
+            return (ref_date - begin_date) / datetime.timedelta(days=365)
+
+    @property
+    def is_student(self):
+        return self.rtype in STUDENT_TYPES
+
+    @property
+    def is_graduate_student(self):
+        return self.rtype in GRADUATE_TYPES
+
+    @property
+    def is_undergraduate_student(self):
+        return self.rtype in UNDER_GRADUATE_TYPES
+
+    @property
+    def is_college_staff(self):
+        return self.rtype in STAFF_TYPES
+
+    @property
+    def is_individual_reader(self):
+        return self.rtype not in NONE_INDIVIDUAL_TYPES
+
+    @property
+    def is_outer_reader(self):
+        return self.rtype in OTHER_INDIVIDUAL_TYPES
+
 
 def collect_reader_attributes(events, **kwargs):
-    import os
     from tqdm import tqdm
     from collections import defaultdict, Iterable, Mapping
-    from Config import DataConfig
     from modules.DataProxy import DataProxy
     from structures.Event import Event
     from structures import SparseVector
-    from utils import ShelveWrapper
 
     reader_attributes = defaultdict(SparseVector)
 
@@ -122,16 +164,27 @@ def collect_reader_attributes(events, **kwargs):
         from utils.Exceptions import ParamTypeError
         raise ParamTypeError('events', 'list/Plist/dict/Pdict/ShelveWrapper', events)
 
-    total_books = kwargs.get('length', DataProxy.get_shelve('books').__len__())
+    data_proxy = DataProxy()
+    total_books = kwargs.get('length', data_proxy.books.__len__())
 
     for reader_id in reader_attributes:
         reader_attributes[reader_id].set_length(total_books)
 
-    auto_save = kwargs.get('auto_save', False)
-    if auto_save is True:
-        ShelveWrapper.init_from(
-            reader_attributes,
-            db_name=os.path.join(DataConfig.operation_path, 'reader_attributes')
-        ).close()
-
     return reader_attributes
+
+
+if __name__ == '__main__':
+    from modules.DataProxy import DataProxy
+    from utils.Constants import reader_type_chinese_map
+    data_proxy = DataProxy()
+    for reader in data_proxy.readers.values():
+        # if not reader.is_student:
+        #     print(reader.register_year, reader)
+        if not isinstance(reader.register_year, int):
+            continue
+            if reader.is_outer_reader:
+                print(reader.register_year, reader)
+        else:
+            continue
+            if reader.is_student:
+                print(reader.register_year, reader)

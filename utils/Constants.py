@@ -53,24 +53,24 @@ reader_type_chinese_map = {
     '61': '研究生VIP1',
     '62': '研究生VIP2',
     '63': '研究生VIP3',
+    '64': 'UnknownType',  # 疑似密西根
+    '71': 'UnknownType',  # 疑似密西根
 }
 
 
 STAFF_TYPES = ('11', '12', '13', '14', '15')
 
-UNDER_GRADUATE_TYPES = ('31', '32', '33', '34', '35')
-
 GRADUATE_TYPES = ('21', '22', '23', '24', '25', '26', '27', '61', '62', '63')
 
-NON_STUDENT_TYPES = ('41', '42', '42', '43', '44', '45', '51', '52')
+UNDER_GRADUATE_TYPES = ('31', '32', '33', '34', '35')
 
-NONE_INDIVIDUAL_TYPES = ('42', '43', '51', '52')
+MICHIGAN_TYPES = ('64', '71', )
 
+__student_type__ = list(UNDER_GRADUATE_TYPES)
+__student_type__.extend(GRADUATE_TYPES)
+__student_type__.extend(MICHIGAN_TYPES)
+STUDENT_TYPES = tuple(__student_type__)
 
-def individual_reader_types():
-    indi_types = list()
-    indi_types.extend(STAFF_TYPES)
-    indi_types.extend(UNDER_GRADUATE_TYPES)
-    indi_types.extend(GRADUATE_TYPES)
-    indi_types.extend(['41', '42', '44', '45'])
-    return indi_types
+OTHER_INDIVIDUAL_TYPES = ('41', '42', '43', '44', '45')
+
+NONE_INDIVIDUAL_TYPES = ('51', '52')

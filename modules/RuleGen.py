@@ -1,10 +1,8 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import os
-import time
 
 from Config import DataConfig
-from modules.DataProxy import DataProxy
 from structures import StandardTimeRange, GrowthTimeRange
 
 
@@ -99,87 +97,6 @@ class RuleGenerator(object):
     @property
     def log(self):
         return self.__logger__
-
-
-def apply_collaborative_filtering(
-        method,
-        neighbor_type,
-        simi_func, **kwargs
-):
-    from tqdm import tqdm
-    from algorithm.CollaborativeFiltering import CollaborativeFiltering
-    from structures import Book
-    from structures.Reader import Reader
-    from utils.FileSupport import save_csv
-
-    max_length = kwargs.get('max_length', 10)
-
-    books_by_reader = DataProxy.get_shelve('books_group_by_readers')
-    readers_by_book = DataProxy.get_shelve('readers_group_by_books')
-
-    if method == CF_BaseType.ReaderBase:
-        # calculating similarity
-        logger.debug_running('CollaborativeFilteringMethods.ReaderBase', 'begin')
-        reader_attributes = DataProxy.get_shelve('reader_attributes')
-
-        cf_generator = CollaborativeFiltering(reader_attributes, Reader)
-        simi_result = cf_generator.run(
-            neighbor_type=CF_NeighborType.All,
-            similarity_type=simi_func,
-        )
-
-        # sorting and selecting books
-        result_list = list()
-        for reader_id in tqdm(simi_result.keys(), desc='finding books'):
-            recommend_list = list()
-            # recommend_list.append(reader)
-            this_selected = books_by_reader[reader_id]
-            assert isinstance(this_selected, set)
-            for simi_reader in simi_result[reader_id]:
-                for item in books_by_reader[simi_reader]:
-                    assert isinstance(books_by_reader[simi_reader], set)
-                    if item not in this_selected and item not in recommend_list:
-                        recommend_list.append(item)
-                    if len(recommend_list) >= max_length:
-                        break
-                if len(recommend_list) >= max_length:
-                    break
-            # recommend_list = [books[var].book_name for var in recommend_list]  # getting book names
-            recommend_list.insert(0, reader_id)
-            result_list.append(recommend_list)
-        save_csv(result_list, 'CollaborativeFilteringMethods.ReaderBase')
-
-        logger.debug_running('CollaborativeFilteringMethods.ReaderBase', 'end')
-    elif method == CF_BaseType.BookBase:
-        # calculating similarity
-        logger.debug_running('CollaborativeFilteringMethods.BookBase', 'begin')
-        book_attributes = DataProxy.get_shelve('book_attributes')
-
-        cf_generator = CollaborativeFiltering(book_attributes, Book)
-        simi_result = cf_generator.run(
-            neighbor_type=CF_NeighborType.All,
-            similarity_type=simi_func,
-        )
-
-        # sorting and selecting books
-        result_list = list()
-        for book_id in tqdm(simi_result.keys(), desc='finding books'):
-            recommend_list = list()
-            this_selected = books_by_reader[book_id]
-            assert isinstance(this_selected, set)
-            simi_books = simi_result[book_id]
-            if len(simi_books) > max_length:
-                recommend_list.extend(simi_books[:max_length])
-            else:
-                recommend_list.extend(simi_books)
-            # recommend_list = [books[var].book_name for var in recommend_list]  # getting book names
-            recommend_list.insert(0, book_id)
-            result_list.append(recommend_list)
-
-        save_csv(result_list, 'CollaborativeFilteringMethods.BookBase')
-        logger.debug_running('CollaborativeFilteringMethods.BookBase', 'end')
-    else:
-        raise NotImplementedError
 
 
 if __name__ == '__main__':

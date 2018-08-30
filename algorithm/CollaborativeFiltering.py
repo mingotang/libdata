@@ -34,6 +34,24 @@ class CFResult(AbstractResult, dict):
                 file.write('\n')
         file.close()
 
+    @classmethod
+    def load_csv(cls, csv_path: str, encoding: str='utf-8'):
+        import os
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(csv_path)
+        result = cls()
+        file = open(csv_path, 'r', encoding=encoding)
+        content = file.readlines()
+        assert isinstance(content, str)
+        content = content.split('\n')
+        for line in content:
+            line = line.split(',')
+            if len(line) > 1:
+                result[line[0]] = line[1:]
+            else:
+                result[line[0]] = list()
+        return result
+
 
 class CollaborativeFiltering(object):
     """
@@ -99,9 +117,11 @@ class CollaborativeFiltering(object):
         :param similarity_type: SimilarityType
         :param fixed_size: int
         :param limited_size: int
+        :param possible_neighbors:
+        :param max_recommend_list:
         :return:
         """
-        from . import CF_NeighborType, CF_SimilarityType
+        from . import CF_NeighborType
         assert isinstance(neighbor_type, CF_NeighborType)
         assert max_recommend_list > 0
         # assert isinstance(similarity_type, CF_SimilarityType)
