@@ -84,24 +84,24 @@ class DataDict(dict):
 
         return result
 
-    def trim_by_range(self, attr_tag: str, range, inline: bool=False):
+    def trim_by_range(self, attr_tag: str, range_iterable, inline: bool=False):
         """
 
         :param attr_tag:
-        :param range:
+        :param range_iterable:
         :param inline:
         :return: DataDict
         """
-        if isinstance(range, (set, frozenset, list, tuple)):
-            range = frozenset(range)
+        if isinstance(range_iterable, (set, frozenset, list, tuple)):
+            range_iterable = frozenset(range_iterable)
         else:
             from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('range', (set, frozenset, list, tuple), range)
+            raise ParamTypeError('range', (set, frozenset, list, tuple), range_iterable)
 
         result = DataDict(data_type=self.type)
 
         for key, value in self.items():
-            if getattr(value, attr_tag) in range:
+            if getattr(value, attr_tag) in range_iterable:
                 result[key] = value
 
         if inline is True:
@@ -142,10 +142,10 @@ class DataDict(dict):
 
     def group_attr_by(self, group_attr: str, by_attr: str):
         """
-        建立属性之间映射的快速索引字典 -> dict( key: set())
+        建立属性之间映射的快速索引字典 -> dict( by_attr: set(group_attr, ))
         :param group_attr:
         :param by_attr:
-        :return: dict( key: set())
+        :return: dict( by_attr: set())
         """
         grouped_dict = dict()
 
@@ -158,6 +158,24 @@ class DataDict(dict):
             grouped_dict[key].add(value)
 
         return grouped_dict
+
+    def neighbor_attr_by(self, neighbor_tag: str, shadow_tag: str):
+        """
+        根据另一个属性(shadow_tag)建立同一个属性不同数据的联系集 -> dict( neighbor_tag_1: set(neighbor_tag_2, ...))
+        :param neighbor_tag:
+        :param shadow_tag:
+        :return: dict( neighbor_tag_1: set(neighbor_tag_2, ...))
+        """
+        neighbor_dict = dict()
+
+        first_level_index = self.group_attr_by(group_attr=shadow_tag, by_attr=neighbor_tag)
+        second_level_index = self.group_attr_by(group_attr=neighbor_tag, by_attr=shadow_tag)
+        for first_k in first_level_index.keys():
+            neighbor_dict[first_k] = set()
+            for second_k in second_level_index.keys():
+                neighbor_dict[first_k].update(second_level_index[second_k])
+
+        return neighbor_dict
 
     def collect_attr(self, attr_tag: str):
         """

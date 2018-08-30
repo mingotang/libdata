@@ -121,6 +121,7 @@ class CollaborativeFiltering(object):
         :param max_recommend_list:
         :return:
         """
+        from tqdm import tqdm
         from . import CF_NeighborType
         assert isinstance(neighbor_type, CF_NeighborType)
         assert max_recommend_list > 0
@@ -136,11 +137,9 @@ class CollaborativeFiltering(object):
 
         self.__logger__.debug_running('collecting similar object')
         simi_result = CFResult()
-        self.__logger__.debug_running(
-            'executing NeighborType.{}'.format(neighbor_type.name)
-        )
+        # self.__logger__.debug_running('executing NeighborType.{}'.format(neighbor_type.name))
         if neighbor_type == CF_NeighborType.All:
-            for u_i in self.data.keys():
+            for u_i in tqdm(self.data.keys(), desc='executing NeighborType.{}'.format(neighbor_type.name)):
                 simi_result.add_list(u_i, self.find_all_neighbors(u_i, similarity_type))
 
         elif neighbor_type == CF_NeighborType.FixSize:
@@ -149,7 +148,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('fixed_size')
 
             if fixed_size > 0:
-                for u_i in self.data.keys():
+                for u_i in tqdm(self.data.keys(), desc='executing NeighborType.{}'.format(neighbor_type.name)):
                     simi_result.add_list(u_i, self.find_k_neighbors(u_i, fixed_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -161,7 +160,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('limited_size')
 
             if limited_size > 0:
-                for u_i in self.data.keys():
+                for u_i in tqdm(self.data.keys(), desc='executing NeighborType.{}'.format(neighbor_type.name)):
                     simi_result.add_list(u_i, self.find_limited_neighbors(u_i, limited_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -197,8 +196,8 @@ class CollaborativeFiltering(object):
                 result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
         else:
             possible_neighbor_set = self.__possible_neighbor_dict__[ui_tag]
-            for tag in self.data.keys():
-                if tag == ui_tag or tag not in possible_neighbor_set:
+            for tag in possible_neighbor_set:
+                if tag == ui_tag:
                     continue
                 result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
 

@@ -22,55 +22,62 @@ class RuleGenerator(object):
 
     def apply_collaborative_filtering(self, base_type, similarity_type, neighbor_type, time_range):
         from algorithm import CF_BaseType, CF_NeighborType
-        from algorithm import CollaborativeFiltering, SparseVectorCollector
+        from algorithm import CollaborativeFiltering
         assert isinstance(base_type, CF_BaseType)
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, (StandardTimeRange, GrowthTimeRange))
 
-        self.log.debug_running('CF_BaseType.{}'.format(base_type.name), 'begin')
+        self.log.debug_running('CF_BaseType.{}'.format(base_type.name))
         if base_type == CF_BaseType.ReaderBase:
             events_data = self.__data_proxy__.events.to_data_dict()
 
-            self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__), 'trimming data')
+            self.log.debug_running('trimming event data from date {} to date {}'.format(
+                time_range.start_time.date(), time_range.end_time.date()
+            ))
+            events_data.trim_between_range(
+                attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
+                include_start=True, include_end=False, inline=True
+            )
+
+            self.log.debug_running('trimming event data by event_type 50/62/63')
+            events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
+
+            self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
             if isinstance(time_range, StandardTimeRange):
-                events_data.trim_between_range(
-                    attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
-                    include_start=True, include_end=False, inline=True
+
+                self.log.debug_running('collecting possible neighbor data')
+                possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+
+                self.log.debug_running('collecting vector data')
+                collector = self.__collect_simple_sparse_vector__(
+                    events_data, 'reader_id', 'book_id', time_tag='times'
                 )
-            elif isinstance(time_range, GrowthTimeRange):
-                raise NotImplementedError
-            else:
-                raise RuntimeError
-            events_data.trim_by_range('event_type', ('50', '62', '63'))
 
-            self.log.debug_running('collecting possible neighbor data')
-            reader2books_index = events_data.group_attr_by(group_attr='book_id', by_attr='reader_id')
-            book2readers_index = events_data.group_attr_by(group_attr='reader_id', by_attr='book_id')
-            possible_neighbors = dict()
-            for reader_id in reader2books_index:
-                possible_neighbors[reader_id] = set()
-                for book_id in reader2books_index[reader_id]:
-                    possible_neighbors[reader_id].update(book2readers_index[book_id])
+                self.log.debug_running('running CollaborativeFiltering')
+                cf_result = CollaborativeFiltering(collector, in_memory=True).run(
+                    neighbor_type=neighbor_type, similarity_type=similarity_type, possible_neighbors=possible_neighbors
+                )
+                cf_result.to_csv()
 
-            self.log.debug_running('collecting vector data')
-            book_set = events_data.collect_attr('book_id')
-            collector = SparseVectorCollector()
-            for event in events_data.values():
-                from structures import Event
-                assert isinstance(event, Event)
-                collector.add(event.reader_id, event.book_id, times=event.times)
-            collector.finish(with_length=len(book_set))
         elif base_type == CF_BaseType.BookBase:
             raise NotImplementedError
         else:
             raise RuntimeError
 
-        cf_go = CollaborativeFiltering(collector, in_memory=True)
-        cf_result = cf_go.run(
-            neighbor_type=neighbor_type, similarity_type=similarity_type,
-            possible_neighbors=possible_neighbors
-        )
-        cf_result.to_csv()
+    def __collect_simple_sparse_vector__(self, data, key_tag: str, attr_tag: str, time_tag: str=None):
+        from algorithm import SparseVectorCollector
+        from structures import DataDict
+        assert isinstance(data, DataDict)
+
+        result = SparseVectorCollector()
+        for value in data.values():
+            if time_tag is None:
+                result.add(getattr(value, key_tag), getattr(value, attr_tag))
+            else:
+                result.add(getattr(value, key_tag), getattr(value, attr_tag), getattr(value, time_tag))
+        result.finish(with_length=len(data.collect_attr(attr_tag)))
+
+        return result
 
     def get_shelve(self, db_name: str, new=False):
         """get shelve db from operation path -> ShelveWrapper"""
@@ -110,7 +117,7 @@ if __name__ == '__main__':
         base_type=CF_BaseType.ReaderBase,
         similarity_type=CF_SimilarityType.Cosine,
         neighbor_type=CF_NeighborType.All,
-        time_range=StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        time_range=StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 2, 1))
     )
 
     rule_generator.log.time_sleep(1)
