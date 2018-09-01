@@ -16,6 +16,7 @@ class DataProxy(object):
     def __init__(self, writeback: bool=False,
                  data_path: str=DataConfig.data_path,
                  operation_path: str=DataConfig.operation_path,
+                 new: bool=False,
                  ):
 
         if not os.path.exists(data_path):
@@ -25,9 +26,9 @@ class DataProxy(object):
             os.makedirs(operation_path)
         self.__operation_path__ = operation_path
 
-        self.__books__ = ShelveWrapper(os.path.join(self.__path__, 'books'), writeback=writeback)
-        self.__readers__ = ShelveWrapper(os.path.join(self.__path__, 'readers'), writeback=writeback)
-        self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback)
+        self.__books__ = ShelveWrapper(os.path.join(self.__path__, 'books'), writeback=writeback, new=new)
+        self.__readers__ = ShelveWrapper(os.path.join(self.__path__, 'readers'), writeback=writeback, new=new)
+        self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback, new=new)
 
         try:
             self.__inducted_events__ = ShelveWrapper(os.path.join(self.__path__, 'inducted_events'))
@@ -141,7 +142,7 @@ def store_record_data():
     """把txt文件的数据记录到 shelve 数据库中"""
     from tqdm import tqdm
     from modules.DataLoad import RawDataProcessor
-    data_proxy = DataProxy()
+    data_proxy = DataProxy(new=True)
     for d_object in tqdm(RawDataProcessor.iter_data_object(), desc='storing record data'):
         data_proxy.include(Book.init_from(d_object))
         data_proxy.include(Reader.init_from(d_object))
@@ -152,7 +153,7 @@ def store_record_data():
 if __name__ == '__main__':
     logger.initiate_time_counter()
     # ------------------------------
-    # store_record_data()
+    store_record_data()
     # data_manager = DataManager(writeback=False)
     data_proxy = DataProxy()
     data_proxy.execute_events_induction('date')
