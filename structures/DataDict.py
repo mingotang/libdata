@@ -172,7 +172,7 @@ class DataDict(dict):
         second_level_index = self.group_attr_by(group_attr=neighbor_tag, by_attr=shadow_tag)
         for first_k in first_level_index.keys():
             neighbor_dict[first_k] = set()
-            for second_k in second_level_index.keys():
+            for second_k in first_level_index[first_k]:
                 neighbor_dict[first_k].update(second_level_index[second_k])
 
         return neighbor_dict

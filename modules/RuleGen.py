@@ -105,6 +105,9 @@ class RuleGenerator(object):
     def log(self):
         return self.__logger__
 
+    def close(self):
+        self.__data_proxy__.close()
+
 
 if __name__ == '__main__':
     import datetime
@@ -113,12 +116,17 @@ if __name__ == '__main__':
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()
 
-    rule_generator.apply_collaborative_filtering(
-        base_type=CF_BaseType.ReaderBase,
-        similarity_type=CF_SimilarityType.Cosine,
-        neighbor_type=CF_NeighborType.All,
-        time_range=StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 2, 1))
-    )
+    try:
+        rule_generator.apply_collaborative_filtering(
+            base_type=CF_BaseType.ReaderBase,
+            similarity_type=CF_SimilarityType.Cosine,
+            neighbor_type=CF_NeighborType.All,
+            time_range=StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        )
+    except KeyboardInterrupt:
+        rule_generator.close()
+    finally:
+        rule_generator.close()
 
     rule_generator.log.time_sleep(1)
     rule_generator.log.print_time_passed()

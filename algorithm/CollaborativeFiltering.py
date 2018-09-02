@@ -65,7 +65,6 @@ class CollaborativeFiltering(object):
         """
         from utils import get_logger
         self.__logger__ = get_logger(module_name=self.__class__.__name__)
-        self.__logger__.debug_running('{}.__init__'.format(self.__class__.__name__), 'begin')
 
         # 检查参数
         if not len(vec_data) > 0:
@@ -73,6 +72,7 @@ class CollaborativeFiltering(object):
             raise ParamNoContentError('vec_data')
 
         # 运行数据是否储存在内存中
+        self.__logger__.debug_running('running cf in memory {}'.format(in_memory))
         if in_memory is True:
             if isinstance(vec_data, dict):
                 self.data = vec_data
@@ -94,7 +94,7 @@ class CollaborativeFiltering(object):
                 raise ParamTypeError('vec_data', (dict, ShelveWrapper, SparseVectorCollector), vec_data)
 
         # 检查数据格式是否符合要求
-        self.__logger__.debug_running('{}.__init__'.format(self.__class__.__name__), 'checking data')
+        self.__logger__.debug_running('checking input data')
         for value in self.data.values():
             if not isinstance(value, (dict, SparseVector)):
                 from utils.Exceptions import ValueTypeError
@@ -121,7 +121,6 @@ class CollaborativeFiltering(object):
         :param max_recommend_list:
         :return:
         """
-        from tqdm import tqdm
         from . import CF_NeighborType
         assert isinstance(neighbor_type, CF_NeighborType)
         assert max_recommend_list > 0
@@ -130,16 +129,17 @@ class CollaborativeFiltering(object):
 
         self.__possible_neighbor_dict__ = possible_neighbors
         if possible_neighbors is not None:
+            self.__logger__.debug_running('cf with acceleration')
             for value in possible_neighbors.values():
                 if not isinstance(value, (set, list, frozenset, tuple)):
                     from utils.Exceptions import ParamTypeError
-                    ParamTypeError('value in first_level_index_dict', set, value)
+                    ParamTypeError('value in possible_neighbors', set, value)
 
         self.__logger__.debug_running('collecting similar object')
         simi_result = CFResult()
         # self.__logger__.debug_running('executing NeighborType.{}'.format(neighbor_type.name))
         if neighbor_type == CF_NeighborType.All:
-            for u_i in tqdm(self.data.keys(), desc='executing NeighborType.{}'.format(neighbor_type.name)):
+            for u_i in self.data.keys():
                 simi_result.add_list(u_i, self.find_all_neighbors(u_i, similarity_type))
 
         elif neighbor_type == CF_NeighborType.FixSize:
@@ -148,7 +148,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('fixed_size')
 
             if fixed_size > 0:
-                for u_i in tqdm(self.data.keys(), desc='executing NeighborType.{}'.format(neighbor_type.name)):
+                for u_i in self.data.keys():
                     simi_result.add_list(u_i, self.find_k_neighbors(u_i, fixed_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -160,7 +160,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('limited_size')
 
             if limited_size > 0:
-                for u_i in tqdm(self.data.keys(), desc='executing NeighborType.{}'.format(neighbor_type.name)):
+                for u_i in self.data.keys():
                     simi_result.add_list(u_i, self.find_limited_neighbors(u_i, limited_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -196,6 +196,7 @@ class CollaborativeFiltering(object):
                 result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
         else:
             possible_neighbor_set = self.__possible_neighbor_dict__[ui_tag]
+            # self.__logger__.debug_variable(possible_neighbor_set)
             for tag in possible_neighbor_set:
                 if tag == ui_tag:
                     continue
