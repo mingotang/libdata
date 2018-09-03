@@ -204,13 +204,17 @@ class OrderedList(object):
         """将列表内容存入一个新的列表（不排序）中 -> list"""
         return self.__data__
 
-    def to_dict(self, index_tag: str):
+    def to_dict(self, index_tag: str=None):
         """
         将列表内容存入一个新的字典中
         :param index_tag:
         :return: dict
         """
         new_dict = dict()
-        for value in self.__data__:
-            new_dict[getattr(value, index_tag)] = value
+        if index_tag is None:
+            for value in self.__data__:
+                new_dict[getattr(value, self.__stag__)] = value
+        else:
+            for value in self.__data__:
+                new_dict[getattr(value, index_tag)] = value
         return new_dict

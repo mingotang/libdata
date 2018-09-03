@@ -1,56 +1,8 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 from Interface import AbstractCollector, AbstractResult
-from structures import CountingDict, SparseVector
+from structures import CountingDict, RecoResult, SparseVector
 from structures import ShelveWrapper
-
-
-class CFResult(AbstractResult, dict):
-    def __init__(self):
-        dict.__init__(self)
-
-    def add(self, *args, **kwargs):
-        self.add_list(*args, **kwargs)
-
-    def add_list(self, key: str, value: list):
-        self.__setitem__(key, value)
-
-    def to_csv(self, folder_path: str=None):
-        import os
-        import datetime
-        from Config import DataConfig
-        file_name = 'cf_result_{}.csv'.format(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'))
-        if folder_path is None:
-            target_path = os.path.join(DataConfig.operation_path, file_name)
-        else:
-            if os.path.exists(folder_path) is False:
-                os.makedirs(folder_path)
-            target_path = os.path.join(folder_path, file_name)
-        with open(target_path, 'w', encoding='utf-8') as file:
-            for key, value in self.items():
-                file.write(key)
-                file.write(',')
-                file.write(','.join(value))
-                file.write('\n')
-        file.close()
-
-    @classmethod
-    def load_csv(cls, csv_path: str, encoding: str='utf-8'):
-        import os
-        if not os.path.exists(csv_path):
-            raise FileNotFoundError(csv_path)
-        result = cls()
-        file = open(csv_path, 'r', encoding=encoding)
-        content = file.readlines()
-        assert isinstance(content, str)
-        content = content.split('\n')
-        for line in content:
-            line = line.split(',')
-            if len(line) > 1:
-                result[line[0]] = line[1:]
-            else:
-                result[line[0]] = list()
-        return result
 
 
 class CollaborativeFiltering(object):
@@ -136,7 +88,7 @@ class CollaborativeFiltering(object):
                     ParamTypeError('value in possible_neighbors', set, value)
 
         self.__logger__.debug_running('collecting similar object')
-        simi_result = CFResult()
+        simi_result = RecoResult()
         # self.__logger__.debug_running('executing NeighborType.{}'.format(neighbor_type.name))
         if neighbor_type == CF_NeighborType.All:
             for u_i in self.data.keys():
@@ -169,7 +121,7 @@ class CollaborativeFiltering(object):
             raise RuntimeError
 
         self.__logger__.debug_running('collecting recommended object')
-        reco_result = CFResult()
+        reco_result = RecoResult()
         for u_i, simi_list in simi_result.items():
             reco_list = list()
             main_set = set(self.data[u_i].keys())

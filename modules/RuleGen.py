@@ -59,17 +59,46 @@ class RuleGenerator(object):
                 )
 
             elif isinstance(time_range, GrowthTimeRange):
-                from algorithm.CollaborativeFiltering import CFResult
+                from structures import RecoResult
+                from structures import DataDict, Event
                 stage_tag, stage_list = time_range.growth_stage
-                cf_result = CFResult()
+                cf_result = RecoResult()
+                readers = self.__data_proxy__.readers
                 for stage in stage_list:
                     self.log.debug_running('trimming event data by stage {}'.format(stage))
-                    if isinstance(stage, int):
-                        this_events = events_data.trim_by_range(stage_tag, (stage, ))
-                    elif isinstance(stage, tuple):
-                        this_events = events_data.trim_between_range(stage_tag, stage[0], stage[1])
-                    else:
-                        raise RuntimeError
+                    this_event = DataDict(data_type=Event)
+                    for key, value in events_data.items():
+                        # assert isinstance(value, Event)
+                        this_growth = getattr(readers[value.reader_id], stage_tag).__call__(time_range.end_time.date())
+                        if this_growth is None:
+                            continue
+
+                        if isinstance(stage, int):
+                            if this_growth == stage:
+                                this_event[key] = value
+                        elif isinstance(stage, tuple):
+                            if stage[0] <= this_growth < stage[1]:
+                                this_event[key] = value
+                        else:
+                            raise RuntimeError
+
+                    if len(this_event) == 0:
+                        continue
+
+                    self.log.debug_running('collecting possible neighbor data for stage {}'.format(stage))
+                    possible_neighbors = this_event.neighbor_attr_by('reader_id', 'book_id')
+
+                    self.log.debug_running('collecting vector data for stage {}'.format(stage))
+                    collector = self.__collect_simple_sparse_vector__(
+                        this_event, 'reader_id', 'book_id', time_tag='times'
+                    )
+                    self.log.debug_running('running CollaborativeFiltering for stage {}')
+                    this_result = CollaborativeFiltering(collector, in_memory=True).run(
+                        neighbor_type=neighbor_type, similarity_type=similarity_type,
+                        possible_neighbors=possible_neighbors
+                    )
+
+                    cf_result.update(this_result)
             else:
                 raise TypeError
 
@@ -97,28 +126,6 @@ class RuleGenerator(object):
 
         return result
 
-    def get_shelve(self, db_name: str, new=False):
-        """get shelve db from operation path -> ShelveWrapper"""
-        from structures import ShelveWrapper
-        if new is False:
-            if os.path.exists(os.path.join(self.__operation_path__, db_name)):
-                return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
-            else:
-                raise FileNotFoundError(
-                    'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
-                )
-        else:
-            return ShelveWrapper.init_from(None, os.path.join(self.__operation_path__, db_name))
-
-    def get_shelve_dict(self, db_name: str):
-        from structures import ShelveWrapper
-        if os.path.exists(os.path.join(self.__operation_path__, db_name)):
-            return ShelveWrapper.get_data_dict(os.path.join(self.__operation_path__, db_name))
-        else:
-            raise FileNotFoundError(
-                'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
-            )
-
     @property
     def log(self):
         return self.__logger__
@@ -135,12 +142,20 @@ if __name__ == '__main__':
     rule_generator.log.initiate_time_counter()
 
     try:
+        # running StandardTimeRange
+        # time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+
+        # running GrowthTimeRange
+        time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 4), (4, 8), (8, 100)])
+
         rule_generator.apply_collaborative_filtering(
             base_type=CF_BaseType.ReaderBase,
             similarity_type=CF_SimilarityType.Cosine,
             neighbor_type=CF_NeighborType.All,
-            time_range=StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+            time_range=time_range,
         )
+
     except KeyboardInterrupt:
         rule_generator.close()
     finally:
