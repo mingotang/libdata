@@ -57,7 +57,25 @@ class RuleGenerator(object):
                 cf_result = CollaborativeFiltering(collector, in_memory=True).run(
                     neighbor_type=neighbor_type, similarity_type=similarity_type, possible_neighbors=possible_neighbors
                 )
-                cf_result.to_csv()
+
+            elif isinstance(time_range, GrowthTimeRange):
+                from algorithm.CollaborativeFiltering import CFResult
+                stage_tag, stage_list = time_range.growth_stage
+                cf_result = CFResult()
+                for stage in stage_list:
+                    self.log.debug_running('trimming event data by stage {}'.format(stage))
+                    if isinstance(stage, int):
+                        this_events = events_data.trim_by_range(stage_tag, (stage, ))
+                    elif isinstance(stage, tuple):
+                        this_events = events_data.trim_between_range(stage_tag, stage[0], stage[1])
+                    else:
+                        raise RuntimeError
+            else:
+                raise TypeError
+
+            cf_result.to_csv()
+
+            return cf_result
 
         elif base_type == CF_BaseType.BookBase:
             raise NotImplementedError

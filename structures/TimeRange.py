@@ -49,16 +49,16 @@ class GrowthTimeRange(TimeRange):
             from utils.Exceptions import ParamNoContentError
             raise ParamNoContentError('stage')
 
-        if isinstance(stage_list[0], (int, float)):
+        if isinstance(stage_list[0], int):
             for item in stage_list:
-                if not isinstance(item, (int, float)):
+                if not isinstance(item, int):
                     raise ParamTypeError('item in stage', (int, float), item)
         elif isinstance(stage_list[0], tuple):
             for item in stage_list:
                 if not isinstance(item, tuple) or len(item) != 2:
                     raise ParamTypeError('item in stage', tuple, item)
         else:
-            raise ParamTypeError('item in stage', (int, float, tuple), stage_list[0])
+            raise ParamTypeError('item in stage', (int, tuple), stage_list[0])
 
         self.__growth_stage_list__ = stage_list
         self.__growth_stage_tag__ = stage_tag

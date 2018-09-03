@@ -165,7 +165,6 @@ class OrderedList(object):
                     raise ParamOutOfRangeError('count', (1, 'infinite'), count)
         return None
 
-
     def trim(self, attr_tag: str, range_start, range_end,
              include_start: bool=True, include_end: bool=False, resort_tag=None):
         """
