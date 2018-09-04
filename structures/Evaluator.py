@@ -28,13 +28,15 @@ class Evaluator(object):
         for ac_key, ac_value in self.__actual_data__.items():
             assert isinstance(ac_value, list)
             if ac_key in self.__predicted_data__:
+                pre_value = self.__predicted_data__[ac_key]
+                assert isinstance(pre_value, (str, type(None))), pre_value
                 match_count += 1
                 if len(ac_value) >= n:
-                    if self.__predicted_data__[ac_key] in ac_value[:n]:
+                    if pre_value in ac_value[:n]:
                         hit_count += 1.0
                 else:
                     # actual data is not enough
-                    if self.__predicted_data__[ac_key] in ac_value:
+                    if pre_value in ac_value:
                         hit_count += 1.0
             else:
                 # no predicted data
@@ -42,6 +44,6 @@ class Evaluator(object):
 
         return hit_count / match_count
 
-    def coverage_accuracy(self):
+    def coverage_i_top_n_accuracy(self, i: int=1, n: int=100):
         """评价若干个预测结果可以覆盖多少比例的实际结果 -> float"""
-        raise NotImplementedError
+        pass

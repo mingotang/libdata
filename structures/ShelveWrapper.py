@@ -145,17 +145,27 @@ class ShelveWrapper(Mapping, Sized):
     def to_list(self):
         return [var for var in self.values()]
 
-    def to_dict(self):
+    def to_dict(self, key_range=None):
         new_d = dict()
-        for key, value in self.items():
-            new_d[key] = value
+        if key_range is None:
+            for key, value in self.items():
+                new_d[key] = value
+        else:
+            for key, value in self.items():
+                if key in key_range:
+                    new_d[key] = value
         return new_d
 
-    def to_data_dict(self):
+    def to_data_dict(self, key_range=None):
         from structures import DataDict
         new_d = DataDict()
-        for key, value in self.items():
-            new_d[key] = value
+        if key_range is None:
+            for key, value in self.items():
+                new_d[key] = value
+        else:
+            for key, value in self.items():
+                if key in key_range:
+                    new_d[key] = value
         return new_d
 
     def update(self, data):

@@ -15,6 +15,27 @@ class RecoResult(dict):
         else:
             self.__setitem__(key, value)
 
+    def derive_top(self, n: int=1):
+        if n < 1:
+            from utils.Exceptions import ParamOutOfRangeError
+            raise ParamOutOfRangeError('n', (1, 'inf'), n)
+        assert n >= 1
+
+        result = RecoResult()
+        for key, value in self.items():
+            if n == 1:
+                if len(value) >= 1:
+                    result.__setitem__(key, value[0])
+                else:
+                    result.__setitem__(key, None)
+            else:
+                if len(value) >= n:
+                    result.add_list(key, value[:n])
+                else:
+                    result.add_list(key, value)
+
+        return result
+
     def to_csv(self, folder_path: str=None):
         import os
         import datetime
@@ -42,8 +63,8 @@ class RecoResult(dict):
         result = cls()
         file = open(csv_path, 'r', encoding=encoding)
         content = file.readlines()
-        assert isinstance(content, str)
-        content = content.split('\n')
+        # assert isinstance(content, str)
+        # content = content.split('\n')
         for line in content:
             line = line.split(',')
             if len(line) > 1:

@@ -126,6 +126,32 @@ class RuleGenerator(object):
 
         return result
 
+    def evaluate_single_result(self, result_data, time_range):
+        from structures import Evaluator, RecoResult, TimeRange
+        assert isinstance(time_range, TimeRange)
+
+        if isinstance(result_data, str):
+            result = RecoResult.load_csv(result_data).derive_top(1)
+        elif isinstance(result_data, RecoResult):
+            result = result_data.derive_top(1)
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('result_data', (str, RecoResult), result_data)
+
+        actual_data = dict()
+        inducted_events = self.__data_proxy__.inducted_events.to_dict()
+        for reco_key, events_list in inducted_events.items():
+            from structures import OrderedList
+            assert isinstance(events_list, OrderedList)
+            events_list = events_list.trim_between_range(
+                'date', time_range.start_time.date(), time_range.start_time.date()
+            ).to_attr_list('book_id')
+            actual_data[reco_key] = events_list
+
+        evaluator = Evaluator(actual_data=actual_data, predicted_data=result)
+        print(evaluator.match_percentage)
+        print(evaluator.top_n_accuracy(100))
+
     @property
     def log(self):
         return self.__logger__
@@ -143,17 +169,26 @@ if __name__ == '__main__':
 
     try:
         # running StandardTimeRange
-        # time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
 
         # running GrowthTimeRange
-        time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
-        time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 4), (4, 8), (8, 100)])
+        this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 4), (4, 8), (8, 100)])
 
-        rule_generator.apply_collaborative_filtering(
-            base_type=CF_BaseType.ReaderBase,
-            similarity_type=CF_SimilarityType.Cosine,
-            neighbor_type=CF_NeighborType.All,
-            time_range=time_range,
+        # rule_generator.apply_collaborative_filtering(
+        #     base_type=CF_BaseType.ReaderBase,
+        #     similarity_type=CF_SimilarityType.Cosine,
+        #     neighbor_type=CF_NeighborType.All,
+        #     time_range=this_time_range,
+        # )
+
+        # rule_generator.evaluate_single_result(
+        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
+        #     time_range=this_time_range
+        # )
+        rule_generator.evaluate_single_result(
+            result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
+            time_range=this_time_range
         )
 
     except KeyboardInterrupt:

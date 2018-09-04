@@ -116,8 +116,10 @@ class DataProxy(object):
     def inducted_events(self):
         if self.__inducted_events__ is None:
             raise RuntimeError('Events should be inducted before calling inducted events')
-        else:
+        elif isinstance(self.__inducted_events__, ShelveWrapper):
             return self.__inducted_events__
+        else:
+            raise RuntimeError
 
     def close(self):
         self.__books__.close()

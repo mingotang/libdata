@@ -165,8 +165,8 @@ class OrderedList(object):
                     raise ParamOutOfRangeError('count', (1, 'infinite'), count)
         return None
 
-    def trim(self, attr_tag: str, range_start, range_end,
-             include_start: bool=True, include_end: bool=False, resort_tag=None):
+    def trim_between_range(self, attr_tag: str, range_start, range_end,
+                           include_start: bool=True, include_end: bool=False, resort_tag=None):
         """
         在列表内容中删减出需要的内容
         :param attr_tag: 删减的标签
@@ -203,6 +203,12 @@ class OrderedList(object):
     def to_list(self):
         """将列表内容存入一个新的列表（不排序）中 -> list"""
         return self.__data__
+
+    def to_attr_list(self, attr_tag: str):
+        new_list = list()
+        for value in self.__data__:
+            new_list.append(getattr(value, attr_tag))
+        return new_list
 
     def to_dict(self, index_tag: str=None):
         """
