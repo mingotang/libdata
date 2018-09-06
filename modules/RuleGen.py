@@ -131,9 +131,9 @@ class RuleGenerator(object):
         assert isinstance(time_range, TimeRange)
 
         if isinstance(result_data, str):
-            result = RecoResult.load_csv(result_data).derive_top(1)
+            result = RecoResult.load_csv(result_data).derive_top(10)
         elif isinstance(result_data, RecoResult):
-            result = result_data.derive_top(1)
+            result = result_data.derive_top(10)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('result_data', (str, RecoResult), result_data)
@@ -144,13 +144,14 @@ class RuleGenerator(object):
             from structures import OrderedList
             assert isinstance(events_list, OrderedList)
             events_list = events_list.trim_between_range(
-                'date', time_range.start_time.date(), time_range.start_time.date()
+                'date', time_range.start_time.date(), time_range.start_time.date() + datetime.timedelta(days=300)
             ).to_attr_list('book_id')
             actual_data[reco_key] = events_list
 
         evaluator = Evaluator(actual_data=actual_data, predicted_data=result)
         print(evaluator.match_percentage)
         print(evaluator.top_n_accuracy(100))
+        print(evaluator.coverage_i_top_n_accuracy(10, 100))
 
     @property
     def log(self):
@@ -182,10 +183,10 @@ if __name__ == '__main__':
         #     time_range=this_time_range,
         # )
 
-        # rule_generator.evaluate_single_result(
-        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
-        #     time_range=this_time_range
-        # )
+        rule_generator.evaluate_single_result(
+            result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
+            time_range=this_time_range
+        )
         rule_generator.evaluate_single_result(
             result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
             time_range=this_time_range
