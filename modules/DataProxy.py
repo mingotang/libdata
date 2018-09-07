@@ -11,6 +11,102 @@ from utils import get_logger
 logger = get_logger(module_name=__file__)
 
 
+class EventStore(object):
+    def __init__(
+            self, folder_path: str=os.path.join(DataConfig.data_path, 'events'),
+            writeback: bool=False, new: bool=False,
+    ):
+        if not os.path.exists(folder_path):
+            if new is False:
+                raise RuntimeError('EventStore folder should be inited before loading')
+            else:
+                pass
+
+        self.__path__ = folder_path
+        self.__data__ = self.__connect_folder__(writeback=writeback)
+
+
+    def store(self, data):
+        from collections import Iterable, Mapping
+
+        stored = self.__connect_folder__(False)
+
+        # check data
+        if isinstance(data, Mapping):
+            for event in data.values():
+                assert event.date.strftime('%Y%m') not in stored, 'Already has data in month {}'.format(event.date)
+
+        elif isinstance(data, Iterable):
+            for event in data:
+                assert isinstance(event, Event)
+                assert event.date.strftime('%Y%m') not in stored, 'Already has data in month {}'.format(event.date)
+
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('data', (Iterable, Mapping), data)
+
+        # storing data
+        if isinstance(data, Mapping):
+            for event in data.values():
+                assert isinstance(event, Event)
+                tag = event.date.strftime('%Y%m')
+
+                if tag not in stored:
+                    stored_db = ShelveWrapper(os.path.join(self.__path__, tag), new=True)
+                    stored[tag] = stored_db
+                else:
+                    stored_db = stored[tag]
+
+                if tag in stored_db:
+                    stored_event = stored_db[event.hashable_key]
+                    stored_event.update_from(event)
+                    stored_db[event.hashable_key] = stored_event
+                else:
+                    stored_db[event.hashable_key] = event
+
+        elif isinstance(data, Iterable):
+            for event in data:
+                assert isinstance(event, Event)
+                tag = event.date.strftime('%Y%m')
+
+                if tag not in stored:
+                    stored_db = ShelveWrapper(os.path.join(self.__path__, tag), new=True)
+                    stored[tag] = stored_db
+                else:
+                    stored_db = stored[tag]
+
+                if tag in stored_db:
+                    stored_event = stored_db[event.hashable_key]
+                    stored_event.update_from(event)
+                    stored_db[event.hashable_key] = stored_event
+                else:
+                    stored_db[event.hashable_key] = event
+
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('data', (Iterable, Mapping), data)
+
+        for tag in stored:
+            stored[tag].close()
+
+    def __connect_folder__(self, writeback: bool):
+        connect = dict()
+
+        for file in os.listdir(self.__path__):
+
+            if len(file) == 0:
+                continue
+            if file[0] in ('.', '_', '$', '@'):
+                continue
+
+            file = file.split('.')
+            file = file[0]
+
+            connect[file] = ShelveWrapper(os.path.join(self.__path__, file), writeback=writeback)
+
+        return connect
+
+
 class DataProxy(object):
 
     def __init__(self, writeback: bool=False,
@@ -155,10 +251,18 @@ def store_record_data():
 if __name__ == '__main__':
     logger.initiate_time_counter()
     # ------------------------------
-    store_record_data()
+    # store_record_data()
     # data_manager = DataManager(writeback=False)
+    # data_proxy = DataProxy()
+    # data_proxy.execute_events_induction('date')
+    # data_proxy.close()
+
+    from tqdm import tqdm
+    from modules.DataLoad import RawDataProcessor
+
     data_proxy = DataProxy()
-    data_proxy.execute_events_induction('date')
-    data_proxy.close()
+
+    event_store = EventStore(new=True)
+    event_store.store(data_proxy.events.to_dict())
     # ------------------------------
     logger.print_time_passed()
