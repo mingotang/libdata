@@ -1,6 +1,6 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from Interface import AbstractCollector, AbstractResult
+from Interface import AbstractCollector
 from structures import CountingDict, RecoResult, SparseVector
 from structures import ShelveWrapper
 
@@ -9,7 +9,7 @@ class CollaborativeFiltering(object):
     """
     CF: finding neighbors
     """
-    def __init__(self, vec_data, in_memory: bool=True):
+    def __init__(self, vec_data, used_data, in_memory: bool=True):
         """
 
         :param vec_data: dict/ShelveWrapper/PreferenceCollector
@@ -18,68 +18,56 @@ class CollaborativeFiltering(object):
         from utils import get_logger
         self.__logger__ = get_logger(module_name=self.__class__.__name__)
 
+        self.used_data = self.__check_used_data__(used_data)
+        self.vec_data = self.__clean_vector_data__(vec_data, in_memory)
+        self.__possible_neighbor_dict__ = None
+
+    def __check_used_data__(self, used_data):
+        from utils.Exceptions import ParamTypeError
+        if isinstance(used_data, dict):
+            for value in used_data.values():
+                if not isinstance(value, set):
+                    raise ParamTypeError('value in used_data', set, value)
+        else:
+            raise ParamTypeError('used_data', dict, used_data)
+        return used_data
+
+    def __clean_vector_data__(self, vec_data, in_memory: bool):
         # 检查参数
         if not len(vec_data) > 0:
             from utils.Exceptions import ParamNoContentError
             raise ParamNoContentError('vec_data')
 
         # 运行数据是否储存在内存中
-        self.__logger__.debug_running('running cf in memory {}'.format(in_memory))
         if in_memory is True:
             if isinstance(vec_data, dict):
-                self.data = vec_data
+                data = vec_data
             elif isinstance(vec_data, ShelveWrapper):
-                self.data = vec_data.to_dict()
+                data = vec_data.to_dict()
             elif isinstance(vec_data, SparseVectorCollector):
-                self.data = vec_data.to_dict()
+                data = vec_data.to_dict()
             else:
                 from utils.Exceptions import ParamTypeError
                 raise ParamTypeError('vec_data', (dict, ShelveWrapper, SparseVectorCollector), vec_data)
         else:
-            self.data = ShelveWrapper.get_temp()
+            data = ShelveWrapper.get_temp()
             if isinstance(vec_data, (ShelveWrapper, dict)):
-                self.data.update(vec_data)
+                data.update(vec_data)
             elif isinstance(vec_data, SparseVectorCollector):
-                self.data.update(vec_data.to_dict())
+                data.update(vec_data.to_dict())
             else:
                 from utils.Exceptions import ParamTypeError
                 raise ParamTypeError('vec_data', (dict, ShelveWrapper, SparseVectorCollector), vec_data)
 
         # 检查数据格式是否符合要求
         self.__logger__.debug_running('checking input data')
-        for value in self.data.values():
+        for value in data.values():
             if not isinstance(value, (dict, SparseVector)):
                 from utils.Exceptions import ValueTypeError
                 raise ValueTypeError('value in vec_data', (dict, SparseVector), value)
+        return data
 
-        self.__possible_neighbor_dict__ = None
-
-    def delete_data(self):
-        if isinstance(self.data, ShelveWrapper):
-            self.data.delete()
-        del self.data
-        self.__logger__.debug_running('{}.delete_data'.format(self.__class__.__name__), 'finished')
-
-    def run(self, neighbor_type, similarity_type,
-            fixed_size: int=None, limited_size: int=None,
-            possible_neighbors: dict=None, max_recommend_list: int=100):
-        """
-
-        :param neighbor_type: NeighborType
-        :param similarity_type: SimilarityType
-        :param fixed_size: int
-        :param limited_size: int
-        :param possible_neighbors:
-        :param max_recommend_list:
-        :return:
-        """
-        from . import CF_NeighborType
-        assert isinstance(neighbor_type, CF_NeighborType)
-        assert max_recommend_list > 0
-        # assert isinstance(similarity_type, CF_SimilarityType)
-        self.__logger__.debug_running('{}.run'.format(self.__class__.__name__), 'begin')
-
-        self.__possible_neighbor_dict__ = possible_neighbors
+    def __check_possible_neighbors__(self, possible_neighbors: dict=None):
         if possible_neighbors is not None:
             self.__logger__.debug_running('cf with acceleration')
             for value in possible_neighbors.values():
@@ -87,11 +75,28 @@ class CollaborativeFiltering(object):
                     from utils.Exceptions import ParamTypeError
                     ParamTypeError('value in possible_neighbors', set, value)
 
-        self.__logger__.debug_running('collecting similar object')
+    def delete_data(self):
+        if isinstance(self.vec_data, ShelveWrapper):
+            self.vec_data.delete()
+        del self.vec_data
+        self.__logger__.debug_running('{}.delete_data'.format(self.__class__.__name__), 'finished')
+
+    def collect_neighbors(
+            self, neighbor_type, similarity_type,
+            fixed_size: int=None, limited_size: int=None,
+            possible_neighbors: dict = None
+    ):
+        from . import CF_NeighborType
+        assert isinstance(neighbor_type, CF_NeighborType)
+
+        self.__possible_neighbor_dict__ = possible_neighbors
+        self.__check_possible_neighbors__(possible_neighbors)
+
+        self.__logger__.debug_running('collecting neighbors')
         simi_result = RecoResult()
         # self.__logger__.debug_running('executing NeighborType.{}'.format(neighbor_type.name))
         if neighbor_type == CF_NeighborType.All:
-            for u_i in self.data.keys():
+            for u_i in self.vec_data.keys():
                 simi_result.add_list(u_i, self.find_all_neighbors(u_i, similarity_type))
 
         elif neighbor_type == CF_NeighborType.FixSize:
@@ -100,7 +105,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('fixed_size')
 
             if fixed_size > 0:
-                for u_i in self.data.keys():
+                for u_i in self.vec_data.keys():
                     simi_result.add_list(u_i, self.find_k_neighbors(u_i, fixed_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -112,21 +117,28 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('limited_size')
 
             if limited_size > 0:
-                for u_i in self.data.keys():
+                for u_i in self.vec_data.keys():
                     simi_result.add_list(u_i, self.find_limited_neighbors(u_i, limited_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
                 raise ParamOutOfRangeError('limited_size', (1, 'inf'), limited_size)
         else:
             raise RuntimeError
+        return simi_result
 
-        self.__logger__.debug_running('collecting recommended object')
+    def collect_recommend_list(self, simi_result: RecoResult, max_recommend_list: int=100):
+        if max_recommend_list  <= 0:
+            from utils.Exceptions import ParamOutOfRangeError
+            raise ParamOutOfRangeError('max_recommend_list', (0, 'inf'), max_recommend_list)
+
+        self.__logger__.debug_running('collecting recommend list')
+
         reco_result = RecoResult()
         for u_i, simi_list in simi_result.items():
             reco_list = list()
-            main_set = set(self.data[u_i].keys())
+            main_set = self.used_data[u_i]
             for sub_i in simi_list:
-                sub_set = set(self.data[sub_i].keys())
+                sub_set = self.used_data[sub_i]
                 reco_set = sub_set - main_set
                 for item in reco_set:
                     if len(reco_list) > max_recommend_list:
@@ -135,24 +147,35 @@ class CollaborativeFiltering(object):
                         reco_list.append(item)
             reco_result.add_list(u_i, reco_list)
 
-        self.__logger__.debug_running('{}.run'.format(self.__class__.__name__), 'end')
+        return reco_result
+
+    def run(self, neighbor_type, similarity_type,
+            fixed_size: int=None, limited_size: int=None,
+            possible_neighbors: dict=None, max_recommend_list: int=100):
+        simi_result = self.collect_neighbors(
+            neighbor_type, similarity_type, fixed_size=fixed_size, limited_size=limited_size,
+            possible_neighbors=possible_neighbors
+        )
+
+        reco_result = self.collect_recommend_list(simi_result, max_recommend_list)
+
         return reco_result
 
     def __calculate_neighbors__(self, ui_tag: str, sim_type):
         result = CountingDict()
 
         if self.__possible_neighbor_dict__ is None:
-            for tag in self.data.keys():
+            for tag in self.vec_data.keys():
                 if tag == ui_tag:
                     continue
-                result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
+                result.set(tag, abs(sim_type.__call__(self.vec_data[ui_tag], self.vec_data[tag])))
         else:
             possible_neighbor_set = self.__possible_neighbor_dict__[ui_tag]
             # self.__logger__.debug_variable(possible_neighbor_set)
             for tag in possible_neighbor_set:
                 if tag == ui_tag:
                     continue
-                result.set(tag, abs(sim_type.__call__(self.data[ui_tag], self.data[tag])))
+                result.set(tag, abs(sim_type.__call__(self.vec_data[ui_tag], self.vec_data[tag])))
 
         return result
 
@@ -167,6 +190,10 @@ class CollaborativeFiltering(object):
     def find_limited_neighbors(self, ui_tag: str, limit: float, simi_type):
         simi = self.__calculate_neighbors__(ui_tag, simi_type).trim(lower_limit=limit)
         return simi.sort(inverse=True)
+
+
+class SlippingRangeCollaborativeFiltering:
+    pass
 
 
 class SparseVectorCollector(AbstractCollector):

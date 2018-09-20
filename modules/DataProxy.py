@@ -4,7 +4,7 @@ import os
 
 from Config import DataConfig
 from structures import Book, Event, Reader
-from structures import ShelveWrapper
+from structures import ShelveWrapper, TimeRange
 from utils import get_logger
 
 
@@ -20,7 +20,7 @@ class EventStore(object):
             if new is False:
                 raise RuntimeError('EventStore folder should be inited before loading')
             else:
-                pass
+                os.makedirs(folder_path)
 
         self.__path__ = folder_path
         self.__data__ = self.__connect_folder__(writeback=writeback)
@@ -106,6 +106,20 @@ class EventStore(object):
 
         return connect
 
+    def derive(self, time_range: TimeRange):
+        from structures import DataDict
+        start = time_range.start_time.date().strftime('%Y%m')
+        end = time_range.end_time.date().strftime('%Y%m')
+        derive_data = DataDict()
+        for time, db in self.__data__.items():
+            if start <= time <= end:
+                assert isinstance(db, ShelveWrapper)
+                for key, event in db.items():
+                    assert isinstance(event, Event)
+                    if start <= event.date.strftime('%Y%m') <= end:
+                        derive_data[key] = event
+        return derive_data
+
 
 class DataProxy(object):
 
@@ -130,6 +144,8 @@ class DataProxy(object):
             self.__inducted_events__ = ShelveWrapper(os.path.join(self.__path__, 'inducted_events'))
         except FileNotFoundError:
             self.__inducted_events__ = None
+
+        self.__event_store__ = None
 
     def include(self, value):
         """
@@ -195,6 +211,13 @@ class DataProxy(object):
         self.__inducted_events__ = inducted_events_db
 
         return inducted_events_db
+
+    @property
+    def event_store(self):
+        if self.__event_store__ is None:
+            self.__event_store__ = EventStore(folder_path=os.path.join(DataConfig.data_path, 'events'))
+
+        return self.__event_store__
 
     @property
     def readers(self):

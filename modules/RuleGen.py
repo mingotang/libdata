@@ -54,7 +54,9 @@ class RuleGenerator(object):
                 )
 
                 self.log.debug_running('running CollaborativeFiltering')
-                cf_result = CollaborativeFiltering(collector, in_memory=True).run(
+                cf_result = CollaborativeFiltering(
+                    collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
+                ).run(
                     neighbor_type=neighbor_type, similarity_type=similarity_type, possible_neighbors=possible_neighbors
                 )
 
@@ -93,7 +95,9 @@ class RuleGenerator(object):
                         this_event, 'reader_id', 'book_id', time_tag='times'
                     )
                     self.log.debug_running('running CollaborativeFiltering for stage {}')
-                    this_result = CollaborativeFiltering(collector, in_memory=True).run(
+                    this_result = CollaborativeFiltering(
+                        collector, this_event.group_attr_by('book_id', 'reader_id'), in_memory=True
+                    ).run(
                         neighbor_type=neighbor_type, similarity_type=similarity_type,
                         possible_neighbors=possible_neighbors
                     )
@@ -176,21 +180,21 @@ if __name__ == '__main__':
         this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
         this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 4), (4, 8), (8, 100)])
 
-        # rule_generator.apply_collaborative_filtering(
-        #     base_type=CF_BaseType.ReaderBase,
-        #     similarity_type=CF_SimilarityType.Cosine,
-        #     neighbor_type=CF_NeighborType.All,
-        #     time_range=this_time_range,
-        # )
+        rule_generator.apply_collaborative_filtering(
+            base_type=CF_BaseType.ReaderBase,
+            similarity_type=CF_SimilarityType.Cosine,
+            neighbor_type=CF_NeighborType.All,
+            time_range=this_time_range,
+        )
 
-        rule_generator.evaluate_single_result(
-            result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
-            time_range=this_time_range
-        )
-        rule_generator.evaluate_single_result(
-            result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
-            time_range=this_time_range
-        )
+        # rule_generator.evaluate_single_result(
+        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
+        #     time_range=this_time_range
+        # )
+        # rule_generator.evaluate_single_result(
+        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
+        #     time_range=this_time_range
+        # )
 
     except KeyboardInterrupt:
         rule_generator.close()
