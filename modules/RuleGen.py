@@ -105,10 +105,6 @@ class RuleGenerator(object):
         readers = self.__data_proxy__.readers
         for i in range(len(stage_list)):
             stage = stage_list[i]
-            if i < len(stage_list) - 1:
-                next_stage = stage_list[i + 1]
-            else:
-                next_stage = None
 
             this_event = DataDict(data_type=Event)
             next_event = DataDict(data_type=Event)
@@ -121,15 +117,13 @@ class RuleGenerator(object):
                 if isinstance(stage, int):
                     if this_growth == stage:
                         this_event[key] = value
-                    if next_stage is not None:
-                        if this_growth == next_stage:
-                            next_event[key] = value
+                    else:
+                        next_event[key] = value
                 elif isinstance(stage, tuple):
                     if stage[0] <= this_growth < stage[1]:
                         this_event[key] = value
-                    if next_stage is not None:
-                        if next_stage[0] <= this_growth < next_stage[1]:
-                            next_event[key] = value
+                    else:
+                        next_event[key] = value
                 else:
                     raise RuntimeError
 
@@ -141,12 +135,9 @@ class RuleGenerator(object):
                 this_event, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
             )
 
-            if next_stage is None:
-                next_collector = None
-            else:
-                next_collector = self.__collect_simple_sparse_vector__(
-                    next_event, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
-                )
+            next_collector = self.__collect_simple_sparse_vector__(
+                next_event, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
+            )
             self.log.debug_running('running CollaborativeFiltering for stage {}'.format(stage))
             this_result = SlippingRangeCollaborativeFiltering(
                 collector, next_collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
@@ -278,10 +269,12 @@ class RuleGenerator(object):
 
 
     def evaluate_single_result(self, result_data, time_range):
+        import os
         from structures import Evaluator, RecoResult, TimeRange
         assert isinstance(time_range, TimeRange)
 
         if isinstance(result_data, str):
+            result_data = os.path.join(DataConfig.operation_path, result_data)
             result = RecoResult.load_csv(result_data).derive_top(10)
         elif isinstance(result_data, RecoResult):
             result = result_data.derive_top(10)
@@ -322,11 +315,11 @@ if __name__ == '__main__':
 
     try:
         # running StandardTimeRange
-        # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2015, 1, 1))
 
         # running GrowthTimeRange
         this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2015, 1, 1))
-        this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 4), (4, 8), (8, 100)])
+        this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
 
         # running DateBackTimeRange
         # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2014, 1, 1), datetime.date(2013, 7, 1))
@@ -337,8 +330,7 @@ if __name__ == '__main__':
 
         this_re = rule_generator.apply_slipped_collaborative_filtering(
             CF_BaseType.ReaderBase, CF_SimilarityType.Cosine,
-            CF_NeighborType.All, this_time_range,
-        )
+            CF_NeighborType.All, this_time_range,)
 
         # this_re = rule_generator.apply_date_back_collaborative_filtering(
         #     CF_BaseType.ReaderBase, CF_SimilarityType.Cosine,
@@ -349,19 +341,18 @@ if __name__ == '__main__':
 
         # print('--- [standard timerange] ---')
         # rule_generator.evaluate_single_result(
-        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
-        #     time_range=this_time_range
-        # )
+        #     result_data='cf_result_20180921_135227.csv',
+        #     time_range=this_time_range, )
         # print('--- [standard timerange] ---')
         # rule_generator.evaluate_single_result(
-        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2015.csv',
+        #     result_data='cf_result_20180920_215921 standard timerange 2013-2014.csv',
         #     time_range=this_time_range
         # )
         # print('--- [growth timerange] ---')
         # rule_generator.evaluate_single_result(
-        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
-        #     time_range=this_time_range
-        # )
+        #     result_data='cf_result_20180921_133542.csv',
+        #     time_range=this_time_range, )
+
         # print('--- [date back timerange] ---')
         # rule_generator.evaluate_single_result(
         #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180920_193451.csv',
