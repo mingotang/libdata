@@ -81,8 +81,9 @@ class DataDict(dict):
         if inline is True:
             self.clear()
             self.update(result)
-
-        return result
+            return self
+        else:
+            return result
 
     def trim_by_range(self, attr_tag: str, range_iterable, inline: bool=False):
         """
@@ -96,7 +97,7 @@ class DataDict(dict):
             range_iterable = frozenset(range_iterable)
         else:
             from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('range', (set, frozenset, list, tuple), range_iterable)
+            raise ParamTypeError('range_iterable', (set, frozenset, list, tuple), range_iterable)
 
         result = DataDict(data_type=self.type)
 
@@ -107,8 +108,29 @@ class DataDict(dict):
         if inline is True:
             self.clear()
             self.update(result)
+            return self
+        else:
+            return result
 
-        return result
+    def trim_exclude_range(self, attr_tag: str, exclude_iterable, inline: bool=False):
+        if isinstance(exclude_iterable, (set, frozenset, list, tuple)):
+            exclude_iterable = frozenset(exclude_iterable)
+        else:
+            from utils.Exceptions import ParamTypeError
+            raise ParamTypeError('exclude_iterable', (set, frozenset, list, tuple), exclude_iterable)
+
+        result = DataDict(data_type=self.type)
+
+        for key, value in self.items():
+            if getattr(value, attr_tag) not in exclude_iterable:
+                result[key] = value
+
+        if inline is True:
+            self.clear()
+            self.update(result)
+            return self
+        else:
+            return result
 
     def group_by(self, by_tag: str):
         """

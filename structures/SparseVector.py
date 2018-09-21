@@ -42,7 +42,8 @@ class SparseVector(Mapping, Sized):
     def __mul__(self, other):
         """ * """
         if isinstance(other, SparseVector):
-            assert self.__len__() == other.__len__() and self.__default_value__ == other.__default_value__
+            assert self.__default_value__ == other.__default_value__
+            # assert self.__len__() == other.__len__()
             tag_set = set(self.keys()).intersection(set(other.keys()))
             result = 0.0
             for tag in tag_set:

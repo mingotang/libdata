@@ -1,9 +1,8 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import os
-
+import datetime
 from Config import DataConfig
-from structures import StandardTimeRange, GrowthTimeRange
+from structures import StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 
 class RuleGenerator(object):
@@ -25,110 +24,258 @@ class RuleGenerator(object):
         from algorithm import CollaborativeFiltering
         assert isinstance(base_type, CF_BaseType)
         assert isinstance(neighbor_type, CF_NeighborType)
-        assert isinstance(time_range, (StandardTimeRange, GrowthTimeRange))
+        assert isinstance(time_range, StandardTimeRange)
 
         self.log.debug_running('CF_BaseType.{}'.format(base_type.name))
-        if base_type == CF_BaseType.ReaderBase:
-            events_data = self.__data_proxy__.events.to_data_dict()
+        events_data = self.__data_proxy__.events.to_data_dict()
 
-            self.log.debug_running('trimming event data from date {} to date {}'.format(
-                time_range.start_time.date(), time_range.end_time.date()
-            ))
-            events_data.trim_between_range(
-                attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
-                include_start=True, include_end=False, inline=True
+        self.log.debug_running('trimming event data from date {} to date {}'.format(
+            time_range.start_time.date(), time_range.end_time.date()
+        ))
+        events_data.trim_between_range(
+            attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
+            include_start=True, include_end=False, inline=True
+        )
+
+        self.log.debug_running('trimming event data by event_type 50/62/63')
+        events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
+
+        self.log.debug_running('collecting possible neighbor data')
+        possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+
+        self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
+
+        self.log.debug_running('collecting vector data')
+        collector = self.__collect_mixed_sparse_vector__(
+            events_data, 'reader_id', 'book_id', ref_date=time_range.end_time.date(), time_tag='times',
+        )
+        # collector = self.__collect_simple_sparse_vector__(
+        #     events_data, 'reader_id', 'book_id', time_tag='times',
+        # )
+
+        self.log.debug_running('running CollaborativeFiltering')
+        cf_result = CollaborativeFiltering(
+            collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
+        ).run(
+            neighbor_type=neighbor_type, similarity_type=similarity_type, possible_neighbors=possible_neighbors
+        )
+
+        readers = self.__data_proxy__.readers
+        for key in list(cf_result.keys()):
+            reader = readers[key]
+            from structures import Reader
+            assert isinstance(reader, Reader)
+            if reader.growth_index(time_range.end_time.date()) is None:
+                cf_result.pop(key)
+
+        cf_result.to_csv()
+
+        return cf_result
+
+    def apply_slipped_collaborative_filtering(self, base_type, similarity_type, neighbor_type, time_range):
+        from algorithm import CF_BaseType, CF_NeighborType
+        from algorithm import SlippingRangeCollaborativeFiltering
+        from structures import RecoResult
+        from structures import DataDict, Event
+        assert isinstance(base_type, CF_BaseType)
+        assert isinstance(neighbor_type, CF_NeighborType)
+        assert isinstance(time_range, GrowthTimeRange)
+
+        self.log.debug_running('CF_BaseType.{}'.format(base_type.name))
+        events_data = self.__data_proxy__.events.to_data_dict()
+
+        self.log.debug_running('trimming event data from date {} to date {}'.format(
+            time_range.start_time.date(), time_range.end_time.date()
+        ))
+        events_data.trim_between_range(
+            attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
+            include_start=True, include_end=False, inline=True
+        )
+
+        self.log.debug_running('trimming event data by event_type 50/62/63')
+        events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
+
+        self.log.debug_running('collecting possible neighbor data')
+        possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+
+        self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
+
+        stage_tag, stage_list = time_range.growth_stage
+        cf_result = RecoResult()
+        readers = self.__data_proxy__.readers
+        for i in range(len(stage_list)):
+            stage = stage_list[i]
+            if i < len(stage_list) - 1:
+                next_stage = stage_list[i + 1]
+            else:
+                next_stage = None
+
+            this_event = DataDict(data_type=Event)
+            next_event = DataDict(data_type=Event)
+            for key, value in events_data.items():
+                # assert isinstance(value, Event)
+                this_growth = getattr(readers[value.reader_id], stage_tag).__call__(time_range.end_time.date())
+                if this_growth is None:
+                    continue
+
+                if isinstance(stage, int):
+                    if this_growth == stage:
+                        this_event[key] = value
+                    if next_stage is not None:
+                        if this_growth == next_stage:
+                            next_event[key] = value
+                elif isinstance(stage, tuple):
+                    if stage[0] <= this_growth < stage[1]:
+                        this_event[key] = value
+                    if next_stage is not None:
+                        if next_stage[0] <= this_growth < next_stage[1]:
+                            next_event[key] = value
+                else:
+                    raise RuntimeError
+
+            if len(this_event) == 0:
+                continue
+
+            self.log.debug_running('collecting vector data for stage {}'.format(stage))
+            collector = self.__collect_simple_sparse_vector__(
+                this_event, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
             )
 
-            self.log.debug_running('trimming event data by event_type 50/62/63')
-            events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
-
-            self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
-            if isinstance(time_range, StandardTimeRange):
-
-                self.log.debug_running('collecting possible neighbor data')
-                possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
-
-                self.log.debug_running('collecting vector data')
-                collector = self.__collect_simple_sparse_vector__(
-                    events_data, 'reader_id', 'book_id', time_tag='times'
-                )
-
-                self.log.debug_running('running CollaborativeFiltering')
-                cf_result = CollaborativeFiltering(
-                    collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
-                ).run(
-                    neighbor_type=neighbor_type, similarity_type=similarity_type, possible_neighbors=possible_neighbors
-                )
-
-            elif isinstance(time_range, GrowthTimeRange):
-                from structures import RecoResult
-                from structures import DataDict, Event
-                stage_tag, stage_list = time_range.growth_stage
-                cf_result = RecoResult()
-                readers = self.__data_proxy__.readers
-                for stage in stage_list:
-                    self.log.debug_running('trimming event data by stage {}'.format(stage))
-                    this_event = DataDict(data_type=Event)
-                    for key, value in events_data.items():
-                        # assert isinstance(value, Event)
-                        this_growth = getattr(readers[value.reader_id], stage_tag).__call__(time_range.end_time.date())
-                        if this_growth is None:
-                            continue
-
-                        if isinstance(stage, int):
-                            if this_growth == stage:
-                                this_event[key] = value
-                        elif isinstance(stage, tuple):
-                            if stage[0] <= this_growth < stage[1]:
-                                this_event[key] = value
-                        else:
-                            raise RuntimeError
-
-                    if len(this_event) == 0:
-                        continue
-
-                    self.log.debug_running('collecting possible neighbor data for stage {}'.format(stage))
-                    possible_neighbors = this_event.neighbor_attr_by('reader_id', 'book_id')
-
-                    self.log.debug_running('collecting vector data for stage {}'.format(stage))
-                    collector = self.__collect_simple_sparse_vector__(
-                        this_event, 'reader_id', 'book_id', time_tag='times'
-                    )
-                    self.log.debug_running('running CollaborativeFiltering for stage {}')
-                    this_result = CollaborativeFiltering(
-                        collector, this_event.group_attr_by('book_id', 'reader_id'), in_memory=True
-                    ).run(
-                        neighbor_type=neighbor_type, similarity_type=similarity_type,
-                        possible_neighbors=possible_neighbors
-                    )
-
-                    cf_result.update(this_result)
+            if next_stage is None:
+                next_collector = None
             else:
-                raise TypeError
+                next_collector = self.__collect_simple_sparse_vector__(
+                    next_event, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
+                )
+            self.log.debug_running('running CollaborativeFiltering for stage {}'.format(stage))
+            this_result = SlippingRangeCollaborativeFiltering(
+                collector, next_collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
+            ).run(
+                neighbor_type=neighbor_type, similarity_type=similarity_type,
+                possible_neighbors=possible_neighbors
+            )
 
-            cf_result.to_csv()
+            cf_result.update(this_result)
 
-            return cf_result
+        cf_result.to_csv()
 
-        elif base_type == CF_BaseType.BookBase:
-            raise NotImplementedError
-        else:
-            raise RuntimeError
+        return cf_result
 
-    def __collect_simple_sparse_vector__(self, data, key_tag: str, attr_tag: str, time_tag: str=None):
+    def apply_date_back_collaborative_filtering(self, base_type, similarity_type, neighbor_type, time_range):
+        from algorithm import CF_BaseType, CF_NeighborType
+        from algorithm import DateBackCollaborativeFiltering
+        assert isinstance(base_type, CF_BaseType)
+        assert isinstance(neighbor_type, CF_NeighborType)
+        assert isinstance(time_range, DateBackTimeRange)
+
+        self.log.debug_running('CF_BaseType.{}'.format(base_type.name))
+        events_data = self.__data_proxy__.events.to_data_dict()
+
+        self.log.debug_running('trimming event data from date {} to date {}'.format(
+            time_range.start_time.date(), time_range.end_time.date()
+        ))
+        events_data.trim_between_range(
+            attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
+            include_start=True, include_end=False, inline=True
+        )
+
+        self.log.debug_running('trimming event data by event_type 50/62/63')
+        events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
+
+        self.log.debug_running('collecting possible neighbor data')
+        possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+
+        self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
+
+        first_data = events_data.trim_between_range(
+            'date', time_range.start_time.date(), time_range.end_first_time.date(), True, False, False
+        )
+
+        second_data = events_data.trim_between_range(
+            'date', time_range.start_second_time.date(), time_range.end_time.date(), True, False, False
+        )
+
+        self.log.debug_running('collecting vector data')
+        first_collector = self.__collect_simple_sparse_vector__(
+            first_data, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
+        )
+        second_collector = self.__collect_simple_sparse_vector__(
+            second_data, 'reader_id', 'book_id', time_tag='times', finish_length=len(events_data)
+        )
+
+        self.log.debug_running('running CollaborativeFiltering')
+        cf_result = DateBackCollaborativeFiltering(
+            second_collector, first_collector,
+            second_data.group_attr_by('book_id', 'reader_id'),
+            first_data.group_attr_by('book_id', 'reader_id'),
+            in_memory=True
+        ).run(
+            neighbor_type=neighbor_type, similarity_type=similarity_type,
+            possible_neighbors=possible_neighbors
+        )
+
+        cf_result.to_csv()
+
+        return cf_result
+
+    def __collect_simple_sparse_vector__(
+            self, data, key_tag: str, attr_tag: str, time_tag: str=None, finish_length: int=None
+    ):
         from algorithm import SparseVectorCollector
         from structures import DataDict
         assert isinstance(data, DataDict)
 
         result = SparseVectorCollector()
+
         for value in data.values():
             if time_tag is None:
                 result.add(getattr(value, key_tag), getattr(value, attr_tag))
             else:
                 result.add(getattr(value, key_tag), getattr(value, attr_tag), getattr(value, time_tag))
-        result.finish(with_length=len(data.collect_attr(attr_tag)))
+
+        if finish_length is None:
+            result.finish(with_length=len(data.collect_attr(attr_tag)))
+        else:
+            result.finish(with_length=finish_length)
+            self.log.debug_running('collected sparse vector with length {}'.format(finish_length))
 
         return result
+
+    def __collect_mixed_sparse_vector__(
+            self, data, key_tag: str, attr_tag: str, ref_date: datetime.date, time_tag: str=None,
+    ):
+        from algorithm import SparseVectorCollector
+        from structures import DataDict, Reader, SparseVector
+        assert isinstance(data, DataDict)
+
+        readers = self.__data_proxy__.readers
+
+        result = SparseVectorCollector()
+
+        for value in data.values():
+            if time_tag is None:
+                result.add(getattr(value, key_tag), getattr(value, attr_tag))
+            else:
+                result.add(getattr(value, key_tag), getattr(value, attr_tag), getattr(value, time_tag))
+
+        result.regulate(multiply=0.01)
+
+        for reader_id in list(result.keys()):
+            sp_vec = result[reader_id]
+            assert isinstance(sp_vec, SparseVector)
+            reader = readers[reader_id]
+            assert isinstance(reader, Reader)
+
+            # 注册年份
+            if reader.growth_index(ref_date) is None:
+                result.data.pop(reader_id)
+            else:
+                sp_vec.set('growth_index', 100000 / reader.growth_index(ref_date))
+
+        result.finish(with_length=len(self.__data_proxy__.books))
+
+        return result
+
 
     def evaluate_single_result(self, result_data, time_range):
         from structures import Evaluator, RecoResult, TimeRange
@@ -156,6 +303,7 @@ class RuleGenerator(object):
         print(evaluator.match_percentage)
         print(evaluator.top_n_accuracy(100))
         print(evaluator.coverage_i_top_n_accuracy(10, 100))
+        print(evaluator.coverage_i_top_n_accuracy(100, 100))
 
     @property
     def log(self):
@@ -177,22 +325,46 @@ if __name__ == '__main__':
         # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
 
         # running GrowthTimeRange
-        this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2014, 1, 1))
+        this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2015, 1, 1))
         this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 4), (4, 8), (8, 100)])
 
-        rule_generator.apply_collaborative_filtering(
-            base_type=CF_BaseType.ReaderBase,
-            similarity_type=CF_SimilarityType.Cosine,
-            neighbor_type=CF_NeighborType.All,
-            time_range=this_time_range,
+        # running DateBackTimeRange
+        # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2014, 1, 1), datetime.date(2013, 7, 1))
+
+        # this_re = rule_generator.apply_collaborative_filtering(
+        #     CF_BaseType.ReaderBase, CF_SimilarityType.Cosine,
+        #     CF_NeighborType.All, this_time_range,)
+
+        this_re = rule_generator.apply_slipped_collaborative_filtering(
+            CF_BaseType.ReaderBase, CF_SimilarityType.Cosine,
+            CF_NeighborType.All, this_time_range,
         )
 
+        # this_re = rule_generator.apply_date_back_collaborative_filtering(
+        #     CF_BaseType.ReaderBase, CF_SimilarityType.Cosine,
+        #     CF_NeighborType.All, this_time_range,)
+
+        print(' --- [] ---')
+        rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range)
+
+        # print('--- [standard timerange] ---')
+        # rule_generator.evaluate_single_result(
+        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
+        #     time_range=this_time_range
+        # )
+        # print('--- [standard timerange] ---')
+        # rule_generator.evaluate_single_result(
+        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2015.csv',
+        #     time_range=this_time_range
+        # )
+        # print('--- [growth timerange] ---')
         # rule_generator.evaluate_single_result(
         #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180903_161351 growth timerange 2013-2014.csv',
         #     time_range=this_time_range
         # )
+        # print('--- [date back timerange] ---')
         # rule_generator.evaluate_single_result(
-        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180902_154033 standard timerange 2013-2014.csv',
+        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180920_193451.csv',
         #     time_range=this_time_range
         # )
 

@@ -5,21 +5,18 @@ import datetime
 class TimeRange(object):
 
     def __init__(self, start_time, end_time):
-        if isinstance(start_time, datetime.datetime):
-            self.__start_time__ = start_time
-        elif isinstance(start_time, datetime.date):
-            self.__start_time__ = datetime.datetime.combine(start_time, datetime.time())
-        else:
-            from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('start_time', (datetime.datetime, datetime.date), start_time)
+        self.__start_time__ = self.__clean_date__(start_time)
+        self.__end_time__ = self.__clean_date__(end_time)
 
-        if isinstance(end_time, datetime.datetime):
-            self.__end_time__ = end_time
-        elif isinstance(end_time, datetime.date):
-            self.__end_time__ = datetime.datetime.combine(end_time, datetime.time())
+    @staticmethod
+    def __clean_date__(date):
+        if isinstance(date, datetime.datetime):
+            return date
+        elif isinstance(date, datetime.date):
+            return datetime.datetime.combine(date, datetime.time())
         else:
             from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('end_time', (datetime.datetime, datetime.date), end_time)
+            raise ParamTypeError('date', (datetime.datetime, datetime.date), date)
 
     @property
     def start_time(self):
@@ -69,3 +66,19 @@ class GrowthTimeRange(TimeRange):
             raise RuntimeError('growth stage should be set by set_growth_stage() before use.')
         else:
             return self.__growth_stage_tag__, self.__growth_stage_list__
+
+
+class DateBackTimeRange(TimeRange):
+    def __init__(self, start_time, end_time, date_back_split_time):
+        super(DateBackTimeRange, self).__init__(start_time, end_time)
+        self.__date_back_time__ = self.__clean_date__(date_back_split_time)
+
+    @property
+    def start_second_time(self):
+        assert isinstance(self.__date_back_time__, datetime.datetime)
+        return self.__date_back_time__
+
+    @property
+    def end_first_time(self):
+        assert isinstance(self.__date_back_time__, datetime.datetime)
+        return self.__date_back_time__

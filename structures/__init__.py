@@ -16,4 +16,4 @@ from .Recorder import CSVRecorder, TextRecorder
 from .ShelveWrapper import ShelveWrapper
 from .SparseVector import SparseVector
 from .SqliteWrapper import SqliteWrapper
-from .TimeRange import TimeRange, StandardTimeRange, GrowthTimeRange
+from .TimeRange import TimeRange, StandardTimeRange, GrowthTimeRange, DateBackTimeRange

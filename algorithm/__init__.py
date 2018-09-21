@@ -4,7 +4,9 @@ from enum import Enum
 from .Apriori import Apriori, BasketCollector, collect_baskets
 from .CollaborativeFiltering import (
     CollaborativeFiltering,
-    SparseVectorCollector
+    SlippingRangeCollaborativeFiltering,
+    DateBackCollaborativeFiltering,
+    SparseVectorCollector,
 )
 from utils.Maths import (
         CosineSimilarity, EuclideanSimilarity,

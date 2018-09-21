@@ -33,9 +33,12 @@ def PearsonCorrelationCoefficient(x, y):
 def CosineSimilarity(x, y):
     """Cosine 相似度（Cosine Similarity）"""
     if isinstance(x, SparseVector) and isinstance(y, SparseVector):
-        return x * y / (
-            math.sqrt(x.sum_squared) * math.sqrt(y.sum_squared)
-        )
+        try:
+            return x * y / (
+                math.sqrt(x.sum_squared) * math.sqrt(y.sum_squared)
+            )
+        except ZeroDivisionError:
+            return 0.0
     else:
         raise NotImplemented
 
