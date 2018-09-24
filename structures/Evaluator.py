@@ -21,6 +21,71 @@ class Evaluator(object):
 
         return match_count / len(self.__actual_data__)
 
+    def coverage(self, total_items: int):
+        assert total_items > 0
+        recommend_set = set()
+
+        for re_key, re_list in self.__predicted_data__.items():
+            for tag in re_list:
+                recommend_set.add(tag)
+
+        return len(recommend_set) / total_items
+
+    def f_value(self, i: int, n: int):
+        assert i>= 1 and n >= 1
+        presicion = self.precision_accuracy(i, n)
+        recall = self.recall_accuracy(i, n)
+        return 2 * presicion * recall / (presicion + recall)
+
+    def recall_accuracy(self, i: int, n: int):
+        assert i >= 1
+        assert n >= 1
+
+        match_count, hit_list = 0, list()
+
+        for ac_key, ac_list in self.__actual_data__.items():
+            assert isinstance(ac_list, list)
+            if ac_key in self.__predicted_data__:
+                pre_list = self.__predicted_data__[ac_key]
+                match_count += 1
+                assert isinstance(pre_list, list)
+                if len(pre_list) == 0:
+                    continue
+                count = 0
+                for tag in pre_list:
+                    if tag in ac_list:
+                        count += 1
+                hit_list.append(count / len(pre_list))
+            else:
+                continue
+
+        return sum(hit_list) / len(hit_list)
+
+    def precision_accuracy(self, i: int, n: int):
+        assert i >= 1
+        assert n >= 1
+
+        match_count, hit_list = 0, list()
+
+        for ac_key, ac_list in self.__actual_data__.items():
+            assert isinstance(ac_list, list)
+            if len(ac_list) == 0:
+                continue
+
+            if ac_key in self.__predicted_data__:
+                pre_list = self.__predicted_data__[ac_key]
+                match_count += 1
+                assert isinstance(pre_list, list)
+                count = 0
+                for tag in pre_list:
+                    if tag in ac_list:
+                        count += 1
+                hit_list.append(count / len(ac_list))
+            else:
+                continue
+
+        return sum(hit_list) / len(hit_list)
+
     def top_n_accuracy(self, n: int):
         """评价单个预测结果落在前n个实际结果中的比例 -> float"""
         if n < 1:
@@ -52,7 +117,7 @@ class Evaluator(object):
 
         return hit_count / match_count
 
-    def coverage_i_top_n_accuracy(self, i: int=1, n: int=100):
+    def front_i_top_n_accuracy(self, i: int=1, n: int=100):
         """评价若干个预测结果可以覆盖多少比例的实际结果 -> float"""
         assert i >= 1 and n >= 1
         match_count, hit_count = 0, 0.0

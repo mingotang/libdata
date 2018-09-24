@@ -107,6 +107,13 @@ class Reader(AbstractDataObject):
         else:
             return None
 
+    @property
+    def register_date(self):
+        if self.register_year is None:
+            return None
+        else:
+            return datetime.date(self.register_year, 9, 1)
+
     def growth_index(self, ref_date: datetime.date):
         """calculate the growth index of a student, return None if not known"""
         if self.register_year is None:
