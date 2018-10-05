@@ -27,16 +27,6 @@ class RecoResult(dict):
                 result.add_list(key, value[:n])
             else:
                 result.add_list(key, value)
-            # if n == 1:
-            #     if len(value) >= 1:
-            #         result.__setitem__(key, value[0])
-            #     else:
-            #         result.__setitem__(key, None)
-            # else:
-            #     if len(value) >= n:
-            #         result.add_list(key, value[:n])
-            #     else:
-            #         result.add_list(key, value)
 
         return result
 

@@ -94,29 +94,13 @@ class Book(AbstractDataObject):
             )
         else:
             from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('value', 'dict/DataObject', value)
-
-
-def collect_book_attributes(events, **kwargs):
-    import os
-    from collections import defaultdict
-    from Config import DataConfig
-    from structures import ShelveWrapper
-    from structures import SparseVector
-
-    book_attributes = defaultdict(SparseVector)
-
-    # TODO: finish collecting book attributes
-
-    auto_save = kwargs.get('auto_save', False)
-    if auto_save is True:
-        ShelveWrapper.init_from(
-            book_attributes,
-            db_path=os.path.join(DataConfig.operation_path, 'book_attributes')
-        ).close()
-
-    return book_attributes
+            raise ParamTypeError('value', 'dict', value)
 
 
 if __name__ == '__main__':
-    pass
+    from modules.DataProxy import DataProxy
+    d_p = DataProxy()
+    books = d_p.books
+    for book in books.values():
+        book_name = BookName(book.name)
+        print(book_name.cleaned_list)

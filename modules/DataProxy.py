@@ -25,7 +25,6 @@ class EventStore(object):
         self.__path__ = folder_path
         self.__data__ = self.__connect_folder__(writeback=writeback)
 
-
     def store(self, data):
         from collections import Iterable, Mapping
 
@@ -263,12 +262,12 @@ def store_record_data():
     """把txt文件的数据记录到 shelve 数据库中"""
     from tqdm import tqdm
     from modules.DataLoad import RawDataProcessor
-    data_proxy = DataProxy(new=True)
+    d_p = DataProxy(new=True)
     for d_object in tqdm(RawDataProcessor.iter_data_object(), desc='storing record data'):
-        data_proxy.include(Book.init_from(d_object))
-        data_proxy.include(Reader.init_from(d_object))
-        data_proxy.include(Event.init_from(d_object))
-    data_proxy.close()
+        d_p.include(Book.init_from(d_object))
+        d_p.include(Reader.init_from(d_object))
+        d_p.include(Event.init_from(d_object))
+    d_p.close()
 
 
 if __name__ == '__main__':
