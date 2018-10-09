@@ -1,7 +1,8 @@
 # -*- encoding: UTF-8 -*-
 import datetime
+import json
 
-from Interface import AbstractDataObject
+from Interface import AbstractDataObject, AbstractPersist
 from structures import BookName, ISBN, LibIndex
 from utils import attributes_repr
 
@@ -22,8 +23,9 @@ def define_book_table(meta):
     )
 
 
-class Book(AbstractDataObject):
+class Book(AbstractDataObject, AbstractPersist):
     __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher')
+    __information__ = ('op_dt', )
     __repr__ = attributes_repr
 
     def __init__(self, index: str, lib_index: str, name: str,
@@ -38,10 +40,31 @@ class Book(AbstractDataObject):
         self.publisher = publisher
         self.op_dt = op_dt
 
+    def set_state_str(self, state: str):
+        self.set_state_dict(json.loads(state))
+
+    def get_state_str(self):
+        return json.dumps(self.get_state_dict())
+
+    def set_state_dict(self, state: dict):
+        for tag in self.__attributes__:
+            setattr(self, tag, state[tag])
+        for tag in self.__information__:
+            if tag not in state:
+                continue
+            setattr(self, tag, state[tag])
+
+    def get_state_dict(self):
+        state = dict()
+        for tag in self.__attributes__:
+            state[tag] = getattr(self, tag)
+        for tag in self.__information__:
+            state[tag] = getattr(self, tag)
+        return state
+
     @property
     def book_name(self):
         return BookName(self.name)
-        # return re.sub(r'\W', ' ', self.name).strip()
 
     @property
     def update_date(self):
@@ -82,7 +105,7 @@ class Book(AbstractDataObject):
     @classmethod
     def init_from(cls, value):
         if isinstance(value, dict):
-            return cls(
+            new = cls(
                 index=value['sysID'],
                 lib_index=value['libIndexID'],
                 name=value['bookname'],
@@ -92,15 +115,30 @@ class Book(AbstractDataObject):
                 publisher=value['publisher'],
                 op_dt=value['event_date'],
             )
+        elif isinstance(value, dict):
+            new = cls('', '', '', '', '', '', '', None)
+            new.set_state_dict(value)
+        elif isinstance(value, str):
+            new = cls('', '', '', '', '', '', '', None)
+            new.set_state_str(value)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict', value)
+        return new
 
 
 if __name__ == '__main__':
+    import time
     from modules.DataProxy import DataProxy
+
     d_p = DataProxy()
     books = d_p.books
-    for book in books.values():
-        book_name = BookName(book.name)
-        print(book_name.cleaned_list)
+    try:
+        for book in books.values():
+            book_name = BookName(book.name)
+            print(book_name.cleaned_list)
+            time.sleep(0.2)
+    except KeyboardInterrupt:
+        d_p.close()
+    finally:
+        d_p.close()

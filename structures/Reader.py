@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import datetime
+import json
 
 from Interface import AbstractDataObject
 from utils import attributes_repr
@@ -27,6 +28,7 @@ def define_reader_table(meta):
 
 class Reader(AbstractDataObject):
     __attributes__ = ('index', 'rtype', 'college')
+    __information__ = ('op_dt', )
     __repr__ = attributes_repr
 
     def __init__(self, index: str, rtype: str, college: str, op_dt=None):
@@ -34,6 +36,28 @@ class Reader(AbstractDataObject):
         self.rtype = rtype
         self.college = college
         self.op_dt = op_dt
+
+    def set_state_str(self, state: str):
+        self.set_state_dict(json.loads(state))
+
+    def get_state_str(self):
+        return json.dumps(self.get_state_dict())
+
+    def set_state_dict(self, state: dict):
+        for tag in self.__attributes__:
+            setattr(self, tag, state[tag])
+        for tag in self.__information__:
+            if tag not in state:
+                continue
+            setattr(self, tag, state[tag])
+
+    def get_state_dict(self):
+        state = dict()
+        for tag in self.__attributes__:
+            state[tag] = getattr(self, tag)
+        for tag in self.__information__:
+            state[tag] = getattr(self, tag)
+        return state
 
     @property
     def update_date(self):
@@ -67,15 +91,22 @@ class Reader(AbstractDataObject):
     @classmethod
     def init_from(cls, value):
         if isinstance(value, dict):
-            return cls(
+            new = cls(
                 index=value['userID'],
                 rtype=value['user_type'],
                 college=value['collegeID'],
                 op_dt=value['event_date'],
             )
+        elif isinstance(value, dict):
+            new = cls('', '', '', None)
+            new.set_state_dict(value)
+        elif isinstance(value, str):
+            new = cls('', '', '', None)
+            new.set_state_str(value)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)
+        return new
 
     @property
     def register_year(self):

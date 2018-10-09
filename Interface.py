@@ -30,22 +30,6 @@ class AbstractDataObject:
         raise NotImplementedError
 
 
-class AbstractResult:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def add(self, *args, **kwargs):
-        raise NotImplementedError
-
-    @abstractmethod
-    def load_csv(self, *args, **kwargs):
-        raise NotImplementedError
-
-    @abstractmethod
-    def to_csv(self, *args, **kwargs):
-        raise NotImplementedError
-
-
 class AbstractCollector:
     __metaclass__ = ABCMeta
 
@@ -61,7 +45,6 @@ class AbstractCollector:
 class AbstractPersist:
     __metaclass__ = ABCMeta
 
-    @abstractmethod
     def set_state(self, type_s: type, state):
         """
         从 state 信息设定对象
@@ -72,13 +55,24 @@ class AbstractPersist:
         assert isinstance(state, type_s)
         raise NotImplementedError
 
-    @abstractmethod
     def get_state(self, type_s: type):
         """
         获取对象数据内容 state
         :param type_s: state 的数据类型
         :return: type_s
         """
+        raise NotImplementedError
+
+    def set_state_str(self, state: str):
+        raise NotImplementedError
+
+    def get_state_str(self):
+        raise NotImplementedError
+
+    def set_state_dict(self, state: dict):
+        raise NotImplementedError
+
+    def get_state_dict(self):
         raise NotImplementedError
 
 

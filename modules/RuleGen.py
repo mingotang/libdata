@@ -1,7 +1,12 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import datetime
+
 from Config import DataConfig
+
+from algorithm import SparseVectorCollector
+from structures import Book, Event, Reader
+from structures import DataDict, SparseVector
 from structures import StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 
@@ -272,10 +277,7 @@ class RuleGenerator(object):
     def __collect_simple_sparse_vector__(
             self, data, time_tag: str=None, finish_length: int=None
     ):
-        from algorithm import SparseVectorCollector
-        from structures import DataDict, Event
         assert isinstance(data, DataDict)
-
         result = SparseVectorCollector()
 
         for value in data.values():
@@ -296,12 +298,8 @@ class RuleGenerator(object):
     def __collect_mixed_sparse_vector__(
             self, data, ref_date: datetime.date, time_tag: str=None,
     ):
-        from algorithm import SparseVectorCollector
-        from structures import DataDict, Event, Reader, SparseVector
         assert isinstance(data, DataDict)
-
         readers = self.__data_proxy__.readers
-
         result = SparseVectorCollector()
 
         for value in data.values():
@@ -315,9 +313,9 @@ class RuleGenerator(object):
 
         for reader_id in list(result.keys()):
             sp_vec = result[reader_id]
-            assert isinstance(sp_vec, SparseVector)
+            # assert isinstance(sp_vec, SparseVector)
             reader = readers[reader_id]
-            assert isinstance(reader, Reader)
+            # assert isinstance(reader, Reader)
 
             # 注册年份
             if reader.growth_index(ref_date) is None:
@@ -330,14 +328,13 @@ class RuleGenerator(object):
         return result
 
     def __collect_growth_weighted_sparse_vector__(self, data, finish_length: int=None):
-        from algorithm import SparseVectorCollector
-        from structures import DataDict, Event
         assert isinstance(data, DataDict)
         readers = self.__data_proxy__.readers
         result = SparseVectorCollector()
+
         for event in data.values():
             # self.log.debug_variable(event)
-            # assert isinstance(data, Event)
+            assert isinstance(data, Event)
             reader = readers[event.reader_id]
             if reader.register_date is None:
                 continue
@@ -347,6 +344,31 @@ class RuleGenerator(object):
             )
         if finish_length is None:
             result.finish(with_length=len(data.collect_attr('book_id')))
+        else:
+            result.finish(with_length=finish_length)
+        return result
+
+    def __collect_keyword_sparse_vector(self, data, finish_length: int=None):
+        assert isinstance(data, DataDict)
+        books, readers = self.__data_proxy__.books, self.__data_proxy__.readers
+        keyword_set = set()
+        result = SparseVectorCollector()
+
+        for event in data.values():
+            assert isinstance(data, Event)
+            book = books[event.book_id]
+            assert isinstance(book, Book)
+            reader = readers[event.reader_id]
+            assert isinstance(reader, Reader)
+            for key in book.book_name.cleaned_list:
+                if reader.register_date is None:
+                    continue
+                keyword_set.add(key)
+                result.add(
+                    event.reader_id, key, (event.date - reader.register_date) / datetime.timedelta(days=1)
+                )
+        if finish_length is None:
+            result.finish(with_length=len(keyword_set))
         else:
             result.finish(with_length=finish_length)
         return result

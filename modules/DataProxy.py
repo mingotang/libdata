@@ -122,27 +122,19 @@ class EventStore(object):
 
 class DataProxy(object):
 
-    def __init__(self, writeback: bool=False,
-                 data_path: str=DataConfig.data_path,
+    def __init__(self, data_path: str=DataConfig.data_path,
                  operation_path: str=DataConfig.operation_path,
-                 new: bool=False,
-                 ):
-
+                 writeback: bool=False,):
         if not os.path.exists(data_path):
             os.makedirs(data_path)
-        self.__path__ = data_path
         if not os.path.exists(operation_path):
             os.makedirs(operation_path)
+        self.__path__ = data_path
         self.__operation_path__ = operation_path
+        self.__db_writeback__ = writeback
 
-        self.__books__ = ShelveWrapper(os.path.join(self.__path__, 'books'), writeback=writeback, new=new)
-        self.__readers__ = ShelveWrapper(os.path.join(self.__path__, 'readers'), writeback=writeback, new=new)
-        self.__events__ = ShelveWrapper(os.path.join(self.__path__, 'events'), writeback=writeback, new=new)
-
-        try:
-            self.__inducted_events__ = ShelveWrapper(os.path.join(self.__path__, 'inducted_events'))
-        except FileNotFoundError:
-            self.__inducted_events__ = None
+        self.__books__, self.__events__, self.__readers__ = None, None, None
+        self.__inducted_events__ = None
 
         self.__event_store__ = None
 
@@ -177,19 +169,6 @@ class DataProxy(object):
             logger.debug_variable(value)
             raise TypeError('value should be of type Book/Event/Reader but got'.format(type(value)))
 
-    def extend(self, iterable):
-        from collections import Iterable
-        if not isinstance(iterable, Iterable):
-            from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('iterable', 'Iterable', iterable)
-        else:
-            for item in iterable:
-                try:
-                    self.include(item)
-                except TypeError as e:
-                    logger.error('elements of iterable should be Book/Event/Reader but got {}'.format(type(item)))
-                    raise e
-
     def execute_events_induction(self, by_attr: str='date'):
         from tqdm import tqdm
         from structures import OrderedList
@@ -220,29 +199,61 @@ class DataProxy(object):
 
     @property
     def readers(self):
+        if self.__readers__ is None:
+            db_path = os.path.join(self.__path__, 'readers')
+            try:
+                self.__readers__ = ShelveWrapper(db_path, writeback=self.__db_writeback__, new=False)
+            except FileNotFoundError:
+                raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
+        assert isinstance(self.__readers__, ShelveWrapper)
         return self.__readers__
 
     @property
     def books(self):
+        if self.__books__ is None:
+            db_path = os.path.join(self.__path__, 'books')
+            try:
+                self.__books__ = ShelveWrapper(db_path, writeback=self.__db_writeback__, new=False)
+            except FileNotFoundError:
+                raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
+        assert isinstance(self.__books__, ShelveWrapper)
         return self.__books__
 
     @property
     def events(self):
+        if self.__events__ is None:
+            db_path = os.path.join(self.__path__, 'events')
+            try:
+                self.__events__ = ShelveWrapper(db_path, writeback=self.__db_writeback__, new=False)
+            except FileNotFoundError:
+                raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
+        assert isinstance(self.__events__, ShelveWrapper)
         return self.__events__
 
     @property
     def inducted_events(self):
         if self.__inducted_events__ is None:
+            try:
+                self.__inducted_events__ = ShelveWrapper(os.path.join(self.__path__, 'inducted_events'))
+            except FileNotFoundError:
+                pass
+
+        if self.__inducted_events__ is None:
             raise RuntimeError('Events should be inducted before calling inducted events')
-        elif isinstance(self.__inducted_events__, ShelveWrapper):
-            return self.__inducted_events__
-        else:
-            raise RuntimeError
+
+        assert isinstance(self.__inducted_events__, ShelveWrapper)
+        return self.__inducted_events__
 
     def close(self):
-        self.__books__.close()
-        self.__readers__.close()
-        self.__events__.close()
+        if isinstance(self.__books__, ShelveWrapper):
+            self.__books__.close()
+
+        if isinstance(self.__readers__, ShelveWrapper):
+            self.__readers__.close()
+
+        if isinstance(self.__events__, ShelveWrapper):
+            self.__events__.close()
+
         if isinstance(self.__inducted_events__, ShelveWrapper):
             self.__inducted_events__.close()
 
@@ -262,6 +273,8 @@ def store_record_data():
     """把txt文件的数据记录到 shelve 数据库中"""
     from tqdm import tqdm
     from modules.DataLoad import RawDataProcessor
+    books, events, readers = dict(), dict(), dict()
+    
     d_p = DataProxy(new=True)
     for d_object in tqdm(RawDataProcessor.iter_data_object(), desc='storing record data'):
         d_p.include(Book.init_from(d_object))
