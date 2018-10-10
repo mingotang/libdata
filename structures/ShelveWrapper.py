@@ -168,6 +168,18 @@ class ShelveWrapper(Mapping, Sized):
                     new_d[key] = value
         return new_d
 
+    def convert_to_data_dict(self, new_type, key_range=None):
+        from structures import DataDict
+        new_d = DataDict()
+        if key_range is None:
+            for key, value in self.items():
+                new_d[key] = new_type.init_from(value)
+        else:
+            for key, value in self.items():
+                if key in key_range:
+                    new_d[key] = new_type.init_from(value)
+        return new_d
+
     def update(self, data):
         from collections import Mapping
         if isinstance(data, Mapping):

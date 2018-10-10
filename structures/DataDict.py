@@ -225,3 +225,4 @@ class DataDict(dict):
             counted_dict.count(getattr(obj, attr_tag))
 
         return counted_dict
+

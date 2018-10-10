@@ -3,7 +3,7 @@
 import os
 
 from Config import DataConfig
-from structures import Book, Event, Reader
+from structures import Book, Event, Reader, DataDict
 from structures import ShelveWrapper, TimeRange
 from utils import get_logger
 
@@ -138,37 +138,6 @@ class DataProxy(object):
 
         self.__event_store__ = None
 
-    def include(self, value):
-        """
-        add value to shelve DB
-        :param value: Book/Reader/Event
-        :return: None
-        """
-        if isinstance(value, Book):
-            if value.index in self.__books__:
-                stored = self.__books__[value.index]
-                stored.update_from(value)
-                self.__books__[value.index] = stored
-            else:
-                self.__books__[value.index] = value
-        elif isinstance(value, Reader):
-            if value.index in self.__readers__:
-                stored = self.__readers__[value.index]
-                stored.update_from(value)
-                self.__readers__[value.index] = stored
-            else:
-                self.__readers__[value.index] = value
-        elif isinstance(value, Event):
-            if value.hashable_key in self.__events__:
-                stored = self.__events__[value.hashable_key]
-                stored.update_from(value)
-                self.__events__[value.hashable_key] = stored
-            else:
-                self.__events__[value.hashable_key] = value
-        else:
-            logger.debug_variable(value)
-            raise TypeError('value should be of type Book/Event/Reader but got'.format(type(value)))
-
     def execute_events_induction(self, by_attr: str='date'):
         from tqdm import tqdm
         from structures import OrderedList
@@ -202,10 +171,10 @@ class DataProxy(object):
         if self.__readers__ is None:
             db_path = os.path.join(self.__path__, 'readers')
             try:
-                self.__readers__ = ShelveWrapper(db_path, writeback=self.__db_writeback__, new=False)
+                self.__readers__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Reader)
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
-        assert isinstance(self.__readers__, ShelveWrapper)
+        assert isinstance(self.__readers__, DataDict)
         return self.__readers__
 
     @property
@@ -213,10 +182,10 @@ class DataProxy(object):
         if self.__books__ is None:
             db_path = os.path.join(self.__path__, 'books')
             try:
-                self.__books__ = ShelveWrapper(db_path, writeback=self.__db_writeback__, new=False)
+                self.__books__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Book)
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
-        assert isinstance(self.__books__, ShelveWrapper)
+        assert isinstance(self.__books__, DataDict)
         return self.__books__
 
     @property
@@ -224,10 +193,10 @@ class DataProxy(object):
         if self.__events__ is None:
             db_path = os.path.join(self.__path__, 'events')
             try:
-                self.__events__ = ShelveWrapper(db_path, writeback=self.__db_writeback__, new=False)
+                self.__events__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Event)
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
-        assert isinstance(self.__events__, ShelveWrapper)
+        assert isinstance(self.__events__, DataDict)
         return self.__events__
 
     @property
@@ -274,30 +243,58 @@ def store_record_data():
     from tqdm import tqdm
     from modules.DataLoad import RawDataProcessor
     books, events, readers = dict(), dict(), dict()
-    
-    d_p = DataProxy(new=True)
+
     for d_object in tqdm(RawDataProcessor.iter_data_object(), desc='storing record data'):
-        d_p.include(Book.init_from(d_object))
-        d_p.include(Reader.init_from(d_object))
-        d_p.include(Event.init_from(d_object))
-    d_p.close()
+        value = Book.init_from(d_object)
+        if value.index in books:
+            stored = books[value.index]
+            stored.update_from(value)
+            books[value.index] = stored
+        else:
+            books[value.index] = value
+        value = Reader.init_from(d_object)
+        if value.index in readers:
+            stored = readers[value.index]
+            stored.update_from(value)
+            readers[value.index] = stored
+        else:
+            readers[value.index] = value
+        value = Event.init_from(d_object)
+        if value.hashable_key in events:
+            stored = events[value.hashable_key]
+            stored.update_from(value)
+            events[value.hashable_key] = stored
+        else:
+            events[value.hashable_key] = value
+
+    book_store = ShelveWrapper(os.path.join(DataConfig.data_path, 'books'), new=True)
+    for key, book in books.items():
+        book_store[key] = book.get_state_str()
+    book_store.close()
+
+    reader_store = ShelveWrapper(os.path.join(DataConfig.data_path, 'readers'), new=True)
+    for key, reader in readers.items():
+        reader_store[key] = reader.get_state_str()
+    reader_store.close()
+
+    event_store = ShelveWrapper(os.path.join(DataConfig.data_path, 'events'), new=True)
+    for key, event in events.items():
+        event_store[key] = event.get_state_str()
+    event_store.close()
 
 
 if __name__ == '__main__':
     logger.initiate_time_counter()
     # ------------------------------
-    # store_record_data()
+    store_record_data()
     # data_manager = DataManager(writeback=False)
     # data_proxy = DataProxy()
     # data_proxy.execute_events_induction('date')
     # data_proxy.close()
 
-    from tqdm import tqdm
-    from modules.DataLoad import RawDataProcessor
+    # data_proxy = DataProxy()
 
-    data_proxy = DataProxy()
-
-    event_store = EventStore(new=True)
-    event_store.store(data_proxy.events.to_dict())
+    # event_store = EventStore(new=True)
+    # event_store.store(data_proxy.events.to_dict())
     # ------------------------------
     logger.print_time_passed()
