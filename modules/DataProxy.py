@@ -286,10 +286,11 @@ def store_record_data():
 if __name__ == '__main__':
     logger.initiate_time_counter()
     # ------------------------------
-    store_record_data()
+    # store_record_data()
     # data_manager = DataManager(writeback=False)
-    # data_proxy = DataProxy()
-    # data_proxy.execute_events_induction('date')
+
+    data_proxy = DataProxy()
+    data_proxy.execute_events_induction('date')
     # data_proxy.close()
 
     # data_proxy = DataProxy()

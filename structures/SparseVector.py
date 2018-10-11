@@ -101,14 +101,14 @@ class SparseVector(Mapping, Sized):
     @property
     def sum(self):
         total = 0
-        for tag in self.data:
+        for tag in self.data.keys():
             total += self.data[tag]
         return total
 
     @property
     def sum_squared(self):
         total = 0
-        for tag in self.data:
+        for tag in self.data.keys():
             total += self.data[tag] ** 2
         return total
 

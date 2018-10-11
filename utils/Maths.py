@@ -9,14 +9,14 @@ def EuclideanDistance(x, y):
     if isinstance(x, SparseVector) and isinstance(y, SparseVector):
         return (x - y).sum_squared
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def EuclideanSimilarity(x, y):
     if isinstance(x, SparseVector) and isinstance(y, SparseVector):
         return 1 / (1 + EuclideanDistance(x, y))
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def PearsonCorrelationCoefficient(x, y):
@@ -27,7 +27,7 @@ def PearsonCorrelationCoefficient(x, y):
             math.sqrt(n * x.sum_squared - x.sum **2) * math.sqrt(n * y.sum_squared - y.sum **2)
         )
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def CosineSimilarity(x, y):
@@ -40,7 +40,7 @@ def CosineSimilarity(x, y):
         except ZeroDivisionError:
             return 0.0
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def TanimotoCoefficient(x, y):
@@ -50,14 +50,11 @@ def TanimotoCoefficient(x, y):
             math.sqrt(x.sum_squared) + math.sqrt(y.sum_squared) - x * y
         )
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 if __name__ == '__main__':
-    from utils.Logger import set_logging, LogInfo
-    LogInfo.initiate_time_counter()
     # ------------------------------
-    set_logging()
+    pass
 
     # ------------------------------
-    print(LogInfo.time_passed())

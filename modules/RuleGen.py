@@ -44,14 +44,16 @@ class RuleGenerator(object):
         events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
 
         self.log.debug_running('collecting possible neighbor data')
-        possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+        # possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+        possible_neighbors = self.__collect_possible_neighbors_by_keyword__(events_data)
 
         self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
 
-        self.log.debug_running('collecting vector data')
+        self.log.debug_running('collecting vector data to speed up')
         # collector = self.__collect_mixed_sparse_vector__(events_data, ref_date=time_range.end_time.date(), time_tag='times',)
         # collector = self.__collect_simple_sparse_vector__(events_data, time_tag='times',)
-        collector = self.__collect_growth_weighted_sparse_vector__(events_data)
+        # collector = self.__collect_growth_weighted_sparse_vector__(events_data)
+        collector = self.__collect_keyword_sparse_vector(events_data)
 
         self.log.debug_running('running CollaborativeFiltering')
         cf_result = CollaborativeFiltering(
@@ -225,7 +227,7 @@ class RuleGenerator(object):
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, DateBackTimeRange)
 
-        events_data = self.__data_proxy__.events.to_data_dict()
+        events_data = self.__data_proxy__.events
 
         self.log.debug_running('trimming event data from date {} to date {}'.format(
             time_range.start_time.date(), time_range.end_time.date()
@@ -275,9 +277,8 @@ class RuleGenerator(object):
         return cf_result
 
     def __collect_simple_sparse_vector__(
-            self, data, time_tag: str=None, finish_length: int=None
+            self, data: DataDict, time_tag: str=None, finish_length: int=None
     ):
-        assert isinstance(data, DataDict)
         result = SparseVectorCollector()
 
         for value in data.values():
@@ -296,9 +297,8 @@ class RuleGenerator(object):
         return result
 
     def __collect_mixed_sparse_vector__(
-            self, data, ref_date: datetime.date, time_tag: str=None,
+            self, data: DataDict, ref_date: datetime.date, time_tag: str=None,
     ):
-        assert isinstance(data, DataDict)
         readers = self.__data_proxy__.readers
         result = SparseVectorCollector()
 
@@ -313,7 +313,7 @@ class RuleGenerator(object):
 
         for reader_id in list(result.keys()):
             sp_vec = result[reader_id]
-            # assert isinstance(sp_vec, SparseVector)
+            assert isinstance(sp_vec, SparseVector)
             reader = readers[reader_id]
             # assert isinstance(reader, Reader)
 
@@ -327,14 +327,13 @@ class RuleGenerator(object):
 
         return result
 
-    def __collect_growth_weighted_sparse_vector__(self, data, finish_length: int=None):
-        assert isinstance(data, DataDict)
+    def __collect_growth_weighted_sparse_vector__(self, data: DataDict, finish_length: int=None):
         readers = self.__data_proxy__.readers
         result = SparseVectorCollector()
 
         for event in data.values():
             # self.log.debug_variable(event)
-            assert isinstance(data, Event)
+            assert isinstance(event, Event)
             reader = readers[event.reader_id]
             if reader.register_date is None:
                 continue
@@ -348,29 +347,61 @@ class RuleGenerator(object):
             result.finish(with_length=finish_length)
         return result
 
-    def __collect_keyword_sparse_vector(self, data, finish_length: int=None):
-        assert isinstance(data, DataDict)
+    def __collect_keyword_sparse_vector(self, data: DataDict, finish_length: int=None):
+        from structures import BookName
         books, readers = self.__data_proxy__.books, self.__data_proxy__.readers
         keyword_set = set()
         result = SparseVectorCollector()
 
         for event in data.values():
-            assert isinstance(data, Event)
+            assert isinstance(event, Event), str(type(event)) + ': ' + str(event)
             book = books[event.book_id]
             assert isinstance(book, Book)
             reader = readers[event.reader_id]
             assert isinstance(reader, Reader)
-            for key in book.book_name.cleaned_list:
+            book_name = BookName(book.name)
+            for key in book_name.cleaned_list:
                 if reader.register_date is None:
                     continue
                 keyword_set.add(key)
-                result.add(
-                    event.reader_id, key, (event.date - reader.register_date) / datetime.timedelta(days=1)
-                )
+                # result.add(
+                #     event.reader_id, key, (event.date - reader.register_date) / datetime.timedelta(days=1)
+                # )
+                result.add(event.reader_id, key, 1.0)
         if finish_length is None:
             result.finish(with_length=len(keyword_set))
         else:
             result.finish(with_length=finish_length)
+        return result
+
+    def __collect_possible_neighbors_by_keyword__(self, data: DataDict):
+        from structures import BookName
+        books, readers = self.__data_proxy__.books, self.__data_proxy__.readers
+
+        reader2keyword, keyword2reader = dict(), dict()
+        for event in data.values():
+            assert isinstance(event, Event), str(type(event)) + ': ' + str(event)
+            book = books[event.book_id]
+            assert isinstance(book, Book)
+            reader = readers[event.reader_id]
+            assert isinstance(reader, Reader)
+            if event.reader_id not in reader2keyword:
+                reader2keyword[event.reader_id] = set()
+            book_name = BookName(book.name)
+            for key in book_name.cleaned_list:
+                if reader.register_date is None:
+                    continue
+                reader2keyword[event.reader_id].add(key)
+                if key not in keyword2reader:
+                    keyword2reader[key] = set()
+                keyword2reader[key].add(event.reader_id)
+
+        result = dict()
+        for reader_id, reader_key_set in reader2keyword.items():
+            result[reader_id] = set()
+            for reader_key in reader_key_set:
+                result[reader_id].update(keyword2reader[reader_key])
+            print(len(result[reader_id]))
         return result
 
     def __load_result__(self, result_data):
@@ -463,7 +494,7 @@ class RuleGenerator(object):
 
 if __name__ == '__main__':
     import datetime
-    from algorithm import CF_BaseType, CF_NeighborType, CF_SimilarityType
+    from algorithm import CF_NeighborType, CF_SimilarityType
 
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()
@@ -477,10 +508,11 @@ if __name__ == '__main__':
         # this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
 
         # running DateBackTimeRange
-        # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2013, 7, 1), datetime.date(2013, 3, 1))
+        # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2013, 7, 1),
+        #                                     datetime.date(2013, 3, 1))
 
-        # this_re = rule_generator.apply_collaborative_filtering(
-        #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
+        this_re = rule_generator.apply_collaborative_filtering(
+            CF_SimilarityType.Euclidean, CF_NeighborType.All, this_time_range,)
 
         # this_re = rule_generator.apply_slipped_collaborative_filtering(
         #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
@@ -491,7 +523,7 @@ if __name__ == '__main__':
         # this_re = rule_generator.apply_date_back_collaborative_filtering(
         #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
 
-        this_re = rule_generator.merge_result('2013-06 growth weighted simple.csv', '2013-06 slipped.csv', top_n=10)
+        # this_re = rule_generator.merge_result('2013-06 growth weighted simple.csv', '2013-06 slipped.csv', top_n=10)
 
         print(' --- [real time] ---')
         rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range, top_n=20)

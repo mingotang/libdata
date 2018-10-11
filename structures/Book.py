@@ -3,7 +3,9 @@ import datetime
 import json
 
 from Interface import AbstractDataObject, AbstractPersist
-from structures import BookName, ISBN, LibIndex
+from structures.BookName import BookName
+from structures.ISBN import ISBN
+from structures.LibIndex import LibIndex
 from utils import attributes_repr
 
 

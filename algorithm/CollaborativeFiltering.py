@@ -1,5 +1,7 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+from tqdm import tqdm
+
 from Interface import AbstractCollector
 from structures import CountingDict, RecoResult, SparseVector
 from structures import ShelveWrapper
@@ -96,7 +98,7 @@ class CollaborativeFiltering(object):
         simi_result = RecoResult()
         # self.__logger__.debug_running('executing NeighborType.{}'.format(neighbor_type.name))
         if neighbor_type == CF_NeighborType.All:
-            for u_i in list(self.vec_data.keys()):
+            for u_i in tqdm(list(self.vec_data.keys()), desc='collect neighbors'):
                 simi_result.add_list(u_i, self.find_all_neighbors(u_i, similarity_type))
 
         elif neighbor_type == CF_NeighborType.FixSize:
@@ -105,7 +107,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('fixed_size')
 
             if fixed_size > 0:
-                for u_i in list(self.vec_data.keys()):
+                for u_i in tqdm(list(self.vec_data.keys()), desc='collect neighbors'):
                     simi_result.add_list(u_i, self.find_k_neighbors(u_i, fixed_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -117,7 +119,7 @@ class CollaborativeFiltering(object):
                 raise ParamMissingError('limited_size')
 
             if limited_size > 0:
-                for u_i in list(self.vec_data.keys()):
+                for u_i in tqdm(list(self.vec_data.keys()), desc='collect neighbors'):
                     simi_result.add_list(u_i, self.find_limited_neighbors(u_i, limited_size, similarity_type))
             else:
                 from utils.Exceptions import ParamOutOfRangeError
@@ -134,7 +136,7 @@ class CollaborativeFiltering(object):
         self.__logger__.debug_running('collecting recommend list')
 
         reco_result = RecoResult()
-        for u_i, simi_list in simi_result.items():
+        for u_i, simi_list in tqdm(simi_result.items(), desc='collect recommendation'):
             reco_list = list()
             main_set = self.used_data[u_i]
             for sub_i in simi_list:
