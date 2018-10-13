@@ -454,7 +454,7 @@ class RuleGenerator(object):
         print('size', len(result))
         print('match percentage', evaluator.match_percentage)
         print('coverage', evaluator.coverage(
-            len(self.__data_proxy__.events.to_data_dict().trim_between_range(
+            len(self.__data_proxy__.events.trim_between_range(
                 'date', time_range.start_time.date(), time_range.end_time.date()).count_attr('book_id'))))
         print('top_10_accuracy', evaluator.top_n_accuracy(10))
         # print('top_100_accuracy', evaluator.top_n_accuracy(100))
@@ -511,8 +511,8 @@ if __name__ == '__main__':
         # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2013, 7, 1),
         #                                     datetime.date(2013, 3, 1))
 
-        this_re = rule_generator.apply_collaborative_filtering(
-            CF_SimilarityType.Euclidean, CF_NeighborType.All, this_time_range,)
+        # this_re = rule_generator.apply_collaborative_filtering(
+        #     CF_SimilarityType.Euclidean, CF_NeighborType.All, this_time_range,)
 
         # this_re = rule_generator.apply_slipped_collaborative_filtering(
         #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
@@ -525,17 +525,17 @@ if __name__ == '__main__':
 
         # this_re = rule_generator.merge_result('2013-06 growth weighted simple.csv', '2013-06 slipped.csv', top_n=10)
 
-        print(' --- [real time] ---')
-        rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range, top_n=20)
+        # print(' --- [real time] ---')
+        # rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range, top_n=20)
 
         # print('--- [similarity] ---')
         # rule_generator.evaluate_result_similarity(
         #     '2013-06 simple.csv',
         #     '2013-06 date back.csv', )
 
-        # rule_generator.evaluate_single_result(
-        #     result_data='2013-06 growth weighted simple.csv',
-        #     time_range=this_time_range, top_n=10)
+        rule_generator.evaluate_single_result(
+            result_data='cf_result_20181013_154317.csv',
+            time_range=this_time_range, top_n=10)
 
         # print('--- [growth timerange] ---')
         # rule_generator.evaluate_single_result(
