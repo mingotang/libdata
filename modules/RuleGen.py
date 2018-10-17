@@ -82,7 +82,7 @@ class RuleGenerator(object):
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, GrowthTimeRange)
 
-        events_data = self.__data_proxy__.events.to_data_dict()
+        events_data = self.__data_proxy__.events
 
         self.log.debug_running('trimming event data from date {} to date {}'.format(
             time_range.start_time.date(), time_range.end_time.date()
@@ -122,8 +122,11 @@ class RuleGenerator(object):
                 elif isinstance(stage, tuple):
                     if stage[0] <= this_growth < stage[1]:
                         this_event[key] = value
-                    else:
+                    elif this_growth >= stage[1]:
                         next_event[key] = value
+                    else:
+                        continue
+                        # next_event[key] = value
                 else:
                     raise RuntimeError
 
@@ -446,7 +449,7 @@ class RuleGenerator(object):
             from structures import OrderedList
             assert isinstance(events_list, OrderedList)
             events_list = events_list.trim_between_range(
-                'date', time_range.end_time.date(), time_range.end_time.date() + datetime.timedelta(days=180)
+                'date', time_range.end_time.date(), time_range.end_time.date() + datetime.timedelta(days=30)
             ).to_attr_list('book_id')
             actual_data[reco_key] = events_list
 
@@ -501,11 +504,11 @@ if __name__ == '__main__':
 
     try:
         # running StandardTimeRange
-        this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
+        # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
 
         # running GrowthTimeRange
-        # this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
-        # this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
+        this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
+        this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
 
         # running DateBackTimeRange
         # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2013, 7, 1),
@@ -514,8 +517,8 @@ if __name__ == '__main__':
         # this_re = rule_generator.apply_collaborative_filtering(
         #     CF_SimilarityType.Euclidean, CF_NeighborType.All, this_time_range,)
 
-        # this_re = rule_generator.apply_slipped_collaborative_filtering(
-        #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
+        this_re = rule_generator.apply_slipped_collaborative_filtering(
+            CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
 
         # this_re = rule_generator.apply_refered_slipped_collaborative_filtering(
         #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
@@ -534,7 +537,7 @@ if __name__ == '__main__':
         #     '2013-06 date back.csv', )
 
         rule_generator.evaluate_single_result(
-            result_data='cf_result_20181013_154317.csv',
+            result_data='cf_result_20181017_163617.csv',
             time_range=this_time_range, top_n=10)
 
         # print('--- [growth timerange] ---')
