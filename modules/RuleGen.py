@@ -51,9 +51,9 @@ class RuleGenerator(object):
 
         self.log.debug_running('collecting vector data to speed up')
         # collector = self.__collect_mixed_sparse_vector__(events_data, ref_date=time_range.end_time.date(), time_tag='times',)
-        # collector = self.__collect_simple_sparse_vector__(events_data, time_tag='times',)
+        collector = self.__collect_simple_sparse_vector__(events_data, time_tag='times',)
         # collector = self.__collect_growth_weighted_sparse_vector__(events_data)
-        collector = self.__collect_keyword_sparse_vector(events_data)
+        # collector = self.__collect_keyword_sparse_vector(events_data)
 
         self.log.debug_running('running CollaborativeFiltering')
         cf_result = CollaborativeFiltering(
@@ -446,7 +446,7 @@ class RuleGenerator(object):
             from structures import OrderedList
             assert isinstance(events_list, OrderedList)
             events_list = events_list.trim_between_range(
-                'date', time_range.end_time.date(), time_range.end_time.date() + datetime.timedelta(days=30)
+                'date', time_range.end_time.date(), time_range.end_time.date() + datetime.timedelta(days=180)
             ).to_attr_list('book_id')
             actual_data[reco_key] = events_list
 

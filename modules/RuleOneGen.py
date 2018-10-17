@@ -21,14 +21,11 @@ class RuleOneGenerator(object):
         books = self.__data_proxy__.books
         print('total books: {}'.format(len(books)))
 
-        events = self.__data_proxy__.events.to_data_dict()
+        events = self.__data_proxy__.events
         print('total events: {}'.format(len(events)))
-        print('2013 events: {}'.format(events.trim_between_range(
-            'date', datetime.date(2013, 1, 1), datetime.date(2014, 1, 1))))
-        print('2014 events: {}'.format(events.trim_between_range(
-            'date', datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))))
-        print('2015 events: {}'.format(events.trim_between_range(
-            'date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
+        # print('2013 events: {}'.format(events.trim_between_range('date', datetime.date(2013, 1, 1), datetime.date(2014, 1, 1))))
+        # print('2014 events: {}'.format(events.trim_between_range('date', datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))))
+        # print('2015 events: {}'.format(events.trim_between_range('date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
 
 
     @property
