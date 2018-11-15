@@ -8,8 +8,8 @@ DEFAULT_LOG_LEVEL = logging.DEBUG
 class DataConfig(object):
     name = 'test'
     raw_data_folder = '/Users/mingo/WeiYun/胡代平/persisted_libdata/raw_data'
-    data_path = '/Users/mingo/Documents/persisted_libdata'
-    operation_path = '/Users/mingo/Documents/persisted_libdata/this_operation'
+    data_path = '/Users/mingo/Downloads/persisted_libdata'
+    operation_path = '/Users/mingo/Downloads/persisted_libdata/this_operation'
 
 
 # class DataBaseConfig(object):
