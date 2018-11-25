@@ -34,12 +34,17 @@ class RuleGenerator(object):
 
         return result
 
-    def evaluate_result_similarity(self, result_01, result_02, top_n: int=10):
+    def evaluate_result_similarity(self, result_01, result_02, top_n: int=10, descrip: str=''):
         from structures import Evaluator
         result_01 = self.__load_result__(result_01).derive_top(top_n)
         result_02 = self.__load_result__(result_02).derive_top(top_n)
         evaluator = Evaluator(result_01, result_02)
-        print('match percentage', evaluator.match_percentage)
+        eva_res = list()
+        if descrip != '':
+            eva_res.append(['Evaluation result - {} with top {}'.format(descrip, top_n), ])
+        else:
+            eva_res.append(['Evaluation result with top {}'.format(top_n), ])
+        eva_res.append(['percentage', evaluator.match_percentage])
         print('coverage', evaluator.coverage)
         print('top_10_accuracy', evaluator.top_n_accuracy(10))
         print('top_100_accuracy', evaluator.top_n_accuracy(100))

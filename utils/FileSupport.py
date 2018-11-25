@@ -65,7 +65,7 @@ def save_csv(content, *path, **kwargs):
     save csv
     :param content: list of str in lists
     :param path: path
-    :param kwargs: encoding
+    :param kwargs: encoding,
     :return:
     """
     assert len(path) > 0
