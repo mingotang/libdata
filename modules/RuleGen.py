@@ -19,7 +19,8 @@ class RuleGenerator(object):
 
         self.__data_proxy__ = DataProxy(data_path=self.__data_path__)
 
-    def __load_result__(self, result_data):
+    @staticmethod
+    def __load_result__(result_data):
         import os
         from structures import RecoResult
 
@@ -34,28 +35,43 @@ class RuleGenerator(object):
 
         return result
 
+    def __evaluation_list__(self, evaluator, top_n: int=10):
+        from structures import Evaluator
+        assert isinstance(evaluator, Evaluator)
+        eva_res = list()
+        eva_res.append(['match_percentage', evaluator.match_percentage])
+        eva_res.append(['coverage', evaluator.coverage()])
+        eva_res.append(['top_5_accuracy', evaluator.top_n_accuracy(5)])
+        eva_res.append(['top_{}_accuracy'.format(top_n), evaluator.top_n_accuracy(top_n)])
+        eva_res.append(['recall_accuracy', evaluator.recall_accuracy()])
+        eva_res.append(['precision_accuracy', evaluator.precision_accuracy()])
+        eva_res.append(['f_value', evaluator.f_value()])
+        eva_res.append(['front_1_top_{}_accuracy'.format(top_n), evaluator.front_i_top_n_accuracy(1, top_n)])
+        eva_res.append(['front_2_top_{}_accuracy'.format(top_n), evaluator.front_i_top_n_accuracy(2, top_n)])
+        eva_res.append(['front_5_top_{}_accuracy'.format(top_n), evaluator.front_i_top_n_accuracy(5, top_n)])
+        eva_res.append(['front_10_top_{}_accuracy'.format(top_n), evaluator.front_i_top_n_accuracy(10, top_n)])
+        eva_res.append(['front_{}_top_{}_accuracy'.format(top_n, top_n),
+                        evaluator.front_i_top_n_accuracy(top_n, top_n)])
+        return eva_res
+
     def evaluate_result_similarity(self, result_01, result_02, top_n: int=10, descrip: str=''):
         from structures import Evaluator
+        from utils.FileSupport import save_csv
         result_01 = self.__load_result__(result_01).derive_top(top_n)
         result_02 = self.__load_result__(result_02).derive_top(top_n)
         evaluator = Evaluator(result_01, result_02)
-        eva_res = list()
+        eva_res = self.__evaluation_list__(evaluator, top_n=top_n)
         if descrip != '':
-            eva_res.append(['Evaluation result - {} with top {}'.format(descrip, top_n), ])
+            des_tag = 'Evaluation result - {} with top {}'.format(descrip, top_n)
         else:
-            eva_res.append(['Evaluation result with top {}'.format(top_n), ])
-        eva_res.append(['percentage', evaluator.match_percentage])
-        print('coverage', evaluator.coverage)
-        print('top_10_accuracy', evaluator.top_n_accuracy(10))
-        print('top_100_accuracy', evaluator.top_n_accuracy(100))
-        print('recall_accuracy', evaluator.recall_accuracy(10, 100))
-        print('precision_accuracy', evaluator.precision_accuracy(10, 100))
-        print('f', evaluator.f_value(10, 100))
-        print('front_10_top_100_accuracy', evaluator.front_i_top_n_accuracy(10, 100))
-        print('front_100_top_100_accuracy', evaluator.front_i_top_n_accuracy(100, 100))
+            des_tag = 'Evaluation result with top {}'.format(top_n)
+        eva_res.insert(0, [des_tag, ])
 
-    def evaluate_single_result(self, result_data, time_range, top_n: int=10):
+        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(des_tag, datetime.datetime.now()))
+
+    def evaluate_single_result(self, result_data, time_range, top_n: int=10, descrip: str=''):
         from structures import Evaluator, TimeRange
+        from utils.FileSupport import save_csv
         assert isinstance(time_range, TimeRange)
 
         result = self.__load_result__(result_data).derive_top(top_n)
@@ -71,18 +87,15 @@ class RuleGenerator(object):
             actual_data[reco_key] = events_list
 
         evaluator = Evaluator(actual_data=actual_data, predicted_data=result)
-        print('size', len(result))
-        print('match percentage', evaluator.match_percentage)
-        print('coverage', evaluator.coverage(
-            len(self.__data_proxy__.events.trim_between_range(
-                'date', time_range.start_time.date(), time_range.end_time.date()).count_attr('book_id'))))
-        print('top_10_accuracy', evaluator.top_n_accuracy(10))
-        # print('top_100_accuracy', evaluator.top_n_accuracy(100))
-        print('recall_accuracy', evaluator.recall_accuracy(20, 100))
-        print('precision_accuracy', evaluator.precision_accuracy(20, 100))
-        print('f', evaluator.f_value(20, 100))
-        print('front_10_top_100_accuracy', evaluator.front_i_top_n_accuracy(20, 100))
-        # print('front_100_top_100_accuracy', evaluator.front_i_top_n_accuracy(100, 100))
+
+        eva_res = self.__evaluation_list__(evaluator, top_n=top_n)
+        if descrip != '':
+            des_tag = 'Evaluation result - {} with top {}'.format(descrip, top_n)
+        else:
+            des_tag = 'Evaluation result with top {}'.format(top_n)
+        eva_res.insert(0, [des_tag, ])
+
+        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(des_tag, datetime.datetime.now()))
 
     def merge_result(self, result_01, result_02, top_n: int=10):
         from structures import RecoResult

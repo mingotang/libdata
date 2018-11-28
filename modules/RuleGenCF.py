@@ -440,8 +440,8 @@ if __name__ == '__main__':
         # this_re = rule_generator.apply_collaborative_filtering(
         #     CF_SimilarityType.Euclidean, CF_NeighborType.All, this_time_range,)
 
-        this_re = rule_generator.apply_slipped_collaborative_filtering(
-            CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range, )
+        # this_re = rule_generator.apply_slipped_collaborative_filtering(
+        #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range, )
 
         # this_re = rule_generator.apply_refered_slipped_collaborative_filtering(
         #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
@@ -460,7 +460,7 @@ if __name__ == '__main__':
         #     '2013-06 date back.csv', )
 
         rule_generator.evaluate_single_result(
-            result_data='cf_result_20181017_163617.csv',
+            result_data='2013-2015 slipped CF.csv',
             time_range=this_time_range, top_n=10)
 
         # print('--- [growth timerange] ---')

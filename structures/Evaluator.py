@@ -21,25 +21,25 @@ class Evaluator(object):
 
         return match_count / len(self.__actual_data__)
 
-    def coverage(self, total_items: int):
-        assert total_items > 0
+    def coverage(self):
         recommend_set = set()
+        data_set = set()
 
         for re_key, re_list in self.__predicted_data__.items():
             for tag in re_list:
                 recommend_set.add(tag)
+        for ac_key, ac_list in self.__actual_data__.items():
+            for tag in ac_list:
+                data_set.add(tag)
 
-        return len(recommend_set) / total_items
+        return len(recommend_set) / len(data_set)
 
-    def f_value(self, i: int, n: int):
-        assert i>= 1 and n >= 1
-        presicion = self.precision_accuracy(i, n)
-        recall = self.recall_accuracy(i, n)
+    def f_value(self):
+        presicion = self.precision_accuracy()
+        recall = self.recall_accuracy()
         return 2 * presicion * recall / (presicion + recall)
 
-    def recall_accuracy(self, i: int, n: int):
-        assert i >= 1
-        assert n >= 1
+    def recall_accuracy(self):
 
         match_count, hit_list = 0, list()
 
@@ -61,9 +61,7 @@ class Evaluator(object):
 
         return sum(hit_list) / len(hit_list)
 
-    def precision_accuracy(self, i: int, n: int):
-        assert i >= 1
-        assert n >= 1
+    def precision_accuracy(self):
 
         match_count, hit_list = 0, list()
 
