@@ -1,8 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import logging
 
-from Config import DEFAULT_LOG_LEVEL
-
 
 def attributes_repr(inst):
     return "{}({})".format(
@@ -25,7 +23,15 @@ def slots(inst):
     return result
 
 
-def set_logging(level: int=DEFAULT_LOG_LEVEL):
+def load_yaml(path: str):
+    """载入yml格式配置文件"""
+    import codecs
+    import yaml
+    with codecs.open(path, encoding='utf-8') as y_f:
+        return yaml.load(y_f)
+
+
+def set_logging(level: int):
     # import logging
     logging.basicConfig(
         level=level,  # 定义输出到文件的log级别，
@@ -134,16 +140,24 @@ class LogWrapper(logging.Logger):
             self._log(logging.WARNING, msg, args, **kwargs)
 
 
-def get_logger(module_name: str='', level: int=DEFAULT_LOG_LEVEL):
+LOG_LEVEL_MAP = {
+    'None': logging.NOTSET,
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+}
+
+
+def get_logger(module_name: str=''):
     """
 
     :param level: logging level
     :param module_name: str
     :return: :class:`~logging.Logger`
     """
-    import logging
-    logger = LogWrapper(module_name, level)
-    logger.setLevel(level)
+    from Environment import Environment
+    config = Environment.get_instance().config
+    log_level = LOG_LEVEL_MAP[config.get('Log', dict()).get('LogLevel', 'None')]
+    logger = LogWrapper(module_name, log_level)
 
     screen_handler = logging.StreamHandler()
     screen_handler.setFormatter(logging.Formatter(

@@ -2,19 +2,14 @@
 # ---------------------------------import------------------------------------
 import os
 
-from Config import DataConfig
 from structures import Book, Event, Reader, DataDict
 from structures import ShelveWrapper, TimeRange
 from utils import get_logger
 
 
-logger = get_logger(module_name=__file__)
-
-
 class EventStore(object):
     def __init__(
-            self, folder_path: str=os.path.join(DataConfig.data_path, 'events'),
-            writeback: bool=False, new: bool=False,
+            self, folder_path: str, writeback: bool=False, new: bool=False,
     ):
         if not os.path.exists(folder_path):
             if new is False:
@@ -122,20 +117,25 @@ class EventStore(object):
 
 class DataProxy(object):
 
-    def __init__(self, data_path: str=DataConfig.data_path,
-                 operation_path: str=DataConfig.operation_path,
-                 writeback: bool=False,):
-        if not os.path.exists(data_path):
-            os.makedirs(data_path)
-        if not os.path.exists(operation_path):
-            os.makedirs(operation_path)
-        self.__path__ = data_path
-        self.__operation_path__ = operation_path
+    def __init__(self, data_path: str=None, writeback: bool=False,):
+        from Environment import Environment
+        env = Environment.get_instance()
+
+        if data_path is None:
+            self.__path__ = env.data_path
+        else:
+            self.__path__ = data_path
+        if not os.path.exists(self.__path__):
+            os.makedirs(self.__path__)
+
+        self.__operation_path__ = os.path.join(self.__path__, 'this_operation')
+        if not os.path.exists(self.__operation_path__):
+            os.makedirs(self.__operation_path__)
+
         self.__db_writeback__ = writeback
 
         self.__books__, self.__events__, self.__readers__ = None, None, None
         self.__inducted_events__ = None
-
         self.__event_store__ = None
 
     def execute_events_induction(self, by_attr: str='date'):
@@ -162,7 +162,7 @@ class DataProxy(object):
     @property
     def event_store(self):
         if self.__event_store__ is None:
-            self.__event_store__ = EventStore(folder_path=os.path.join(DataConfig.data_path, 'events'))
+            self.__event_store__ = EventStore(folder_path=os.path.join(self.__path__, 'events'))
 
         return self.__event_store__
 
@@ -241,10 +241,15 @@ class DataProxy(object):
 def store_record_data():
     """把txt文件的数据记录到 shelve 数据库中"""
     from tqdm import tqdm
+    from Environment import Environment
     from modules.DataLoad import RawDataProcessor
+    env = Environment.get_instance()
     books, events, readers = dict(), dict(), dict()
 
-    for d_object in tqdm(RawDataProcessor.iter_data_object(), desc='storing record data'):
+    for d_object in tqdm(
+            RawDataProcessor.iter_data_object(),
+            desc='storing record data'
+    ):
         value = Book.init_from(d_object)
         if value.index in books:
             stored = books[value.index]
@@ -267,30 +272,31 @@ def store_record_data():
         else:
             events[value.hashable_key] = value
 
-    book_store = ShelveWrapper(os.path.join(DataConfig.data_path, 'books'), new=True)
+    book_store = ShelveWrapper(os.path.join(env.data_path, 'books'), new=True)
     for key, book in books.items():
         book_store[key] = book.get_state_str()
     book_store.close()
 
-    reader_store = ShelveWrapper(os.path.join(DataConfig.data_path, 'readers'), new=True)
+    reader_store = ShelveWrapper(os.path.join(env.data_path, 'readers'), new=True)
     for key, reader in readers.items():
         reader_store[key] = reader.get_state_str()
     reader_store.close()
 
-    event_store = ShelveWrapper(os.path.join(DataConfig.data_path, 'events'), new=True)
+    event_store = ShelveWrapper(os.path.join(env.data_path, 'events'), new=True)
     for key, event in events.items():
         event_store[key] = event.get_state_str()
     event_store.close()
 
 
 if __name__ == '__main__':
-    logger.initiate_time_counter()
     # ------------------------------
-    # store_record_data()
+    from Environment import Environment
+    Environment()
+    store_record_data()
     # data_manager = DataManager(writeback=False)
 
-    data_proxy = DataProxy()
-    data_proxy.execute_events_induction('date')
+    # data_proxy = DataProxy()
+    # data_proxy.execute_events_induction('date')
     # data_proxy.close()
 
     # data_proxy = DataProxy()
@@ -298,4 +304,3 @@ if __name__ == '__main__':
     # event_store = EventStore(new=True)
     # event_store.store(data_proxy.events.to_dict())
     # ------------------------------
-    logger.print_time_passed()

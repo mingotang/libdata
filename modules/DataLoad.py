@@ -3,12 +3,8 @@
 import re
 import os
 
-from Config import ChoiceConfig, DataConfig
 from utils.Constants import event_type_chinese_map
 from utils import get_logger
-
-
-logger = get_logger(__file__)
 
 
 class DataObject(dict):
@@ -40,15 +36,15 @@ class DataObject(dict):
 class RawDataProcessor(object):
 
     @staticmethod
-    def derive_raw_data(file_range=ChoiceConfig.raw_text_file_list,
-                        splitter='@', text_encoding='gb18030',
-                        ):
-        logger.debug_running('derive_raw_data', 'checking file')
+    def derive_raw_data(splitter='@', text_encoding='gb18030', ):
+        from Environment import Environment
+        config = Environment.get_instance().config.get('Resources')
+        # logger.debug_running('derive_raw_data', 'checking file')
 
         data_list = list()
-        for file_name in file_range:
-            logger.debug_running('derive_raw_data', 'reading file {0}'.format(str(file_name)))
-            data_file = open(os.path.join(DataConfig.raw_data_folder, file_name), 'r', encoding=text_encoding)
+        for file_name in config.get('RawDataList'):
+            # logger.debug_running('derive_raw_data', 'reading file {0}'.format(str(file_name)))
+            data_file = open(os.path.join(config.get('RawDataPath'), file_name), 'r', encoding=text_encoding)
 
             text_line = data_file.readline()
             __temp_list__ = list()
@@ -60,21 +56,24 @@ class RawDataProcessor(object):
                     data_object = DataObject(line_content)
                     data_list.append(data_object)
                 elif len(line_content) == 0:
-                    logger.debug('RawDataProcessor: empty line')
+                    # logger.debug('RawDataProcessor: empty line')
+                    pass
                 else:
-                    logger.warning("Unqualified data :  {0:s}".format(str(line_content)))
+                    # logger.warning("Unqualified data :  {0:s}".format(str(line_content)))
+                    pass
                 text_line = data_file.readline()
         return data_list
 
     @staticmethod
-    def iter_data_object(file_range=ChoiceConfig.raw_text_file_list,
-                         splitter='@', text_encoding='gb18030', ):
-        logger.debug_running('derive_raw_data', 'checking file')
+    def iter_data_object(splitter='@', text_encoding='gb18030', ):
+        from Environment import Environment
+        config = Environment.get_instance().config.get('Resources')
+        # logger.debug_running('derive_raw_data', 'checking file')
 
         # data_list = list()
-        for file_name in file_range:
-            logger.debug_running('derive_raw_data', 'reading file {0}'.format(str(file_name)))
-            data_file = open(os.path.join(DataConfig.raw_data_folder, file_name), 'r', encoding=text_encoding)
+        for file_name in config.get('RawDataList'):
+            # logger.debug_running('derive_raw_data', 'reading file {0}'.format(str(file_name)))
+            data_file = open(os.path.join(config.get('RawDataPath'), file_name), 'r', encoding=text_encoding)
 
             text_line = data_file.readline()
             __temp_list__ = list()
@@ -86,9 +85,11 @@ class RawDataProcessor(object):
                     data_object = DataObject(line_content)
                     yield data_object
                 elif len(line_content) == 0:
-                    logger.debug('RawDataProcessor: empty line')
+                    pass
+                    # logger.debug('RawDataProcessor: empty line')
                 else:
-                    logger.warning("Unqualified data :  {0:s}".format(str(line_content)))
+                    raise RuntimeError("Unqualified data :  {0:s}".format(str(line_content)))
+                    # logger.warning("Unqualified data :  {0:s}".format(str(line_content)))
                 text_line = data_file.readline()
 
     @staticmethod

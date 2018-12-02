@@ -1,6 +1,6 @@
 # Description:
 
-# data path
+# data path settings
 Resources:
   RawDataPath: "/Users/mingo/WeiYun/胡代平/persisted_libdata/raw_data"
   RawDataList:
@@ -8,3 +8,8 @@ Resources:
     - "2016-11-16-guanyuan2014.txt"
     - "2016-11-16-guanyuan2015.txt"
   ShelveDataPath: "/Users/mingo/Downloads/persisted_libdata"
+
+# log settings
+Log:
+  # debug/info
+  LogLevel:  debug

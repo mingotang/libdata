@@ -51,9 +51,9 @@ class ShelveWrapper(Mapping, Sized):
     def get_temp(cls):
         from os import path
         from datetime import datetime
-        from Config import DataConfig
-        if path.exists(DataConfig.operation_path):
-            db_folder = DataConfig.operation_path
+        from Environment import Environment
+        if path.exists(Environment.get_instance().data_path):
+            db_folder = Environment.get_instance().data_path
         else:
             db_folder = tempfile.gettempdir()
         return cls(

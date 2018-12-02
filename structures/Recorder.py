@@ -2,12 +2,11 @@
 # ---------------------------------import------------------------------------
 import os
 
-from Config import DataConfig
 from Interface import AbstractRecordable
 
 
 class BaseRecorder(object):
-    def __init__(self, output_path: str=DataConfig.operation_path):
+    def __init__(self, output_path: str):
         from datetime import datetime
 
         self.recos = dict()
@@ -32,7 +31,7 @@ class BaseRecorder(object):
 
 class CSVRecorder(BaseRecorder):
 
-    def __init__(self, output_path: str=DataConfig.operation_path):
+    def __init__(self, output_path: str):
         super(CSVRecorder, self).__init__(output_path)
 
         self.__recos_column__ = dict()

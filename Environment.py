@@ -12,10 +12,11 @@ class Environment(object):
 
     def __init__(self):
         from Interface import get_root_path
+        from utils import load_yaml
         Environment._env = self
 
         # public
-        # self.config = load_yaml(os.path.join(ROOT_PATH, 'Config.yaml'))
+        self.config = load_yaml(os.path.join(get_root_path(), 'config.yaml'))
 
         # private
         self.__data_proxy__ = None  # 数据接口
@@ -27,11 +28,20 @@ class Environment(object):
         """
         if Environment._env is None:
             raise RuntimeError("Environment has not been created.")
+        assert isinstance(Environment._env, Environment)
         return Environment._env
 
-    def get_data_proxy(self):
+    @property
+    def data_path(self):
+        d_path = self.config.get('Resources', dict()).get('ShelveDataPath')
+        if not os.path.exists(d_path):
+            os.makedirs(d_path)
+        return d_path
+
+    @property
+    def data_proxy(self):
         from modules.DataProxy import DataProxy
-        assert isinstance(self.__data_proxy__, DataProxy)
+        assert isinstance(self.__data_proxy__, DataProxy), 'set DataProxy before using.'
         return self.__data_proxy__
 
     def set_data_proxy(self, data_proxy):
