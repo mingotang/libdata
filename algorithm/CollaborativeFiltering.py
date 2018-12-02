@@ -11,17 +11,21 @@ class CollaborativeFiltering(object):
     """
     CF: finding neighbors
     """
-    def __init__(self, vec_data, used_data, in_memory: bool=True):
+    def __init__(self, events, used_data, in_memory: bool=True):
         """
 
-        :param vec_data: dict/ShelveWrapper/PreferenceCollector
+        :param events: dict/ShelveWrapper/PreferenceCollector
+        :param used_data:
         :param in_memory: bool
         """
+        from structures import DataDict
         from utils import get_logger
         self.__logger__ = get_logger(module_name=self.__class__.__name__)
 
+        assert isinstance(events, DataDict)
+
         self.used_data = self.__check_used_data__(used_data)
-        self.vec_data = self.__clean_vector_data__(vec_data, in_memory)
+        self.vec_data = self.__clean_vector_data__(events, in_memory)
         self.__possible_neighbor_dict__ = None
 
     def __check_used_data__(self, used_data):
@@ -195,13 +199,13 @@ class CollaborativeFiltering(object):
 
 
 class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
-    def __init__(self, vec_data, next_vec_data, used_data, in_memory: bool=True):
+    def __init__(self, events, next_vec_data, used_data, in_memory: bool=True):
         """
 
-        :param vec_data: dict/ShelveWrapper/PreferenceCollector
+        :param events: dict/ShelveWrapper/PreferenceCollector
         :param in_memory: bool
         """
-        super(SlippingRangeCollaborativeFiltering, self).__init__(vec_data, used_data, in_memory)
+        super(SlippingRangeCollaborativeFiltering, self).__init__(events, used_data, in_memory)
         if next_vec_data is not None:
             from utils.Exceptions import ParamNoContentError
             try:
@@ -245,13 +249,13 @@ class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
 
 
 class DateBackCollaborativeFiltering(CollaborativeFiltering):
-    def __init__(self, vec_data, date_back_data, used_data, date_back_used_data, in_memory: bool=True):
+    def __init__(self, events, date_back_data, used_data, date_back_used_data, in_memory: bool=True):
         """
 
-        :param vec_data: dict/ShelveWrapper/PreferenceCollector
+        :param events: dict/ShelveWrapper/PreferenceCollector
         :param in_memory: bool
         """
-        super(DateBackCollaborativeFiltering, self).__init__(vec_data, used_data, in_memory)
+        super(DateBackCollaborativeFiltering, self).__init__(events, used_data, in_memory)
         self.last_vec_data = self.__clean_vector_data__(date_back_data, in_memory)
         self.last_used_data = self.__check_used_data__(date_back_used_data)
 

@@ -6,7 +6,6 @@ import os
 
 import pandas as pd
 
-from Config import DataConfig
 from utils import get_logger
 
 

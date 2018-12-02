@@ -1,7 +1,5 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-import datetime
-
 from Config import DataConfig
 
 
@@ -35,7 +33,8 @@ class RuleGenerator(object):
 
         return result
 
-    def __evaluation_list__(self, evaluator, top_n: int=10):
+    @staticmethod
+    def __evaluation_list__(evaluator, top_n: int=10):
         from structures import Evaluator
         assert isinstance(evaluator, Evaluator)
         eva_res = list()
@@ -70,6 +69,7 @@ class RuleGenerator(object):
         save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(des_tag, datetime.datetime.now()))
 
     def evaluate_single_result(self, result_data, time_range, top_n: int=10, descrip: str=''):
+        """评价单个结果并以csv文件形式输出"""
         from structures import Evaluator, TimeRange
         from utils.FileSupport import save_csv
         assert isinstance(time_range, TimeRange)
@@ -98,6 +98,7 @@ class RuleGenerator(object):
         save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(des_tag, datetime.datetime.now()))
 
     def merge_result(self, result_01, result_02, top_n: int=10):
+        """把两个结果合并在一起"""
         from structures import RecoResult
         result_01 = self.__load_result__(result_01).derive_top(top_n)
         result_02 = self.__load_result__(result_02).derive_top(top_n)
@@ -127,60 +128,12 @@ class RuleGenerator(object):
 
 if __name__ == '__main__':
     import datetime
-    from algorithm import CF_NeighborType, CF_SimilarityType
 
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()
 
     try:
         pass
-        # running StandardTimeRange
-        # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
-
-        # running GrowthTimeRange
-        # this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
-        # this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
-
-        # running DateBackTimeRange
-        # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2013, 7, 1),
-        #                                     datetime.date(2013, 3, 1))
-
-        # this_re = rule_generator.apply_collaborative_filtering(
-        #     CF_SimilarityType.Euclidean, CF_NeighborType.All, this_time_range,)
-
-        # this_re = rule_generator.apply_slipped_collaborative_filtering(
-        #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
-
-        # this_re = rule_generator.apply_refered_slipped_collaborative_filtering(
-        #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
-
-        # this_re = rule_generator.apply_date_back_collaborative_filtering(
-        #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range,)
-
-        # this_re = rule_generator.merge_result('2013-06 growth weighted simple.csv', '2013-06 slipped.csv', top_n=10)
-
-        # print(' --- [real time] ---')
-        # rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range, top_n=20)
-
-        # print('--- [similarity] ---')
-        # rule_generator.evaluate_result_similarity(
-        #     '2013-06 simple.csv',
-        #     '2013-06 date back.csv', )
-
-        # rule_generator.evaluate_single_result(
-        #     result_data='cf_result_20181017_163617.csv',
-        #     time_range=this_time_range, top_n=10)
-
-        # print('--- [growth timerange] ---')
-        # rule_generator.evaluate_single_result(
-        #     result_data='2013-2014 slipped CF.csv',
-        #     time_range=this_time_range, )
-
-        # print('--- [date back timerange] ---')
-        # rule_generator.evaluate_single_result(
-        #     result_data='/Users/mingo/Downloads/persisted_libdata/this_operation/cf_result_20180920_193451.csv',
-        #     time_range=this_time_range
-        # )
 
     except KeyboardInterrupt:
         rule_generator.close()

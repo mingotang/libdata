@@ -156,7 +156,7 @@ class DataDict(dict):
             if by_value not in grouped_dict:
                 grouped_dict[by_value] = set()
 
-            stored_set = grouped_dict[by_value]
+            stored_set = grouped_dict.__getitem__(by_value)
             stored_set.add(index)
             grouped_dict[by_value] = stored_set
 
@@ -225,4 +225,3 @@ class DataDict(dict):
             counted_dict.count(getattr(obj, attr_tag))
 
         return counted_dict
-

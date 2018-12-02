@@ -1,0 +1,10 @@
+# Description:
+
+# data path
+Resources:
+  RawDataPath: "/Users/mingo/WeiYun/胡代平/persisted_libdata/raw_data"
+  RawDataList:
+    - "2016-11-16-guanyuan2013.txt"
+    - "2016-11-16-guanyuan2014.txt"
+    - "2016-11-16-guanyuan2015.txt"
+  ShelveDataPath: "/Users/mingo/Downloads/persisted_libdata"

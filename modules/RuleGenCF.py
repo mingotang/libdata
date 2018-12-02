@@ -9,7 +9,7 @@ from structures import DataDict, SparseVector
 from structures import StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 
-class RuleGeneratorCF(RuleGenerator):
+class RuleGenCF(RuleGenerator):
     def __init__(self, data_path: str=DataConfig.data_path, operation_path: str=DataConfig.operation_path):
         RuleGenerator.__init__(self, data_path=data_path, operation_path=operation_path)
 
@@ -22,9 +22,12 @@ class RuleGeneratorCF(RuleGenerator):
 
         events = self.__data_proxy__.events
         print('total events: {}'.format(len(events)))
-        # print('2013 events: {}'.format(events.trim_between_range('date', datetime.date(2013, 1, 1), datetime.date(2014, 1, 1))))
-        # print('2014 events: {}'.format(events.trim_between_range('date', datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))))
-        # print('2015 events: {}'.format(events.trim_between_range('date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
+        print('2013 events: {}'.format(
+            events.trim_between_range('date', datetime.date(2013, 1, 1), datetime.date(2014, 1, 1))))
+        print('2014 events: {}'.format(
+            events.trim_between_range('date', datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))))
+        print('2015 events: {}'.format(
+            events.trim_between_range('date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
 
     def apply_collaborative_filtering(self, similarity_type, neighbor_type, time_range):
         from algorithm import CF_NeighborType
@@ -52,8 +55,8 @@ class RuleGeneratorCF(RuleGenerator):
         self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
 
         self.log.debug_running('collecting vector data to speed up')
-        collector = self.__collect_mixed_sparse_vector__(
-            events_data, ref_date=time_range.end_time.date(), time_tag='times',)
+        # collector = self.__collect_mixed_sparse_vector__(
+        #     events_data, ref_date=time_range.end_time.date(), time_tag='times',)
         collector = self.__collect_simple_sparse_vector__(events_data, time_tag='times',)
         # collector = self.__collect_growth_weighted_sparse_vector__(events_data)
         # collector = self.__collect_keyword_sparse_vector(events_data)
@@ -420,9 +423,9 @@ class RuleGeneratorCF(RuleGenerator):
 
 if __name__ == '__main__':
     import datetime
-    from algorithm import CF_NeighborType, CF_SimilarityType
+    # from algorithm import CF_NeighborType, CF_SimilarityType
 
-    rule_generator = RuleGeneratorCF()
+    rule_generator = RuleGenCF()
     rule_generator.log.initiate_time_counter()
 
     try:
