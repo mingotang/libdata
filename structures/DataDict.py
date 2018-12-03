@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+from collections.abc import Mapping
 
 
 class DataDict(dict):
@@ -8,6 +9,18 @@ class DataDict(dict):
         super(DataDict, self).__init__()
 
         self.__data_type__ = data_type
+
+    @classmethod
+    def init_from(cls, data_type: type, obj):
+        if isinstance(obj, Mapping):
+            new_d = cls(data_type=data_type)
+            for key, value in obj.items():
+                if data_type != type(None):
+                    assert isinstance(value, data_type)
+                new_d[key] = value
+            return new_d
+        else:
+            raise NotImplementedError
 
     def __repr__(self):
         content = '{\n'
@@ -28,7 +41,7 @@ class DataDict(dict):
             for value in self.values():
                 if value is not None:
                     return type(value)
-            return None
+            return type(None)
         else:
             return self.__data_type__
 
