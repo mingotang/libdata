@@ -89,6 +89,13 @@ class SparseVector(Mapping, Sized):
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('other', SparseVector, other)
 
+    def update(self, obj):
+        if isinstance(obj, Mapping):
+            for k, v in obj.items():
+                self.set(k, v)
+        else:
+            raise NotImplementedError
+
     def get(self, key):
         return self.__getitem__(key)
 

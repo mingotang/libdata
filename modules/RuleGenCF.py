@@ -63,7 +63,7 @@ class RuleGenCF(RuleGenerator):
 
         self.log.debug_running('running CollaborativeFiltering')
         cf_result = CollaborativeFiltering(
-            collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
+            collector, events_data.group_attr_set_by('book_id', 'reader_id'), in_memory=True
         ).run(
             neighbor_type=neighbor_type, similarity_type=similarity_type, possible_neighbors=possible_neighbors
         )
@@ -149,7 +149,7 @@ class RuleGenCF(RuleGenerator):
             next_collector = self.__collect_growth_weighted_sparse_vector__(next_event, len(events_data))
             self.log.debug_running('running CollaborativeFiltering for stage {}'.format(stage))
             this_result = SlippingRangeCollaborativeFiltering(
-                collector, next_collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
+                collector, next_collector, events_data.group_attr_set_by('book_id', 'reader_id'), in_memory=True
             ).run(
                 neighbor_type=neighbor_type, similarity_type=similarity_type,
                 possible_neighbors=possible_neighbors
@@ -218,7 +218,7 @@ class RuleGenCF(RuleGenerator):
             )
             self.log.debug_running('running CollaborativeFiltering for stage {}'.format(stage))
             this_result = CollaborativeFiltering(
-                collector, events_data.group_attr_by('book_id', 'reader_id'), in_memory=True
+                collector, events_data.group_attr_set_by('book_id', 'reader_id'), in_memory=True
             ).run(
                 neighbor_type=neighbor_type, similarity_type=similarity_type,
                 possible_neighbors=possible_neighbors
@@ -273,8 +273,8 @@ class RuleGenCF(RuleGenerator):
         self.log.debug_running('running CollaborativeFiltering')
         cf_result = DateBackCollaborativeFiltering(
             second_collector, first_collector,
-            second_data.group_attr_by('book_id', 'reader_id'),
-            first_data.group_attr_by('book_id', 'reader_id'),
+            second_data.group_attr_set_by('book_id', 'reader_id'),
+            first_data.group_attr_set_by('book_id', 'reader_id'),
             in_memory=True
         ).run(
             neighbor_type=neighbor_type, similarity_type=similarity_type,
@@ -298,7 +298,7 @@ class RuleGenCF(RuleGenerator):
                 result.add(value.reader_id, value.book_id, getattr(value, time_tag))
 
         if finish_length is None:
-            result.finish(with_length=len(data.collect_attr('book_id')))
+            result.finish(with_length=len(data.collect_attr_set('book_id')))
         else:
             result.finish(with_length=finish_length)
             self.log.debug_running('collected sparse vector with length {}'.format(finish_length))
@@ -351,7 +351,7 @@ class RuleGenCF(RuleGenerator):
                 (event.date - reader.register_date) / datetime.timedelta(days=1)
             )
         if finish_length is None:
-            result.finish(with_length=len(data.collect_attr('book_id')))
+            result.finish(with_length=len(data.collect_attr_set('book_id')))
         else:
             result.finish(with_length=finish_length)
         return result

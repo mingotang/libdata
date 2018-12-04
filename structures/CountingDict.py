@@ -16,6 +16,15 @@ class CountingDict(dict):
         else:
             raise TypeError()
 
+    @classmethod
+    def init_from(cls, obj):
+        from collections.abc import Iterable
+        assert isinstance(obj, Iterable)
+        new_cd = cls()
+        for item in obj:
+            new_cd.count(item)
+        return new_cd
+
     def set(self, element, value):
         self.__setitem__(element, value)
 

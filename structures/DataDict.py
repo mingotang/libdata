@@ -151,9 +151,9 @@ class DataDict(dict):
         :param by_tag: related attribute
         :return: dict( key: set())
         """
-        grouped_dict = dict()
+        grouped_dict = DataDict(DataDict)
 
-        for index in self.keys():
+        for index, val in self.items():
             obj = self.__getitem__(index)
             by_value = getattr(obj, by_tag)
 
@@ -167,15 +167,13 @@ class DataDict(dict):
                 continue
 
             if by_value not in grouped_dict:
-                grouped_dict[by_value] = set()
+                grouped_dict[by_value] = DataDict(self.__data_type__)
 
-            stored_set = grouped_dict.__getitem__(by_value)
-            stored_set.add(index)
-            grouped_dict[by_value] = stored_set
+            grouped_dict[by_value][index] = val
 
         return grouped_dict
 
-    def group_attr_by(self, group_attr: str, by_attr: str):
+    def group_attr_set_by(self, group_attr: str, by_attr: str):
         """
         建立属性之间映射的快速索引字典 -> dict( by_attr: set(group_attr, ))
         :param group_attr:
@@ -188,9 +186,7 @@ class DataDict(dict):
             key = getattr(obj, by_attr)
             if key not in grouped_dict:
                 grouped_dict[key] = set()
-
-            value = getattr(obj, group_attr)
-            grouped_dict[key].add(value)
+            grouped_dict[key].add(getattr(obj, group_attr))
 
         return grouped_dict
 
@@ -203,8 +199,8 @@ class DataDict(dict):
         """
         neighbor_dict = dict()
 
-        first_level_index = self.group_attr_by(group_attr=shadow_tag, by_attr=neighbor_tag)
-        second_level_index = self.group_attr_by(group_attr=neighbor_tag, by_attr=shadow_tag)
+        first_level_index = self.group_attr_set_by(group_attr=shadow_tag, by_attr=neighbor_tag)
+        second_level_index = self.group_attr_set_by(group_attr=neighbor_tag, by_attr=shadow_tag)
         for first_k in first_level_index.keys():
             neighbor_dict[first_k] = set()
             for second_k in first_level_index[first_k]:
@@ -212,7 +208,7 @@ class DataDict(dict):
 
         return neighbor_dict
 
-    def collect_attr(self, attr_tag: str):
+    def collect_attr_set(self, attr_tag: str):
         """
         收集出现过的属性内容
         :param attr_tag: str
@@ -225,7 +221,15 @@ class DataDict(dict):
 
         return collected_set
 
-    def count_attr(self, attr_tag: str):
+    def collect_attr_list(self, attr_tag: str):
+        collected_list = list()
+
+        for obj in self.values():
+            collected_list.append(getattr(obj, attr_tag))
+
+        return collected_list
+
+    def count_attr_number(self, attr_tag: str):
         """
         对出现过的属性内容计数
         :param attr_tag: str
