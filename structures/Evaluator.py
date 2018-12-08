@@ -93,7 +93,7 @@ class Evaluator(object):
         match_count, hit_count = 0, 0.0
 
         for ac_key, ac_value in self.__actual_data__.items():
-            assert isinstance(ac_value, list)
+            assert isinstance(ac_value, list), str(ac_value)
             if ac_key in self.__predicted_data__:
                 pre_value = self.__predicted_data__[ac_key]
                 if len(pre_value) >= 1:

@@ -116,7 +116,7 @@ class RawDataProcessor(object):
                     return temp_list
                 else:
                     __temp_list__.clear()
-                    logger.warning('Unqualified data : {0:s}'.format(str(temp_list)))
+                    print('Unqualified data : {0:s}'.format(str(temp_list)))
                     return list()
             else:
                 __temp_list__.extend(content)
@@ -139,10 +139,10 @@ class RawDataProcessor(object):
                     return cont
                     # print(content)
                 else:
-                    logger.warning('Unqualified data : {0:s}'.format(str(cont)))
+                    print('Unqualified data : {0:s}'.format(str(cont)))
                     return list()
             else:
-                logger.warning('Unqualified data : {0:s}'.format(str(cont)))
+                print('Unqualified data : {0:s}'.format(str(cont)))
                 return list()
 
 

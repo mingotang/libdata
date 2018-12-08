@@ -5,7 +5,7 @@ from collections.abc import Mapping
 
 class DataDict(dict):
 
-    def __init__(self, data_type: type=None):
+    def __init__(self, data_type: type = None):
         super(DataDict, self).__init__()
 
         self.__data_type__ = data_type
@@ -15,7 +15,7 @@ class DataDict(dict):
         if isinstance(obj, Mapping):
             new_d = cls(data_type=data_type)
             for key, value in obj.items():
-                if data_type != type(None):
+                if not isinstance(data_type, type(None)):
                     assert isinstance(value, data_type)
                 new_d[key] = value
             return new_d
@@ -51,9 +51,8 @@ class DataDict(dict):
             new_d[k] = v
         return new_d
 
-    def trim_between_range(self, attr_tag: str, range_start, range_end,
-                           include_start: bool=True, include_end: bool=False,
-                           inline: bool=False):
+    def trim_between_range(self, attr_tag: str, range_start, range_end, include_start: bool = True,
+                           include_end: bool = False, inline: bool = False):
         """
         删选合适的数据进入内存 -> dict
         :param attr_tag:
@@ -98,7 +97,7 @@ class DataDict(dict):
         else:
             return result
 
-    def trim_by_range(self, attr_tag: str, range_iterable, inline: bool=False):
+    def trim_by_range(self, attr_tag: str, range_iterable, inline: bool = False):
         """
 
         :param attr_tag:
@@ -125,7 +124,7 @@ class DataDict(dict):
         else:
             return result
 
-    def trim_exclude_range(self, attr_tag: str, exclude_iterable, inline: bool=False):
+    def trim_exclude_range(self, attr_tag: str, exclude_iterable, inline: bool = False):
         if isinstance(exclude_iterable, (set, frozenset, list, tuple)):
             exclude_iterable = frozenset(exclude_iterable)
         else:
@@ -229,7 +228,7 @@ class DataDict(dict):
 
         return collected_list
 
-    def count_attr_number(self, attr_tag: str):
+    def count_attr(self, attr_tag: str):
         """
         对出现过的属性内容计数
         :param attr_tag: str
@@ -242,3 +241,9 @@ class DataDict(dict):
             counted_dict.count(getattr(obj, attr_tag))
 
         return counted_dict
+
+    def sort_by_attr(self, attr_tag: str):
+        from structures.OrderedList import OrderedList
+        new_list = OrderedList(self.__data_type__, attr_tag)
+        new_list.extend(list(self.values()))
+        return new_list

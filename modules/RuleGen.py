@@ -1,29 +1,30 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from Config import DataConfig
+import os
+import datetime
 
 
 class RuleGenerator(object):
-    def __init__(self, data_path: str=DataConfig.data_path, operation_path: str=DataConfig.operation_path):
+    def __init__(self):
+        from Environment import Environment
         from modules.DataProxy import DataProxy
-        from structures import TextRecorder
+        # from structures import TextRecorder
         from utils import get_logger
         self.__logger__ = get_logger(self.__class__.__name__)
 
-        self.__data_path__ = data_path
-        self.__operation_path__ = operation_path
-
-        self.__recorder__ = TextRecorder()
+        env = Environment.get_instance()
+        self.__data_path__ = env.data_path
+        self.__operation_path__ = os.path.join(self.__data_path__, 'this_operation')
+        # self.__recorder__ = TextRecorder()
 
         self.__data_proxy__ = DataProxy(data_path=self.__data_path__)
 
-    @staticmethod
-    def __load_result__(result_data):
+    def __load_result__(self, result_data):
         import os
         from structures import RecoResult
 
         if isinstance(result_data, str):
-            result_data = os.path.join(DataConfig.operation_path, result_data)
+            result_data = os.path.join(self.__operation_path__, result_data)
             result = RecoResult.load_csv(result_data)
         elif isinstance(result_data, RecoResult):
             result = result_data
@@ -33,8 +34,24 @@ class RuleGenerator(object):
 
         return result
 
+    def simple_statistic(self):
+        readers = self.__data_proxy__.readers
+        print('total readers: {}'.format(len(readers)))
+
+        books = self.__data_proxy__.books
+        print('total books: {}'.format(len(books)))
+
+        events = self.__data_proxy__.events
+        print('total events: {}'.format(len(events)))
+        print('2013 events: {}'.format(
+            events.trim_between_range('date', datetime.date(2013, 1, 1), datetime.date(2014, 1, 1))))
+        print('2014 events: {}'.format(
+            events.trim_between_range('date', datetime.date(2014, 1, 1), datetime.date(2015, 1, 1))))
+        print('2015 events: {}'.format(
+            events.trim_between_range('date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
+
     @staticmethod
-    def __evaluation_list__(evaluator, top_n: int=10):
+    def __evaluation_list__(evaluator, top_n: int = 10):
         from structures import Evaluator
         assert isinstance(evaluator, Evaluator)
         eva_res = list()
@@ -53,7 +70,7 @@ class RuleGenerator(object):
                         evaluator.front_i_top_n_accuracy(top_n, top_n)])
         return eva_res
 
-    def evaluate_result_similarity(self, result_01, result_02, top_n: int=10, descrip: str=''):
+    def evaluate_result_similarity(self, result_01, result_02, top_n: int = 10, descrip: str = ''):
         from structures import Evaluator
         from utils.FileSupport import save_csv
         result_01 = self.__load_result__(result_01).derive_top(top_n)
@@ -66,9 +83,10 @@ class RuleGenerator(object):
             des_tag = 'Evaluation result with top {}'.format(top_n)
         eva_res.insert(0, [des_tag, ])
 
-        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(des_tag, datetime.datetime.now()))
+        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(
+            des_tag, datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')))
 
-    def evaluate_single_result(self, result_data, time_range, top_n: int=10, descrip: str=''):
+    def evaluate_single_result(self, result_data, time_range, top_n: int = 10, descrip: str = ''):
         """评价单个结果并以csv文件形式输出"""
         from structures import Evaluator, TimeRange
         from utils.FileSupport import save_csv
@@ -77,15 +95,24 @@ class RuleGenerator(object):
         result = self.__load_result__(result_data).derive_top(top_n)
 
         actual_data = dict()
+        # events = self.__data_proxy__.events
+        # for reco_key in tqdm(list(result.keys()), desc='collecting actual data'):
+        #     events_list = events.trim_by_range('reader_id', [reco_key, ])
+        #     events_list.trim_between_range(
+        #         'date', time_range.end_time.date(),
+        #         time_range.end_time.date() + datetime.timedelta(days=30), inline=True
+        #     ).sort_by_attr('date').to_attr_list('book_id')
+        #     actual_data[reco_key] = events_list
         inducted_events = self.__data_proxy__.inducted_events.to_dict()
         for reco_key, events_list in inducted_events.items():
-            from structures import OrderedList
-            assert isinstance(events_list, OrderedList)
+            # from structures import OrderedList
+            # assert isinstance(events_list, OrderedList)
             events_list = events_list.trim_between_range(
                 'date', time_range.end_time.date(), time_range.end_time.date() + datetime.timedelta(days=30)
             ).to_attr_list('book_id')
             actual_data[reco_key] = events_list
 
+        self.log.debug_running('evaluating single result ')
         evaluator = Evaluator(actual_data=actual_data, predicted_data=result)
 
         eva_res = self.__evaluation_list__(evaluator, top_n=top_n)
@@ -95,9 +122,10 @@ class RuleGenerator(object):
             des_tag = 'Evaluation result with top {}'.format(top_n)
         eva_res.insert(0, [des_tag, ])
 
-        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(des_tag, datetime.datetime.now()))
+        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(
+            des_tag, datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')))
 
-    def merge_result(self, result_01, result_02, top_n: int=10):
+    def merge_result(self, result_01, result_02, top_n: int = 10):
         """把两个结果合并在一起"""
         from structures import RecoResult
         result_01 = self.__load_result__(result_01).derive_top(top_n)
@@ -127,7 +155,6 @@ class RuleGenerator(object):
 
 
 if __name__ == '__main__':
-    import datetime
 
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()

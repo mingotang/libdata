@@ -33,10 +33,11 @@ class RecoResult(dict):
     def to_csv(self, folder_path: str=None):
         import os
         import datetime
-        from Config import DataConfig
+        from Environment import Environment
+        env = Environment.get_instance()
         file_name = 'cf_result_{}.csv'.format(datetime.datetime.now().strftime('%Y%m%d_%H%M%S'))
         if folder_path is None:
-            target_path = os.path.join(DataConfig.operation_path, file_name)
+            target_path = os.path.join(os.path.join(env.data_path, 'this_operation'), file_name)
         else:
             if os.path.exists(folder_path) is False:
                 os.makedirs(folder_path)

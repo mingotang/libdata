@@ -1,0 +1,23 @@
+# Record Result
+
+- 简单协同过滤，全部近邻、余弦相似度、借阅向量的值为借阅次数
+    - cf_result_20181208_170402.csv
+    - Evaluation result with top 20 - 2018-12-08 17/04/47.430642.csv
+- 简单协同过滤，限制5近邻、余弦相似度、借阅向量的值为借阅次数（性能有所下降）
+    - cf_result_20181208_180738.csv
+    - Evaluation result with top 20 - 2018-12-08 18/08/30.891679.csv
+- 分组外简单协同过滤，全部近邻、余弦相似度、借阅向量的值为借阅次数（性能相近）
+    - 2013-06 slipped.csv
+    - Evaluation result with top 10 - 2018-12-08 18/28/22.211734
+- 分组内简单协同过滤，全部近邻、余弦相似度、借阅向量的值为借阅次数（性能明显下降）
+    - 2013-06 ref slipped
+    - Evaluation result with top 10 - 2018-12-08 18/32/38.380823
+- 简单协同过滤，全部近邻、余弦相似度、借阅向量的值为借阅次数乘以用户注册时间系数（性能有所上升）
+    - 2013-06 growth weighted simple
+    - Evaluation result with top 10 - 2018-12-08 18/36/03.668930
+- 简单协同过滤，在前一个时间段寻找相似用户，全部近邻、余弦相似度、借阅向量的值为借阅次数
+    - 2013-06 date back
+    - Evaluation result with top 10 - 2018-12-08 18/47/47.491398
+- 简单协同过滤，全部近邻、余弦相似度、借阅向量的值为书名关键字
+    - 2013-06 keyword simple
+    - Evaluation result with top 10 - 2018-12-08 19/16/56.160154

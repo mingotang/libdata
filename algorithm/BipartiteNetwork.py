@@ -7,7 +7,7 @@ from structures import Event
 
 class BipartiteNetwork(object):
 
-    def __init__(self, event_dict, in_memory: bool=True):
+    def __init__(self, event_dict, in_memory: bool = True):
         from structures import ShelveWrapper
         from utils import get_logger
         self.__logger__ = get_logger(module_name=self.__class__.__name__)
@@ -34,12 +34,15 @@ class BipartiteNetwork(object):
             data_dict = self.__event_dict__
         else:
             data_dict = DataDict.init_from(Event, self.__event_dict__)
-        new_vector = SparseVector(data_dict.count_attr_number(tag))
+        new_vector = SparseVector(data_dict.count_attr(tag))
         new_vector.update(CountingDict.init_from(data_dict.collect_attr_list(tag)))
         return new_vector
 
     def run(self):
         if isinstance(self.__event_dict__, DataDict):
-            raise NotImplementedError
+            b_w, r_w = SparseVector(len(self.book_weight)), SparseVector(len(self.reader_weight))
         else:
             raise NotImplementedError
+
+        while (self.book_weight - b_w).sum_squared < 0.1 and (self.reader_weight - r_w).sum_squared < 0.1:
+            

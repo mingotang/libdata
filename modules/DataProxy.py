@@ -119,6 +119,8 @@ class DataProxy(object):
 
     def __init__(self, data_path: str=None, writeback: bool=False,):
         from Environment import Environment
+        from utils import get_logger
+        self.log = get_logger(self.__class__.__name__)
         env = Environment.get_instance()
 
         if data_path is None:
@@ -172,6 +174,7 @@ class DataProxy(object):
             db_path = os.path.join(self.__path__, 'readers')
             try:
                 self.__readers__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Reader)
+                self.log.debug('DataDict converted from {}'.format(db_path))
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
         assert isinstance(self.__readers__, DataDict)
@@ -183,6 +186,7 @@ class DataProxy(object):
             db_path = os.path.join(self.__path__, 'books')
             try:
                 self.__books__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Book)
+                self.log.debug('DataDict converted from {}'.format(db_path))
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
         assert isinstance(self.__books__, DataDict)
@@ -194,6 +198,7 @@ class DataProxy(object):
             db_path = os.path.join(self.__path__, 'events')
             try:
                 self.__events__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Event)
+                self.log.debug('DataDict converted from {}'.format(db_path))
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
         assert isinstance(self.__events__, DataDict)
@@ -292,12 +297,12 @@ if __name__ == '__main__':
     # ------------------------------
     from Environment import Environment
     Environment()
-    store_record_data()
+    # store_record_data()
     # data_manager = DataManager(writeback=False)
 
-    # data_proxy = DataProxy()
-    # data_proxy.execute_events_induction('date')
-    # data_proxy.close()
+    data_proxy = DataProxy()
+    data_proxy.execute_events_induction('date')
+    data_proxy.close()
 
     # data_proxy = DataProxy()
 

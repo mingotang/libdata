@@ -5,7 +5,7 @@ from collections import Mapping, Sized
 
 class SparseVector(Mapping, Sized):
     """稀疏向量 类 defaultdict"""
-    def __init__(self, length: int=None, default_value=0):
+    def __init__(self, length: int = None, default_value=0):
         assert isinstance(length, (type(None), int))
         self.__length__ = length
         self.data = dict()
@@ -96,6 +96,11 @@ class SparseVector(Mapping, Sized):
         else:
             raise NotImplementedError
 
+    def copy(self):
+        new_vec = SparseVector(self.__length__, self.__default_value__)
+        new_vec.update(self)
+        return new_vec
+
     def get(self, key):
         return self.__getitem__(key)
 
@@ -118,6 +123,9 @@ class SparseVector(Mapping, Sized):
         for tag in self.data.keys():
             total += self.data[tag] ** 2
         return total
+
+    def normalization(self):
+        return self * (1 / self.sum_squared)
 
     def keys(self):
         return self.data.keys()
