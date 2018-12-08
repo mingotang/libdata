@@ -45,4 +45,4 @@ class BipartiteNetwork(object):
             raise NotImplementedError
 
         while (self.book_weight - b_w).sum_squared < 0.1 and (self.reader_weight - r_w).sum_squared < 0.1:
-            
+
