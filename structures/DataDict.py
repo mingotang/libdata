@@ -107,6 +107,8 @@ class DataDict(dict):
         """
         if isinstance(range_iterable, (set, frozenset, list, tuple)):
             range_iterable = frozenset(range_iterable)
+        elif isinstance(range_iterable, (str, int, float)):
+            range_iterable = (range_iterable, )
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('range_iterable', (set, frozenset, list, tuple), range_iterable)

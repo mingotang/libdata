@@ -109,7 +109,7 @@ class LogWrapper(logging.Logger):
             if len(args) == 2:
                 self._log(
                     logging.DEBUG,
-                    '[running]: {0:s} - now {1:s}'.format(args[0], args[1]),
+                    '[running]: {0:s} - {1:s}'.format(args[0], args[1]),
                     tuple(), **kwargs
                 )
             elif len(args) == 1:
