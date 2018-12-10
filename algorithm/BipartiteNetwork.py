@@ -67,15 +67,16 @@ class BipartiteNetwork(object):
         return max_occupy
 
     def run(self, reader_weight_first: bool = True):
+        from tqdm import tqdm
         if isinstance(self.__event_dict__, DataDict):
             b_w, r_w = SparseVector(len(self.book_weight)), SparseVector(len(self.reader_weight))
         else:
             raise NotImplementedError
 
-        self.__logger__.debug_running('init', 'repeat_times')
+        # self.__logger__.debug_running('init', 'repeat_times')
         repeat_times = dict()
-        for book_id in self.book_weight.keys():
-            book_event = self.__event_dict__.trim_by_range('book_id', [book_id, ])
+        for book_id, book_event in tqdm(self.__event_dict__.group_by('book_id').items(), desc='init repeat_times'):
+            # book_event = self.__event_dict__.trim_by_range('book_id', [book_id, ])
             repeat_times[book_id] = SparseVector(len(book_event.collect_attr_set('reader_id')))
             repeat_times[book_id].update(CountingDict.init_from(book_event.collect_attr_list('reader_id')))
 

@@ -1,16 +1,15 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import os
+import json
+import datetime
 
 from structures import Book, Event, Reader, DataDict
 from structures import ShelveWrapper, TimeRange
-from utils import get_logger
 
 
 class EventStore(object):
-    def __init__(
-            self, folder_path: str, writeback: bool=False, new: bool=False,
-    ):
+    def __init__(self, folder_path: str, writeback: bool=False, new: bool=False,):
         if not os.path.exists(folder_path):
             if new is False:
                 raise RuntimeError('EventStore folder should be inited before loading')
@@ -20,65 +19,50 @@ class EventStore(object):
         self.__path__ = folder_path
         self.__data__ = self.__connect_folder__(writeback=writeback)
 
-    def store(self, data):
-        from collections import Iterable, Mapping
+    def __write__(self, date: datetime.date, data_dict: DataDict):
+        json.dump(
+            [getattr(var, 'get_state_dict').__call__() for var in data_dict.values()],
+            os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
+        )
 
+    def __read__(self, date: datetime.date):
+        file_path = os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
+        new_dict = DataDict(Event)
+        if os.path.exists(file_path):
+            event_list = json.load(file_path)
+            for event in event_list:
+                new_event = Event.init_from(event)
+                new_dict[new_event.hashable_key] = new_event
+        else:
+            pass
+        return new_dict
+
+
+    def store(self, event_data: DataDict):
         stored = self.__connect_folder__(False)
 
         # check data
-        if isinstance(data, Mapping):
-            for event in data.values():
-                assert event.date.strftime('%Y%m') not in stored, 'Already has data in month {}'.format(event.date)
+        for event in event_data.values():
+            assert isinstance(event, Event), str(type(event))
+            assert event.date.strftime('%Y%m') not in stored, 'Already has data in date {}'.format(event.date)
 
-        elif isinstance(data, Iterable):
-            for event in data:
-                assert isinstance(event, Event)
-                assert event.date.strftime('%Y%m') not in stored, 'Already has data in month {}'.format(event.date)
+        # store data
+        for event in event_data:
+            assert isinstance(event, Event)
+            tag = event.date.strftime('%Y%m')
 
-        else:
-            from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('data', (Iterable, Mapping), data)
+            if tag not in stored:
+                stored_db = ShelveWrapper(os.path.join(self.__path__, tag), new=True)
+                stored[tag] = stored_db
+            else:
+                stored_db = stored[tag]
 
-        # storing data
-        if isinstance(data, Mapping):
-            for event in data.values():
-                assert isinstance(event, Event)
-                tag = event.date.strftime('%Y%m')
-
-                if tag not in stored:
-                    stored_db = ShelveWrapper(os.path.join(self.__path__, tag), new=True)
-                    stored[tag] = stored_db
-                else:
-                    stored_db = stored[tag]
-
-                if tag in stored_db:
-                    stored_event = stored_db[event.hashable_key]
-                    stored_event.update_from(event)
-                    stored_db[event.hashable_key] = stored_event
-                else:
-                    stored_db[event.hashable_key] = event
-
-        elif isinstance(data, Iterable):
-            for event in data:
-                assert isinstance(event, Event)
-                tag = event.date.strftime('%Y%m')
-
-                if tag not in stored:
-                    stored_db = ShelveWrapper(os.path.join(self.__path__, tag), new=True)
-                    stored[tag] = stored_db
-                else:
-                    stored_db = stored[tag]
-
-                if tag in stored_db:
-                    stored_event = stored_db[event.hashable_key]
-                    stored_event.update_from(event)
-                    stored_db[event.hashable_key] = stored_event
-                else:
-                    stored_db[event.hashable_key] = event
-
-        else:
-            from utils.Exceptions import ParamTypeError
-            raise ParamTypeError('data', (Iterable, Mapping), data)
+            if tag in stored_db:
+                stored_event = stored_db[event.hashable_key]
+                stored_event.update_from(event)
+                stored_db[event.hashable_key] = stored_event
+            else:
+                stored_db[event.hashable_key] = event
 
         for tag in stored:
             stored[tag].close()
@@ -100,24 +84,10 @@ class EventStore(object):
 
         return connect
 
-    def derive(self, time_range: TimeRange):
-        from structures import DataDict
-        start = time_range.start_time.date().strftime('%Y%m')
-        end = time_range.end_time.date().strftime('%Y%m')
-        derive_data = DataDict()
-        for time, db in self.__data__.items():
-            if start <= time <= end:
-                assert isinstance(db, ShelveWrapper)
-                for key, event in db.items():
-                    assert isinstance(event, Event)
-                    if start <= event.date.strftime('%Y%m') <= end:
-                        derive_data[key] = event
-        return derive_data
-
 
 class DataProxy(object):
 
-    def __init__(self, data_path: str=None, writeback: bool=False,):
+    def __init__(self, data_path: str = None, writeback: bool = False,):
         from Environment import Environment
         from utils import get_logger
         self.log = get_logger(self.__class__.__name__)
@@ -300,9 +270,9 @@ if __name__ == '__main__':
     # store_record_data()
     # data_manager = DataManager(writeback=False)
 
-    data_proxy = DataProxy()
-    data_proxy.execute_events_induction('date')
-    data_proxy.close()
+    # data_proxy = DataProxy()
+    # data_proxy.execute_events_induction('date')
+    # data_proxy.close()
 
     # data_proxy = DataProxy()
 

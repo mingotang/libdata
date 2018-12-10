@@ -11,26 +11,23 @@ class Event(AbstractDataObject):
     __information__ = ('times', )
     __repr__ = attributes_repr
 
-    def __init__(self, book_id: str, reader_id: str, event_date: str, event_type: str):
+    def __init__(self, book_id: str, reader_id: str, event_date: str, event_type: str, **kwargs):
         self.book_id = book_id
         self.reader_id = reader_id
         self.event_date = event_date
         self.event_type = event_type
-        self.times = 1
+        self.times = kwargs.get('times', 1)
 
-    def set_state_str(self, state: str):
-        self.set_state_dict(json.loads(state))
+    @classmethod
+    def set_state_str(cls, state: str):
+        return cls.set_state_dict(json.loads(state))
 
     def get_state_str(self):
         return json.dumps(self.get_state_dict())
 
-    def set_state_dict(self, state: dict):
-        for tag in self.__attributes__:
-            setattr(self, tag, state[tag])
-        for tag in self.__information__:
-            if tag not in state:
-                continue
-            setattr(self, tag, state[tag])
+    @classmethod
+    def set_state_dict(cls, state: dict):
+        return cls(**state)
 
     def get_state_dict(self):
         state = dict()
@@ -87,11 +84,9 @@ class Event(AbstractDataObject):
                 event_type=value['event_type'],
             )
         elif isinstance(value, dict):
-            new = cls('', '', '', '')
-            new.set_state_dict(value)
+            new = cls.set_state_dict(value)
         elif isinstance(value, str):
-            new = cls('', '', '', '')
-            new.set_state_str(value)
+            new = cls.set_state_str(value)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)

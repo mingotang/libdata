@@ -63,13 +63,15 @@ class AbstractPersist:
         """
         raise NotImplementedError
 
-    def set_state_str(self, state: str):
+    @classmethod
+    def set_state_str(cls, state: str):
         raise NotImplementedError
 
     def get_state_str(self):
         raise NotImplementedError
 
-    def set_state_dict(self, state: dict):
+    @classmethod
+    def set_state_dict(cls, state: dict):
         raise NotImplementedError
 
     def get_state_dict(self):
