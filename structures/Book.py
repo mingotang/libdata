@@ -9,22 +9,6 @@ from structures.LibIndex import LibIndex
 from utils import attributes_repr
 
 
-def define_book_table(meta):
-    from sqlalchemy import MetaData, Table, Column, String
-    assert isinstance(meta, MetaData)
-    return Table(
-        'books', meta,
-        Column('index', String, nullable=False, primary_key=True),
-        Column('lib_index', String),
-        Column('name', String),
-        Column('isbn', String),
-        Column('author', String),
-        Column('year', String),
-        Column('publisher', String),
-        Column('op_dt', String)
-    )
-
-
 class Book(AbstractDataObject, AbstractPersist):
     __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher')
     __information__ = ('op_dt', )

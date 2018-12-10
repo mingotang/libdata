@@ -1,6 +1,44 @@
 # -*- encoding: UTF-8 -*-
+from sqlalchemy import MetaData, Table, Column, String, Integer
 
 from structures import Book, Event, Reader
+
+
+def define_book_table(meta):
+    assert isinstance(meta, MetaData)
+    return Table(
+        'books', meta,
+        Column('index', String, nullable=False, primary_key=True),
+        Column('lib_index', String),
+        Column('name', String),
+        Column('isbn', String),
+        Column('author', String),
+        Column('year', String),
+        Column('publisher', String),
+        Column('op_dt', String)
+    )
+
+
+def define_reader_table(meta):
+    assert isinstance(meta, MetaData)
+    return Table(
+        'users', meta,
+        Column('index', String, nullable=False, primary_key=True),
+        Column('rtype', String, nullable=False),
+        Column('college', String),
+        Column('op_dt', String),
+    )
+
+
+def define_event_table(meta: MetaData):
+    return Table(
+        'events', meta,
+        Column('book_id', String, primary_key=True),
+        Column('reader_id', String, primary_key=True),
+        Column('event_date', String, primary_key=True),
+        Column('event_type', String, primary_key=True),
+        Column('times', Integer),
+    )
 
 
 class SqliteWrapper(object):

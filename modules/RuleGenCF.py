@@ -15,21 +15,17 @@ class RuleGenCF(RuleGenerator):
         RuleGenerator.__init__(self)
 
     def apply_collaborative_filtering(self, time_range):
+        assert isinstance(time_range, StandardTimeRange)
 
         events_data = self.__data_proxy__.events
-
         self.log.debug_running('trimming event data from date {} to date {}'.format(
-            time_range.start_time.date(), time_range.end_time.date()
-        ))
+            time_range.start_time.date(), time_range.end_time.date()))
         events_data.trim_between_range(
             attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
-            include_start=True, include_end=False, inline=True
-        )
+            include_start=True, include_end=False, inline=True, )
 
         self.log.debug_running('trimming event data by event_type 50/62/63')
         events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
-
-        self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
 
         cf_result = CollaborativeFiltering(events_data).set_relation_tag('reader_id', 'book_id')
         cf_result.set_neighbor_type(CF_NeighborType.FixSize).set_similarity_type(CF_SimilarityType.Cosine)
@@ -43,14 +39,10 @@ class RuleGenCF(RuleGenerator):
             assert isinstance(reader, Reader)
             if reader.growth_index(time_range.end_time.date()) is None:
                 cf_result.pop(key)
-
         cf_result.to_csv()
-
         return cf_result
 
     def apply_slipped_collaborative_filtering(self, time_range):
-        from structures import RecoResult
-        from structures import DataDict, Event
         assert isinstance(time_range, GrowthTimeRange)
 
         events_data = self.__data_proxy__.events
@@ -195,7 +187,6 @@ class RuleGenCF(RuleGenerator):
         return cf_result
 
     def apply_date_back_collaborative_filtering(self, similarity_type, neighbor_type, time_range):
-        from algorithm import DateBackCollaborativeFiltering
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, DateBackTimeRange)
 

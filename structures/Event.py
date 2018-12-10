@@ -2,22 +2,8 @@
 import datetime
 import json
 
-from sqlalchemy import MetaData, Table, Column, String, Integer
-
 from Interface import AbstractDataObject
-from structures import OrderedList
 from utils import attributes_repr
-
-
-def define_event_table(meta: MetaData):
-    return Table(
-        'events', meta,
-        Column('book_id', String, primary_key=True),
-        Column('reader_id', String, primary_key=True),
-        Column('event_date', String, primary_key=True),
-        Column('event_type', String, primary_key=True),
-        Column('times', Integer),
-    )
 
 
 class Event(AbstractDataObject):

@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from collections.abc import Mapping
 
 
 class DataDict(dict):
@@ -12,6 +11,7 @@ class DataDict(dict):
 
     @classmethod
     def init_from(cls, data_type: type, obj):
+        from collections.abc import Mapping
         if isinstance(obj, Mapping):
             new_d = cls(data_type=data_type)
             for key, value in obj.items():

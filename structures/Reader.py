@@ -11,19 +11,7 @@ from utils.Constants import (
 )
 
 
-NOW_YEAR = datetime.datetime.now().date().year
-
-
-def define_reader_table(meta):
-    from sqlalchemy import MetaData, Table, Column, String
-    assert isinstance(meta, MetaData)
-    return Table(
-        'users', meta,
-        Column('index', String, nullable=False, primary_key=True),
-        Column('rtype', String, nullable=False),
-        Column('college', String),
-        Column('op_dt', String),
-    )
+TODAY = datetime.datetime.now().date()
 
 
 class Reader(AbstractDataObject):
@@ -129,7 +117,7 @@ class Reader(AbstractDataObject):
             else:
                 return None
 
-            if r_y <= NOW_YEAR:
+            if r_y <= TODAY.year:
                 return r_y
             else:
                 # Exception :   Reader(index: 3965589366, rtype: 35, college: )
@@ -181,48 +169,15 @@ class Reader(AbstractDataObject):
         return self.rtype in OTHER_INDIVIDUAL_TYPES
 
 
-def collect_reader_attributes(events, **kwargs):
-    from tqdm import tqdm
-    from collections import defaultdict, Iterable, Mapping
-    from modules.DataProxy import DataProxy
-    from structures.Event import Event
-    from structures import SparseVector
-
-    reader_attributes = defaultdict(SparseVector)
-
-    if isinstance(events, Iterable):
-        for event in tqdm(events, desc='checking events'):
-            # event = events[i]
-            assert isinstance(event, Event)
-            reader_attributes[event.reader_id][event.book_id] = event.times
-    elif isinstance(events, Mapping):
-        for event in tqdm(events.values(), desc='checking events'):
-            reader_attributes[event.reader_id][event.book_id] = event.times
-    else:
-        from utils.Exceptions import ParamTypeError
-        raise ParamTypeError('events', 'list/Plist/dict/Pdict/ShelveWrapper', events)
-
-    data_proxy = DataProxy()
-    total_books = kwargs.get('length', data_proxy.books.__len__())
-
-    for reader_id in reader_attributes:
-        reader_attributes[reader_id].set_length(total_books)
-
-    return reader_attributes
-
-
 if __name__ == '__main__':
+    from Environment import Environment
     from modules.DataProxy import DataProxy
-    from utils.Constants import reader_type_chinese_map
+    env = Environment()
     data_proxy = DataProxy()
     for reader in data_proxy.readers.values():
-        # if not reader.is_student:
-        #     print(reader.register_year, reader)
         if not isinstance(reader.register_year, int):
-            continue
+            # continue
             if reader.is_outer_reader:
                 print(reader.register_year, reader)
         else:
             continue
-            if reader.is_student:
-                print(reader.register_year, reader)

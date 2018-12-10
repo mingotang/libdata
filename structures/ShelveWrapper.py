@@ -1,6 +1,6 @@
 # -*- encoding: UTF-8 -*-
+import os
 import shelve
-import tempfile
 
 from collections import Mapping, Sized
 
@@ -8,7 +8,6 @@ from collections import Mapping, Sized
 class ShelveWrapper(Mapping, Sized):
 
     def __init__(self, db_path: str, writeback: bool=False, new: bool=False):
-        import os
         from utils import get_logger
         Mapping.__init__(self)
         self.__logger__ = get_logger(self.__class__.__name__)
@@ -49,6 +48,7 @@ class ShelveWrapper(Mapping, Sized):
 
     @classmethod
     def get_temp(cls):
+        import tempfile
         from os import path
         from datetime import datetime
         from Environment import Environment
@@ -92,12 +92,6 @@ class ShelveWrapper(Mapping, Sized):
 
     def __len__(self):
         return self.__db__.__len__()
-
-    # def __del__(self):
-    #     if self.__closed__ is False:
-    #         self.__logger__.warning('shelve database {} auto closed.'.format(self.__path__))
-    #         self.close()
-    #     del self.__closed__, self.__db__, self.__path__
 
     def keys(self):
         return self.__db__.keys()
