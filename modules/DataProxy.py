@@ -9,7 +9,7 @@ from structures import ShelveWrapper, TimeRange
 
 
 class EventStore(object):
-    def __init__(self, folder_path: str, writeback: bool=False, new: bool=False,):
+    def __init__(self, folder_path: str, writeback: bool = False, new: bool = False,):
         if not os.path.exists(folder_path):
             if new is False:
                 raise RuntimeError('EventStore folder should be inited before loading')
@@ -36,7 +36,6 @@ class EventStore(object):
         else:
             pass
         return new_dict
-
 
     def store(self, event_data: DataDict):
         stored = self.__connect_folder__(False)
@@ -110,7 +109,7 @@ class DataProxy(object):
         self.__inducted_events__ = None
         self.__event_store__ = None
 
-    def execute_events_induction(self, by_attr: str='date'):
+    def execute_events_induction(self, by_attr: str = 'date'):
         from tqdm import tqdm
         from structures import OrderedList
 
