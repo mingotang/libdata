@@ -1,13 +1,8 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from utils import get_logger
-
-
-logger = get_logger(module_name=__file__)
 
 
 if __name__ == '__main__':
-    logger.initiate_time_counter()
 
     # -------- [1] --------
     # 第一步，储存txt数据至shelve
@@ -21,11 +16,12 @@ if __name__ == '__main__':
     # data_proxy.execute_events_induction('date')
 
     # -------- get data --------
-    from modules.DataProxy import DataProxy
-    data = DataProxy()
+    from Environment import Environment
+    from modules.DataProxy import DataProxy, store_events_by_date, store_events_by_register_month
 
+    env = Environment()
+    env.set_data_proxy(DataProxy())
+    store_events_by_date()
+    store_events_by_register_month()
 
     # --------  --------
-    data.close()
-
-    logger.print_time_passed()

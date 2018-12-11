@@ -56,6 +56,7 @@ class SparseVector(Mapping, Sized):
             new_vector = SparseVector(self.__len__(), default_value=self.__default_value__)
             for tag in self.keys():
                 new_vector[tag] = other * self.__getitem__(tag)
+            return new_vector
         elif isinstance(other, Mapping):
             tag_set = set(self.keys()).intersection(set(other.keys()))
             result = 0.0

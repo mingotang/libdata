@@ -5,7 +5,7 @@ import json
 import datetime
 
 from structures import Book, Event, Reader, DataDict
-from structures import ShelveWrapper, TimeRange
+from structures import ShelveWrapper
 
 
 class EventStore(object):
@@ -18,8 +18,8 @@ class EventStore(object):
 
         self.__path__ = folder_path
 
-    def __write__(self, date: datetime.date, data_dict: DataDict):
-        file_path = os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
+    def __write__(self, key: str, data_dict: DataDict):
+        file_path = os.path.join(self.__path__, '{}.json'.format(key))
         if os.path.exists(file_path):
             raise FileExistsError(file_path)
         else:
@@ -28,8 +28,8 @@ class EventStore(object):
                 open(file_path, 'w', encoding='utf-8')
             )
 
-    def __read__(self, date: datetime.date):
-        file_path = os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
+    def __read__(self, key: str):
+        file_path = os.path.join(self.__path__, '{}.json'.format(key))
         new_dict = DataDict(Event)
         if os.path.exists(file_path):
             event_list = json.load(open(file_path, 'r', encoding='utf-8'))
@@ -40,10 +40,22 @@ class EventStore(object):
             pass
         return new_dict
 
+    def store(self, *args):
+        raise NotImplementedError
+
+    def get(self, *args):
+        raise NotImplementedError
+
+    def iter(self, *args):
+        raise NotImplementedError
+
+
+class DateEventStore(EventStore):
+
     def store(self, event_data: DataDict):
         group_by_date = event_data.group_by('event_date')
         for date, date_dict in group_by_date.items():
-            self.__write__(datetime.datetime.strptime(date, '%Y%m%d'), date_dict)
+            self.__write__(date, date_dict)
 
     def get(self, start_date: datetime.date, end_date: datetime.date):
         if start_date > end_date:
@@ -52,7 +64,7 @@ class EventStore(object):
         new_dict = DataDict(Event)
         this_date = start_date
         while this_date <= end_date:
-            new_dict.update(self.__read__(this_date))
+            new_dict.update(self.__read__(this_date.strftime('%Y%m%d')))
             this_date += datetime.timedelta(days=1)
         return new_dict
 
@@ -62,8 +74,32 @@ class EventStore(object):
 
         this_date = start_date
         while this_date <= end_date:
-            yield self.__read__(this_date)
+            yield self.__read__(this_date.strftime('%Y%m%d'))
             this_date += datetime.timedelta(days=1)
+
+
+class RegisterMonthEventStore(EventStore):
+
+    def store(self, event_data: DataDict):
+        group_by_date = event_data.group_by('month_from_reader_register')
+        for month, date_dict in group_by_date.items():
+            self.__write__(str(month), date_dict)
+
+    def get(self, month_range):
+        new_dict = DataDict(Event)
+        for d_dict in self.iter(month_range):
+            new_dict.update(d_dict)
+        return new_dict
+
+    def iter(self, month_range):
+        from collections import Iterable
+        if isinstance(month_range, int):
+            yield self.__read__(str(month_range))
+        elif isinstance(month_range, Iterable):
+            for month in month_range:
+                yield self.__read__(str(month))
+        else:
+            raise TypeError
 
 
 class DataProxy(object):
@@ -89,7 +125,8 @@ class DataProxy(object):
 
         self.__books__, self.__events__, self.__readers__ = None, None, None
         self.__inducted_events__ = None
-        self.__event_store__ = None
+        self.__event_store_by_date__ = None
+        self.__event_store_by_register_month__ = None
 
     def execute_events_induction(self, by_attr: str = 'date'):
         from tqdm import tqdm
@@ -112,16 +149,20 @@ class DataProxy(object):
 
         return inducted_events_db
 
-    def store_events(self):
-        self.__event_store__ = EventStore(folder_path=os.path.join(self.__path__, 'events'), new=True)
-        self.__event_store__.store(self.events)
+    @property
+    def event_store_by_date(self):
+        if self.__event_store_by_date__ is None:
+            self.__event_store_by_date__ = DateEventStore(folder_path=os.path.join(self.__path__, 'events_by_date'))
+
+        return self.__event_store_by_date__
 
     @property
-    def event_store(self):
-        if self.__event_store__ is None:
-            self.__event_store__ = EventStore(folder_path=os.path.join(self.__path__, 'events'))
+    def event_store_by_register_month(self):
+        if self.__event_store_by_register_month__ is None:
+            self.__event_store_by_register_month__ = RegisterMonthEventStore(
+                folder_path=os.path.join(self.__path__, 'events_by_register_month'))
 
-        return self.__event_store__
+        return self.__event_store_by_register_month__
 
     @property
     def readers(self):
@@ -248,17 +289,31 @@ def store_record_data():
     event_store.close()
 
 
+def store_events_by_date():
+    from Environment import Environment
+    env = Environment.get_instance()
+    d_s = DateEventStore(folder_path=os.path.join(env.data_path, 'events_by_date'), new=True)
+    d_s.store(env.data_proxy.events)
+
+
+def store_events_by_register_month():
+    from Environment import Environment
+    env = Environment.get_instance()
+    d_s = RegisterMonthEventStore(folder_path=os.path.join(env.data_path, 'events_by_register_month'), new=True)
+    d_s.store(env.data_proxy.events)
+
+
 if __name__ == '__main__':
     # ------------------------------
     from Environment import Environment
-    Environment()
+    env = Environment()
+    env.set_data_proxy(DataProxy())
     # store_record_data()
     # data_manager = DataManager(writeback=False)
 
-    data_proxy = DataProxy()
-
+    # data_proxy = DataProxy()
     # data_proxy.execute_events_induction('date')
     # data_proxy.close()
 
-    data_proxy.store_events()
+    store_events_by_date()
     # ------------------------------

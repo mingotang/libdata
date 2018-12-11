@@ -95,3 +95,15 @@ class Event(AbstractDataObject):
     @property
     def hashable_key(self):
         return '|'.join([self.book_id, self.reader_id, self.event_date, self.event_type])
+
+    @property
+    def month_from_reader_register(self):
+        from Environment import Environment
+        reader = Environment.get_instance().data_proxy.readers[self.reader_id]
+        if reader.register_date is None:
+            return None
+        else:
+            if reader.register_date >= self.date:
+                return 0
+            else:
+                return int(((self.date - reader.register_date) / datetime.timedelta(days=1)) / 30)

@@ -13,7 +13,10 @@ class Environment(object):
     def __init__(self):
         from Interface import get_root_path
         from utils import load_yaml
-        Environment._env = self
+        if Environment._env is None:
+            Environment._env = self
+        else:
+            raise RuntimeError("Environment has been created.")
 
         # public
         self.config = load_yaml(os.path.join(get_root_path(), 'config.yaml'))
@@ -46,5 +49,5 @@ class Environment(object):
 
     def set_data_proxy(self, data_proxy):
         from modules.DataProxy import DataProxy
-        assert isinstance(data_proxy, DataProxy)
+        assert isinstance(data_proxy, DataProxy), type(data_proxy)
         self.__data_proxy__ = data_proxy
