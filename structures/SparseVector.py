@@ -11,6 +11,9 @@ class SparseVector(Mapping, Sized):
         self.data = dict()
         self.__default_value__ = default_value
 
+    def __repr__(self):
+        return str(self.copy_to_dict())
+
     def __len__(self):
         if self.__length__ is None:
             raise RuntimeError('SparseVector defined without length.')
@@ -100,6 +103,11 @@ class SparseVector(Mapping, Sized):
         new_vec = SparseVector(self.__length__, self.__default_value__)
         new_vec.update(self)
         return new_vec
+
+    def copy_to_dict(self):
+        new_dict = dict()
+        new_dict.update(self)
+        return new_dict
 
     def get(self, key):
         return self.__getitem__(key)

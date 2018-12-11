@@ -8,9 +8,11 @@ from structures import Event
 class BipartiteNetwork(object):
 
     def __init__(self, event_dict, in_memory: bool = True):
+        from Environment import Environment
         from structures import ShelveWrapper
         from utils import get_logger
-        self.__logger__ = get_logger(module_name=self.__class__.__name__)
+        self.log = get_logger(module_name=self.__class__.__name__)
+        self.env = Environment.get_instance()
 
         if in_memory is True:
             if isinstance(event_dict, DataDict):
@@ -23,7 +25,7 @@ class BipartiteNetwork(object):
         else:
             raise NotImplementedError
 
-        self.__logger__.debug_running('init', 'book_weight/reader_weight')
+        self.log.debug_running('init', 'book_weight/reader_weight')
         self.book_weight = self.__init_weight__('book_id')    # 书籍权重
         self.reader_weight = self.__init_weight__('reader_id')    # 读者权重
         # self.__calculated_bw__ = SparseVector()    # 计算书籍权重
@@ -40,30 +42,31 @@ class BipartiteNetwork(object):
 
     def __collect_max_book_occupy__(self):
         from collections import defaultdict
-        from structures import OrderedList
-        ordered_events = OrderedList(Event, 'date')
-        ordered_events.extend(list(self.__event_dict__.values()))
         max_occupy, now_occupy = defaultdict(int), defaultdict(int)
-        for event in ordered_events:
-            assert isinstance(event, Event)
-            if event.event_type == '61':  # 还书
-                if now_occupy[event.book_id] > 0:
+        for event_dict in self.env.data_proxy.event_store.iter(
+                start_date=min(self.__event_dict__.collect_attr_set('date')),
+                end_date=max(self.__event_dict__.collect_attr_set('date'))
+        ):
+            for event in event_dict.values():
+                assert isinstance(event, Event)
+                if event.event_type == '61':  # 还书
+                    if now_occupy[event.book_id] > 0:
+                        if max_occupy[event.book_id] < now_occupy[event.book_id]:
+                            max_occupy[event.book_id] = now_occupy[event.book_id]
+                        else:
+                            pass
+                        now_occupy[event.book_id] = now_occupy[event.book_id] - 1
+                    else:
+                        if max_occupy[event.book_id] < 1:
+                            max_occupy[event.book_id] = 1
+                        else:
+                            pass
+                else:
+                    now_occupy[event.book_id] = now_occupy[event.book_id] + 1
                     if max_occupy[event.book_id] < now_occupy[event.book_id]:
                         max_occupy[event.book_id] = now_occupy[event.book_id]
                     else:
                         pass
-                    now_occupy[event.book_id] = now_occupy[event.book_id] - 1
-                else:
-                    if max_occupy[event.book_id] < 1:
-                        max_occupy[event.book_id] = 1
-                    else:
-                        pass
-            else:
-                now_occupy[event.book_id] = now_occupy[event.book_id] + 1
-                if max_occupy[event.book_id] < now_occupy[event.book_id]:
-                    max_occupy[event.book_id] = now_occupy[event.book_id]
-                else:
-                    pass
         return max_occupy
 
     def run(self, reader_weight_first: bool = True):
@@ -80,22 +83,28 @@ class BipartiteNetwork(object):
             repeat_times[book_id] = SparseVector(len(book_event.collect_attr_set('reader_id')))
             repeat_times[book_id].update(CountingDict.init_from(book_event.collect_attr_list('reader_id')))
 
-        self.__logger__.debug_running('init', 'book_count')
+        self.log.debug_running('init', 'book_count')
         book_count = self.__collect_max_book_occupy__()
 
-        self.__logger__.debug_running('init', 'reader2book')
+        self.log.debug_running('init', 'reader2book')
         reader2book = self.__event_dict__.group_attr_set_by('book_id', 'reader_id')
 
-        round = 1
-        while (self.book_weight - b_w).sum_squared < 0.1 and (self.reader_weight - r_w).sum_squared < 0.1:
+        round_i = 0
+        self.log.debug_running('round {} book weight'.format(round_i), self.book_weight)
+        self.log.debug_running('round {} reader weight'.format(round_i), self.reader_weight)
+        left_check, right_check = (self.book_weight - b_w).sum_squared, (self.reader_weight - r_w).sum_squared
+        self.log.debug_running('book_check: {}'.format(left_check), 'reader_check: {}'.format(right_check))
+        while left_check > 0.1 and right_check > 0.1:
+            round_i += 1
             for book_id in self.book_weight.keys():
                 b_w[book_id] = self.reader_weight * repeat_times[book_id]
             for reader_id in self.reader_weight.keys():
                 r_w[reader_id] = sum([(self.book_weight[var] / book_count) for var in reader2book[reader_id]])
             self.book_weight, self.reader_weight = b_w * 1 / b_w.sum, r_w * 1 / r_w.sum
-            self.__logger__.debug_running('round {} book weight'.format(round), self.book_weight)
-            self.__logger__.debug_running('round {} reader weight'.format(round), self.reader_weight)
-            round += 1
+            self.log.debug_running('round {} book weight'.format(round_i), self.book_weight)
+            self.log.debug_running('round {} reader weight'.format(round_i), self.reader_weight)
+            left_check, right_check = (self.book_weight - b_w).sum_squared, (self.reader_weight - r_w).sum_squared
+            self.log.debug_running('book_check: {}'.format(left_check), 'reader_check: {}'.format(right_check))
 
         if reader_weight_first:
             return self.reader_weight, self.book_weight

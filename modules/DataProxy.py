@@ -9,7 +9,7 @@ from structures import ShelveWrapper, TimeRange
 
 
 class EventStore(object):
-    def __init__(self, folder_path: str, writeback: bool = False, new: bool = False,):
+    def __init__(self, folder_path: str, new: bool = False,):
         if not os.path.exists(folder_path):
             if new is False:
                 raise RuntimeError('EventStore folder should be inited before loading')
@@ -17,71 +17,53 @@ class EventStore(object):
                 os.makedirs(folder_path)
 
         self.__path__ = folder_path
-        self.__data__ = self.__connect_folder__(writeback=writeback)
 
     def __write__(self, date: datetime.date, data_dict: DataDict):
-        json.dump(
-            [getattr(var, 'get_state_dict').__call__() for var in data_dict.values()],
-            os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
-        )
+        file_path = os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
+        if os.path.exists(file_path):
+            raise FileExistsError(file_path)
+        else:
+            json.dump(
+                [getattr(var, 'get_state_dict').__call__() for var in data_dict.values()],
+                open(file_path, 'w', encoding='utf-8')
+            )
 
     def __read__(self, date: datetime.date):
         file_path = os.path.join(self.__path__, '{}.json'.format(date.strftime('%Y%m%d')))
         new_dict = DataDict(Event)
         if os.path.exists(file_path):
-            event_list = json.load(file_path)
+            event_list = json.load(open(file_path, 'r', encoding='utf-8'))
             for event in event_list:
-                new_event = Event.init_from(event)
+                new_event = Event.set_state_dict(event)
                 new_dict[new_event.hashable_key] = new_event
         else:
             pass
         return new_dict
 
     def store(self, event_data: DataDict):
-        stored = self.__connect_folder__(False)
+        group_by_date = event_data.group_by('event_date')
+        for date, date_dict in group_by_date.items():
+            self.__write__(datetime.datetime.strptime(date, '%Y%m%d'), date_dict)
 
-        # check data
-        for event in event_data.values():
-            assert isinstance(event, Event), str(type(event))
-            assert event.date.strftime('%Y%m') not in stored, 'Already has data in date {}'.format(event.date)
+    def get(self, start_date: datetime.date, end_date: datetime.date):
+        if start_date > end_date:
+            raise ValueError('end_date should lay behind start date')
 
-        # store data
-        for event in event_data:
-            assert isinstance(event, Event)
-            tag = event.date.strftime('%Y%m')
+        new_dict = DataDict(Event)
+        this_date = start_date
+        while this_date <= end_date:
+            new_dict.update(self.__read__(this_date))
+            this_date += datetime.timedelta(days=1)
+        return new_dict
 
-            if tag not in stored:
-                stored_db = ShelveWrapper(os.path.join(self.__path__, tag), new=True)
-                stored[tag] = stored_db
-            else:
-                stored_db = stored[tag]
+    def iter(self, start_date: datetime.date, end_date: datetime.date):
+        if start_date > end_date:
+            raise ValueError('end_date should lay behind start date')
 
-            if tag in stored_db:
-                stored_event = stored_db[event.hashable_key]
-                stored_event.update_from(event)
-                stored_db[event.hashable_key] = stored_event
-            else:
-                stored_db[event.hashable_key] = event
-
-        for tag in stored:
-            stored[tag].close()
-
-    def __connect_folder__(self, writeback: bool):
-        connect = dict()
-
-        for file in os.listdir(self.__path__):
-
-            if len(file) == 0:
-                continue
-            if file[0] in ('.', '_', '$', '@'):
-                continue
-
-            file = file.split('.')
-            file = file[0]
-
-            connect[file] = ShelveWrapper(os.path.join(self.__path__, file), writeback=writeback)
-
-        return connect
+        this_date = start_date
+        while this_date <= end_date:
+            yield self.__read__(this_date)
+            this_date += datetime.timedelta(days=1)
 
 
 class DataProxy(object):
@@ -129,6 +111,10 @@ class DataProxy(object):
         self.__inducted_events__ = inducted_events_db
 
         return inducted_events_db
+
+    def store_events(self):
+        self.__event_store__ = EventStore(folder_path=os.path.join(self.__path__, 'events'), new=True)
+        self.__event_store__.store(self.events)
 
     @property
     def event_store(self):
@@ -269,12 +255,10 @@ if __name__ == '__main__':
     # store_record_data()
     # data_manager = DataManager(writeback=False)
 
-    # data_proxy = DataProxy()
+    data_proxy = DataProxy()
+
     # data_proxy.execute_events_induction('date')
     # data_proxy.close()
 
-    # data_proxy = DataProxy()
-
-    # event_store = EventStore(new=True)
-    # event_store.store(data_proxy.events.to_dict())
+    data_proxy.store_events()
     # ------------------------------
