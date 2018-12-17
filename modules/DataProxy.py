@@ -8,7 +8,7 @@ from structures import Book, Event, Reader, DataDict
 from structures import ShelveWrapper
 
 
-class EventStore(object):
+class BaseEventStore(object):
     def __init__(self, folder_path: str, new: bool = False,):
         if not os.path.exists(folder_path):
             if new is False:
@@ -50,7 +50,7 @@ class EventStore(object):
         raise NotImplementedError
 
 
-class DateEventStore(EventStore):
+class DateEventStore(BaseEventStore):
 
     def store(self, event_data: DataDict):
         group_by_date = event_data.group_by('event_date')
@@ -78,7 +78,7 @@ class DateEventStore(EventStore):
             this_date += datetime.timedelta(days=1)
 
 
-class RegisterMonthEventStore(EventStore):
+class RegisterMonthEventStore(BaseEventStore):
 
     def store(self, event_data: DataDict):
         group_by_date = event_data.group_by('month_from_reader_register')
@@ -306,8 +306,8 @@ def store_events_by_register_month():
 if __name__ == '__main__':
     # ------------------------------
     from Environment import Environment
-    env = Environment()
-    env.set_data_proxy(DataProxy())
+    env_instance = Environment()
+    env_instance.set_data_proxy(DataProxy())
     # store_record_data()
     # data_manager = DataManager(writeback=False)
 

@@ -2,11 +2,9 @@
 import datetime
 
 from algorithm.CollaborativeFiltering import CF_NeighborType, CF_SimilarityType
-from algorithm.CollaborativeFiltering import CollaborativeFiltering
-from algorithm.CollaborativeFiltering import SlippingRangeCollaborativeFiltering
 from modules.RuleGen import RuleGenerator
 from structures import Book, Event, Reader
-from structures import DataDict, SparseVector
+from structures import DataDict, RecoResult, SparseVector
 from structures import StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 
@@ -15,6 +13,7 @@ class RuleGenCF(RuleGenerator):
         RuleGenerator.__init__(self)
 
     def apply_collaborative_filtering(self, time_range):
+        from algorithm.CollaborativeFiltering import CollaborativeFiltering
         assert isinstance(time_range, StandardTimeRange)
 
         events_data = self.__data_proxy__.events
@@ -43,23 +42,17 @@ class RuleGenCF(RuleGenerator):
         return cf_result
 
     def apply_slipped_collaborative_filtering(self, time_range):
+        from algorithm.CollaborativeFiltering import SlippingRangeCollaborativeFiltering
         assert isinstance(time_range, GrowthTimeRange)
-
-        events_data = self.__data_proxy__.events
 
         self.log.debug_running('trimming event data from date {} to date {}'.format(
             time_range.start_time.date(), time_range.end_time.date()
         ))
-        events_data.trim_between_range(
+        self.log.debug_running('trimming event data by event_type 50/62/63')
+        events_data = self.__data_proxy__.events.trim_between_range(
             attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
             include_start=True, include_end=False, inline=True
-        )
-
-        self.log.debug_running('trimming event data by event_type 50/62/63')
-        events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
-
-        self.log.debug_running('collecting possible neighbor data')
-        possible_neighbors = events_data.neighbor_attr_by('reader_id', 'book_id')
+        ).trim_by_range('event_type', ('50', '62', '63'), inline=True)
 
         self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
 
@@ -97,22 +90,10 @@ class RuleGenCF(RuleGenerator):
                 continue
 
             self.log.debug_running('collecting vector data for stage {}'.format(stage))
-            # collector = self.__collect_simple_sparse_vector__(
-            #     this_event, time_tag='times', finish_length=len(events_data))
-            collector = self.__collect_growth_weighted_sparse_vector__(this_event, finish_length=len(events_data))
-
-            # next_collector = self.__collect_simple_sparse_vector__(
-            #     next_event, time_tag='times', finish_length=len(events_data))
-            next_collector = self.__collect_growth_weighted_sparse_vector__(next_event, len(events_data))
-            self.log.debug_running('running CollaborativeFiltering for stage {}'.format(stage))
-            this_result = SlippingRangeCollaborativeFiltering(
-                collector, next_collector, events_data.group_attr_set_by('book_id', 'reader_id'), in_memory=True
-            ).run(
-                neighbor_type=neighbor_type, similarity_type=similarity_type,
-                possible_neighbors=possible_neighbors
-            )
-
-            cf_result.update(this_result)
+            srcf = SlippingRangeCollaborativeFiltering(this_event, next_event).set_relation_tag('reader_id', 'book_id')
+            srcf.set_neighbor_type(CF_NeighborType.FixSize).set_similarity_type(CF_SimilarityType.Cosine)
+            srcf.set_item_vector_value_tag('times')
+            cf_result.update(srcf.run(fixed_size=5, max_recommend_list=100))
 
         cf_result.to_csv()
 
@@ -259,17 +240,17 @@ if __name__ == '__main__':
 
     try:
         # running StandardTimeRange
-        # this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
+        this_time_range = StandardTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
 
         # running GrowthTimeRange
-        this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
-        this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
+        # this_time_range = GrowthTimeRange(start_time=datetime.date(2013, 1, 1), end_time=datetime.date(2013, 7, 1))
+        # this_time_range.set_growth_stage('growth_index', [(0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 100)])
 
         # running DateBackTimeRange
         # this_time_range = DateBackTimeRange(datetime.date(2013, 1, 1), datetime.date(2013, 7, 1),
         #                                     datetime.date(2013, 3, 1))
 
-        # this_re = rule_generator.apply_collaborative_filtering(this_time_range,)
+        this_re = rule_generator.apply_collaborative_filtering(this_time_range,)
 
         # this_re = rule_generator.apply_slipped_collaborative_filtering(
         #     CF_SimilarityType.Cosine, CF_NeighborType.All, this_time_range, )
@@ -282,17 +263,17 @@ if __name__ == '__main__':
 
         # this_re = rule_generator.merge_result('2013-06 growth weighted simple.csv', '2013-06 slipped.csv', top_n=10)
 
-        # rule_generator.log.info(' --- [real time] ---')
-        # rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range, top_n=20)
+        rule_generator.log.info(' --- [real time] ---')
+        rule_generator.evaluate_single_result(result_data=this_re, time_range=this_time_range, top_n=20)
 
         # print('--- [similarity] ---')
         # rule_generator.evaluate_result_similarity(
         #     '2013-06 simple.csv',
         #     '2013-06 date back.csv', )
 
-        rule_generator.evaluate_single_result(
-            result_data='cf_result_20181208_165855.csv',
-            time_range=this_time_range, top_n=10)
+        # rule_generator.evaluate_single_result(
+        #     result_data='cf_result_20181208_165855.csv',
+        #     time_range=this_time_range, top_n=10)
 
         # print('--- [growth timerange] ---')
         # rule_generator.evaluate_single_result(

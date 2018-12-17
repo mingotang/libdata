@@ -50,7 +50,7 @@ class CollaborativeFiltering(object):
         self.__main_tag__, self.__item_tag__ = None, None
         self.__neighbor_type__ = CF_NeighborType.All
         self.__similarity_type__ = CF_SimilarityType.Cosine
-        self.__item_vector_value_tag__ = None
+        self.__item_vector_value_tag__ = None               # Event 对象中获取向量值的属性
 
         self.vec_data = None
         self.__possible_neighbor_dict__ = None
@@ -191,21 +191,44 @@ class CollaborativeFiltering(object):
 
 
 class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
-    def __init__(self, events_dict, next_vec_data, used_data, in_memory: bool = True):
-        """
+    def __init__(self, events_dict, next_vec_data):
+        from structures import DataDict
+        CollaborativeFiltering.__init__(self, events_dict)
+        assert isinstance(next_vec_data, DataDict)
+        self.__next_event__ = next_vec_data
+        self.next_vec_data = None
 
-        :param events_dict: dict/ShelveWrapper/PreferenceCollector
-        :param in_memory: bool
-        """
-        super(SlippingRangeCollaborativeFiltering, self).__init__(events_dict, used_data, in_memory)
-        if next_vec_data is not None:
-            from utils.Exceptions import ParamNoContentError
-            try:
-                self.next_vec_data = self.__clean_vector_data__(next_vec_data, in_memory)
-            except ParamNoContentError:
-                self.next_vec_data = None
-        else:
-            self.next_vec_data = None
+    def __collect_vec_data__(self):
+        from collections import defaultdict
+        self.vec_data, self.next_vec_data = SparseVectorCollector(), SparseVectorCollector()
+        main2item, item2main = defaultdict(set), defaultdict(set)
+        self.__possible_neighbor_dict__ = defaultdict(set)
+
+        for value in self.__events__.values():
+            assert isinstance(value, Event)
+            main_value, item_value = getattr(value, self.__main_tag__), getattr(value, self.__item_tag__)
+            if isinstance(item_value, str):
+                self.vec_data.add(main_value, item_value, getattr(value, self.__item_vector_value_tag__))
+                main2item[main_value].add(item_value)
+                item2main[item_value].add(main_value)
+            else:
+                raise NotImplementedError
+
+        for value in self.__next_event__.values():
+            assert isinstance(value, Event)
+            main_value, item_value = getattr(value, self.__main_tag__), getattr(value, self.__item_tag__)
+            if isinstance(item_value, str):
+                self.next_vec_data.add(main_value, item_value, getattr(value, self.__item_vector_value_tag__))
+                main2item[main_value].add(item_value)
+                item2main[item_value].add(main_value)
+            else:
+                raise NotImplementedError
+
+        self.vec_data = self.vec_data.finish(with_length=len(self.__events__.collect_attr_set(self.__item_tag__)))
+        self.next_vec_data = self.next_vec_data.finish(len(self.__next_event__.collect_attr_set(self.__item_tag__)))
+        for m_tag, m_value in main2item.items():
+            for i_tag in m_value:
+                self.__possible_neighbor_dict__[m_tag].update(item2main[i_tag])
 
     def __calculate_neighbors__(self, ui_tag: str, sim_type):
         result = CountingDict()
@@ -216,9 +239,7 @@ class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
                         continue
                     result.set(tag, abs(sim_type.__call__(self.vec_data[ui_tag], self.vec_data[tag])))
             else:
-                possible_neighbor_set = self.__possible_neighbor_dict__[ui_tag]
-                # self.__logger__.debug_variable(possible_neighbor_set)
-                for tag in possible_neighbor_set:
+                for tag in self.__possible_neighbor_dict__[ui_tag]:
                     if tag == ui_tag:
                         continue
                     result.set(tag, abs(sim_type.__call__(self.vec_data[ui_tag], self.vec_data[tag])))
@@ -229,8 +250,7 @@ class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
                         continue
                     result.set(tag, abs(sim_type.__call__(self.vec_data[ui_tag], self.next_vec_data[tag])))
             else:
-                possible_neighbor_set = self.__possible_neighbor_dict__[ui_tag]
-                for tag in possible_neighbor_set:
+                for tag in self.__possible_neighbor_dict__[ui_tag]:
                     if tag == ui_tag:
                         continue
                     if tag not in self.next_vec_data:
