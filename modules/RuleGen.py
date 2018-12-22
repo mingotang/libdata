@@ -50,6 +50,31 @@ class RuleGenerator(object):
         print('2015 events: {}'.format(
             events.trim_between_range('date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
 
+    def statistic_one(self):
+        """"""
+        from collections import defaultdict
+        from tqdm import tqdm
+        from structures import CountingDict, Event
+        from utils.FileSupport import save_csv
+
+        book_weight_dict = defaultdict(CountingDict)
+        for event in tqdm(self.__data_proxy__.events.values(), desc='collect book_weight_dict'):
+            assert isinstance(event, Event)
+            book_weight_dict[event.book_id].count(event.date.year - event.correspond_book.publish_year)
+
+        book_weight = CountingDict()
+        for book_id, book_count in tqdm(book_weight_dict.items(), desc='collect book_weight'):
+            weighted_sum = 0
+            for k, v in book_count.items():
+                weighted_sum += k * v
+            book_weight.set(book_id, weighted_sum / book_count.sum)
+
+        self.log.debug_running('outputing result')
+        output_csv = [['book_name', 'weight'], ]
+        for key in book_weight.sort(inverse=True):
+            output_csv.append([self.__data_proxy__.books[key].name, book_weight.get(key)])
+        save_csv(output_csv, self.__operation_path__, '..', 'book_weight_one.csv')
+
     @staticmethod
     def __evaluation_list__(evaluator, top_n: int = 10):
         from structures import Evaluator
@@ -155,12 +180,16 @@ class RuleGenerator(object):
 
 
 if __name__ == '__main__':
+    from Environment import Environment
+    from modules.DataProxy import DataProxy
+    env_inst = Environment()
+    env_inst.set_data_proxy(DataProxy())
 
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()
 
     try:
-        pass
+        rule_generator.statistic_one()
 
     except KeyboardInterrupt:
         rule_generator.close()

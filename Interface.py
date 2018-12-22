@@ -14,6 +14,10 @@ def get_root_path():
 class AbstractDataObject:
     __metaclass__ = ABCMeta
 
+    @property
+    def hashable_key(self):
+        raise NotImplementedError
+
     @abstractmethod
     def update_from(self, *args, **kwargs):
         """以相关信息更新数据对象 -> DataObject/None"""

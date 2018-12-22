@@ -25,19 +25,20 @@ class Reader(AbstractDataObject):
         self.college = college
         self.op_dt = op_dt
 
-    def set_state_str(self, state: str):
-        self.set_state_dict(json.loads(state))
+    @property
+    def hashable_key(self):
+        return self.index
+
+    @classmethod
+    def set_state_str(cls, state: str):
+        return cls.set_state_dict(json.loads(state))
 
     def get_state_str(self):
         return json.dumps(self.get_state_dict())
 
-    def set_state_dict(self, state: dict):
-        for tag in self.__attributes__:
-            setattr(self, tag, state[tag])
-        for tag in self.__information__:
-            if tag not in state:
-                continue
-            setattr(self, tag, state[tag])
+    @classmethod
+    def set_state_dict(cls, state: dict):
+        return cls(**state)
 
     def get_state_dict(self):
         state = dict()
@@ -86,11 +87,9 @@ class Reader(AbstractDataObject):
                 op_dt=value['event_date'],
             )
         elif isinstance(value, dict):
-            new = cls('', '', '', None)
-            new.set_state_dict(value)
+            new = cls.set_state_dict(value)
         elif isinstance(value, str):
-            new = cls('', '', '', None)
-            new.set_state_str(value)
+            new = cls.set_state_str(value)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)

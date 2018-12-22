@@ -1,105 +1,10 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
 import os
-import json
-import datetime
 
+from modules.DataStore import BaseObjectStore, DateEventStore, RegisterMonthEventStore
 from structures import Book, Event, Reader, DataDict
 from structures import ShelveWrapper
-
-
-class BaseEventStore(object):
-    def __init__(self, folder_path: str, new: bool = False,):
-        if not os.path.exists(folder_path):
-            if new is False:
-                raise RuntimeError('EventStore folder should be inited before loading')
-            else:
-                os.makedirs(folder_path)
-
-        self.__path__ = folder_path
-
-    def __write__(self, key: str, data_dict: DataDict):
-        file_path = os.path.join(self.__path__, '{}.json'.format(key))
-        if os.path.exists(file_path):
-            raise FileExistsError(file_path)
-        else:
-            json.dump(
-                [getattr(var, 'get_state_dict').__call__() for var in data_dict.values()],
-                open(file_path, 'w', encoding='utf-8')
-            )
-
-    def __read__(self, key: str):
-        file_path = os.path.join(self.__path__, '{}.json'.format(key))
-        new_dict = DataDict(Event)
-        if os.path.exists(file_path):
-            event_list = json.load(open(file_path, 'r', encoding='utf-8'))
-            for event in event_list:
-                new_event = Event.set_state_dict(event)
-                new_dict[new_event.hashable_key] = new_event
-        else:
-            pass
-        return new_dict
-
-    def store(self, *args):
-        raise NotImplementedError
-
-    def get(self, *args):
-        raise NotImplementedError
-
-    def iter(self, *args):
-        raise NotImplementedError
-
-
-class DateEventStore(BaseEventStore):
-
-    def store(self, event_data: DataDict):
-        group_by_date = event_data.group_by('event_date')
-        for date, date_dict in group_by_date.items():
-            self.__write__(date, date_dict)
-
-    def get(self, start_date: datetime.date, end_date: datetime.date):
-        if start_date > end_date:
-            raise ValueError('end_date should lay behind start date')
-
-        new_dict = DataDict(Event)
-        this_date = start_date
-        while this_date <= end_date:
-            new_dict.update(self.__read__(this_date.strftime('%Y%m%d')))
-            this_date += datetime.timedelta(days=1)
-        return new_dict
-
-    def iter(self, start_date: datetime.date, end_date: datetime.date):
-        if start_date > end_date:
-            raise ValueError('end_date should lay behind start date')
-
-        this_date = start_date
-        while this_date <= end_date:
-            yield self.__read__(this_date.strftime('%Y%m%d'))
-            this_date += datetime.timedelta(days=1)
-
-
-class RegisterMonthEventStore(BaseEventStore):
-
-    def store(self, event_data: DataDict):
-        group_by_date = event_data.group_by('month_from_reader_register')
-        for month, date_dict in group_by_date.items():
-            self.__write__(str(month), date_dict)
-
-    def get(self, month_range):
-        new_dict = DataDict(Event)
-        for d_dict in self.iter(month_range):
-            new_dict.update(d_dict)
-        return new_dict
-
-    def iter(self, month_range):
-        from collections import Iterable
-        if isinstance(month_range, int):
-            yield self.__read__(str(month_range))
-        elif isinstance(month_range, Iterable):
-            for month in month_range:
-                yield self.__read__(str(month))
-        else:
-            raise TypeError
 
 
 class DataProxy(object):
@@ -121,8 +26,10 @@ class DataProxy(object):
         if not os.path.exists(self.__operation_path__):
             os.makedirs(self.__operation_path__)
 
-        self.__db_writeback__ = writeback
+        self.book_dict = BaseObjectStore(os.path.join(self.__path__, 'books'), Book, new=True)
+        self.reader_dict = BaseObjectStore(os.path.join(self.__path__, 'readers'), Reader, new=True)
 
+        self.__db_writeback__ = writeback
         self.__books__, self.__events__, self.__readers__ = None, None, None
         self.__inducted_events__ = None
         self.__event_store_by_date__ = None
@@ -289,6 +196,15 @@ def store_record_data():
     event_store.close()
 
 
+def store_readers_and_books():
+    from Environment import Environment
+    env = Environment.get_instance()
+    book_dict = BaseObjectStore(os.path.join(env.data_path, 'books'), Book, new=True)
+    reader_dict = BaseObjectStore(os.path.join(env.data_path, 'readers'), Reader, new=True)
+    book_dict.store(env.data_proxy.books)
+    reader_dict.store(env.data_proxy.readers)
+
+
 def store_events_by_date():
     from Environment import Environment
     env = Environment.get_instance()
@@ -307,8 +223,7 @@ if __name__ == '__main__':
     # ------------------------------
     from Environment import Environment
     env_instance = Environment()
-    env_instance.set_data_proxy(DataProxy())
-    # store_record_data()
+    store_readers_and_books()
     # data_manager = DataManager(writeback=False)
 
     # data_proxy = DataProxy()

@@ -97,9 +97,24 @@ class Event(AbstractDataObject):
         return '|'.join([self.book_id, self.reader_id, self.event_date, self.event_type])
 
     @property
-    def month_from_reader_register(self):
+    def correspond_reader(self):
         from Environment import Environment
+        from structures.Reader import Reader
         reader = Environment.get_instance().data_proxy.readers[self.reader_id]
+        assert isinstance(reader, Reader), str(self)
+        return reader
+
+    @property
+    def correspond_book(self):
+        from Environment import Environment
+        from structures.Book import Book
+        book = Environment.get_instance().data_proxy.books[self.book_id]
+        assert isinstance(book, Book), str(self)
+        return book
+
+    @property
+    def month_from_reader_register(self):
+        reader = self.correspond_reader
         if reader.register_date is None:
             return None
         else:

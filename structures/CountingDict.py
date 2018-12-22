@@ -74,3 +74,10 @@ class CountingDict(dict):
                     self.__delitem__(tag)
 
         return self
+
+    @property
+    def sum(self):
+        result = 0
+        for value in self.values():
+            result += value
+        return result
