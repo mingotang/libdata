@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 import datetime
-import json
 
 from Interface import AbstractDataObject
 from utils import attributes_repr
@@ -15,11 +14,11 @@ TODAY = datetime.datetime.now().date()
 
 
 class Reader(AbstractDataObject):
-    __attributes__ = ('index', 'rtype', 'college')
-    __information__ = ('op_dt', )
+    __attributes__ = ('index', 'rtype', 'college', 'op_dt')
     __repr__ = attributes_repr
 
     def __init__(self, index: str, rtype: str, college: str, op_dt=None):
+        AbstractDataObject.__init__(self)
         self.index = index
         self.rtype = rtype
         self.college = college
@@ -29,25 +28,6 @@ class Reader(AbstractDataObject):
     def hashable_key(self):
         return self.index
 
-    @classmethod
-    def set_state_str(cls, state: str):
-        return cls.set_state_dict(json.loads(state))
-
-    def get_state_str(self):
-        return json.dumps(self.get_state_dict())
-
-    @classmethod
-    def set_state_dict(cls, state: dict):
-        return cls(**state)
-
-    def get_state_dict(self):
-        state = dict()
-        for tag in self.__attributes__:
-            state[tag] = getattr(self, tag)
-        for tag in self.__information__:
-            state[tag] = getattr(self, tag)
-        return state
-
     @property
     def update_date(self):
         """check the update date of reader info which is derived from events list"""
@@ -55,15 +35,15 @@ class Reader(AbstractDataObject):
 
     def update_from(self, value):
         if isinstance(value, type(self)):
-            if self.update_date >= value.update_date:
-                return None
-            else:
-                for tag in self.__attributes__:
-                    if tag in value.__dict__:
-                        if value.__dict__[tag] is not None:
-                            if len(self.__dict__[tag]) < len(value.__dict__[tag]):
-                                self.__dict__[tag] = value.__dict__[tag]
-                return self
+            # if self.update_date >= value.update_date:
+            #     return None
+            # else:
+            for tag in self.__attributes__:
+                if tag in value.__dict__:
+                    if value.__dict__[tag] is not None:
+                        if len(self.__dict__[tag]) < len(value.__dict__[tag]):
+                            self.__dict__[tag] = value.__dict__[tag]
+            return self
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', '{}'.format(self.__class__.__name__), value)
@@ -86,10 +66,6 @@ class Reader(AbstractDataObject):
                 college=value['collegeID'],
                 op_dt=value['event_date'],
             )
-        elif isinstance(value, dict):
-            new = cls.set_state_dict(value)
-        elif isinstance(value, str):
-            new = cls.set_state_str(value)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)

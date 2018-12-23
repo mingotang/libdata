@@ -12,6 +12,6 @@ from .OrderedList import OrderedList
 from .Reader import Reader
 from .RecommendResult import RecoResult
 from .Recorder import CSVRecorder, TextRecorder
-from .ShelveWrapper import ShelveWrapper
+from .ShelveDict import ShelveDict, ShelveWrapper
 from .SparseVector import SparseVector
 from .TimeRange import TimeRange, StandardTimeRange, GrowthTimeRange, DateBackTimeRange

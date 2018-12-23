@@ -60,7 +60,10 @@ class RuleGenerator(object):
         book_weight_dict = defaultdict(CountingDict)
         for event in tqdm(self.__data_proxy__.events.values(), desc='collect book_weight_dict'):
             assert isinstance(event, Event)
-            book_weight_dict[event.book_id].count(event.date.year - event.correspond_book.publish_year)
+            try:
+                book_weight_dict[event.book_id].count(event.date.year - event.correspond_book.publish_year)
+            except TypeError:
+                book_weight_dict[event.book_id].count(1)
 
         book_weight = CountingDict()
         for book_id, book_count in tqdm(book_weight_dict.items(), desc='collect book_weight'):

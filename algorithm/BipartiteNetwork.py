@@ -9,7 +9,7 @@ class BipartiteNetwork(object):
 
     def __init__(self, event_dict, in_memory: bool = True):
         from Environment import Environment
-        from structures import ShelveWrapper
+        from structures import ShelveDict
         from utils import get_logger
         self.log = get_logger(module_name=self.__class__.__name__)
         self.env = Environment.get_instance()
@@ -17,7 +17,7 @@ class BipartiteNetwork(object):
         if in_memory is True:
             if isinstance(event_dict, DataDict):
                 self.__event_dict__ = event_dict
-            elif isinstance(event_dict, (dict, ShelveWrapper)):
+            elif isinstance(event_dict, (dict, ShelveDict)):
                 self.__event_dict__ = DataDict.init_from(Event, event_dict)
             else:
                 from utils.Exceptions import ParamTypeError

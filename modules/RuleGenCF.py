@@ -106,7 +106,7 @@ class RuleGenCF(RuleGenerator):
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, GrowthTimeRange)
 
-        events_data = self.__data_proxy__.events.to_data_dict()
+        # events_data = self.__data_proxy__.events.to_data_dict()
 
         self.log.debug_running('trimming event data from date {} to date {}'.format(
             time_range.start_time.date(), time_range.end_time.date()

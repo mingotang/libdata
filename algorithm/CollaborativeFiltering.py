@@ -2,7 +2,6 @@
 # ---------------------------------import------------------------------------
 from enum import Enum
 
-from Interface import AbstractCollector
 from structures import CountingDict, RecoResult, SparseVector
 from structures import Event
 
@@ -319,7 +318,7 @@ class DateBackCollaborativeFiltering(CollaborativeFiltering):
         return reco_result
 
 
-class SparseVectorCollector(AbstractCollector):
+class SparseVectorCollector(object):
     def __init__(self):
         from collections import defaultdict
         self.data = defaultdict(SparseVector)

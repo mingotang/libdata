@@ -1,22 +1,18 @@
 # -*- encoding: UTF-8 -*-
 import datetime
-import json
 
-from Interface import AbstractDataObject, AbstractPersist
+from Interface import AbstractDataObject
 from structures.BookName import BookName
 from structures.ISBN import ISBN
 from structures.LibIndex import LibIndex
-from utils import attributes_repr
 
 
-class Book(AbstractDataObject, AbstractPersist):
-    __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher')
-    __information__ = ('op_dt', )
-    __repr__ = attributes_repr
+class Book(AbstractDataObject):
+    __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher', 'op_dt')
 
-    def __init__(self, index: str, lib_index: str, name: str,
-                 isbn: str, author: str, year: str, publisher: str,
-                 op_dt=None):
+    def __init__(self, index: str, lib_index: str, name: str, isbn: str,
+                 author: str, year: str, publisher: str, op_dt=None):
+        AbstractDataObject.__init__(self)
         self.index = index
         self.lib_index = lib_index
         self.name = name
@@ -30,28 +26,13 @@ class Book(AbstractDataObject, AbstractPersist):
     def hashable_key(self):
         return self.index
 
-    @classmethod
-    def set_state_str(cls, state: str):
-        return cls.set_state_dict(json.loads(state))
-
-    def get_state_str(self):
-        return json.dumps(self.get_state_dict())
-
-    @classmethod
-    def set_state_dict(cls, state: dict):
-        return cls(**state)
-
-    def get_state_dict(self):
-        state = dict()
-        for tag in self.__attributes__:
-            state[tag] = getattr(self, tag)
-        for tag in self.__information__:
-            state[tag] = getattr(self, tag)
-        return state
-
     @property
     def publish_year(self):
-        return int(self.year)
+        year = int(self.year)
+        if 1800 <= year <= datetime.date.today().year:
+            return year
+        else:
+            return None
 
     @property
     def book_name(self):
@@ -71,15 +52,15 @@ class Book(AbstractDataObject, AbstractPersist):
 
     def update_from(self, value):
         if isinstance(value, type(self)):
-            if self.update_date >= value.update_date:
-                return None
-            else:
-                for tag in self.__attributes__:
-                    if tag in value.__dict__:
-                        if value.__dict__[tag] is not None:
-                            if len(self.__dict__[tag]) < len(value.__dict__[tag]):
-                                self.__dict__[tag] = value.__dict__[tag]
-                return self
+            # if self.update_date >= value.update_date:
+            #     return self
+            # else:
+            for tag in self.__attributes__:
+                if tag in value.__dict__:
+                    if value.__dict__[tag] is not None:
+                        if len(self.__dict__[tag]) < len(value.__dict__[tag]):
+                            self.__dict__[tag] = value.__dict__[tag]
+            return self
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', '{}'.format(self.__class__.__name__), value)
@@ -106,10 +87,6 @@ class Book(AbstractDataObject, AbstractPersist):
                 publisher=value['publisher'],
                 op_dt=value['event_date'],
             )
-        elif isinstance(value, dict):
-            new = cls.set_state_dict(value)
-        elif isinstance(value, str):
-            new = cls.set_state_str(value)
         else:
             from utils.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict', value)
@@ -117,16 +94,19 @@ class Book(AbstractDataObject, AbstractPersist):
 
 
 if __name__ == '__main__':
-    import time
+    from Environment import Environment
     from modules.DataProxy import DataProxy
+    from structures import Book
 
+    env_inst = Environment()
     d_p = DataProxy()
-    books = d_p.books
+    env_inst.set_data_proxy(d_p)
+
     try:
-        for book in books.values():
-            book_name = BookName(book.name)
-            print(book_name.cleaned_list)
-            time.sleep(0.2)
+        for book in d_p.books.values():
+            assert isinstance(book, Book)
+            if book.publish_year is None:
+                print(book.lib_index, book)
     except KeyboardInterrupt:
         d_p.close()
     finally:

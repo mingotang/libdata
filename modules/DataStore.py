@@ -117,6 +117,14 @@ class BaseObjectStore(object):
             if tag.endswith('.json'):
                 yield tag.replace('.json', '')
 
+    def values(self):
+        for key in self.keys():
+            yield self.get(key)
+
+    def items(self):
+        for key in self.keys():
+            yield key, self.get(key)
+
     def __write__(self, key: str, obj):
         assert hasattr(obj, 'get_state_dict'), str(obj)
         assert len(key) > 0, str(obj)

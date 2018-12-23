@@ -2,8 +2,6 @@
 # ---------------------------------import------------------------------------
 import os
 
-from Interface import AbstractRecordable
-
 
 class BaseRecorder(object):
     def __init__(self, output_path: str):
@@ -43,7 +41,6 @@ class CSVRecorder(BaseRecorder):
         self.__recos_column__[name] = columns
 
     def record(self, name: str, content):
-        assert isinstance(content, AbstractRecordable)
         try:
             new_line = list()
             dict_for_record = content.record()
@@ -60,7 +57,6 @@ class TextRecorder(BaseRecorder):
         self.recos[name] = open(file_path, mode='w', encoding='utf-8')
 
     def record(self, name: str, content):
-        assert isinstance(content, AbstractRecordable)
         try:
             self.recos[name].write(str(content.record()) + '\n')
         except KeyError:

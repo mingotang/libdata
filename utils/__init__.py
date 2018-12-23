@@ -157,8 +157,8 @@ def get_logger(module_name: str=''):
     from Environment import Environment
     config = Environment.get_instance().config
     log_level = LOG_LEVEL_MAP[config.get('Log', dict()).get('LogLevel', 'None')]
-    logger = LogWrapper(module_name, log_level)
 
+    logger = LogWrapper(module_name, log_level)
     screen_handler = logging.StreamHandler()
     screen_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(filename)s %(funcName)s %(lineno)d:  %(levelname)s, %(message)s'

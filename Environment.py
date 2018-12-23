@@ -11,7 +11,6 @@ class Environment(object):
     _env = None
 
     def __init__(self):
-        from Interface import get_root_path
         from utils import load_yaml
         if Environment._env is None:
             Environment._env = self
@@ -19,7 +18,7 @@ class Environment(object):
             raise RuntimeError("Environment has been created.")
 
         # public
-        self.config = load_yaml(os.path.join(get_root_path(), 'config.yaml'))
+        self.config = load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.yaml'))
 
         # private
         self.__data_proxy__ = None  # 数据接口

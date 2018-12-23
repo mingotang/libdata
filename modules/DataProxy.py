@@ -4,7 +4,7 @@ import os
 
 from modules.DataStore import BaseObjectStore, DateEventStore, RegisterMonthEventStore
 from structures import Book, Event, Reader, DataDict
-from structures import ShelveWrapper
+from structures import ShelveDict, ShelveWrapper
 
 
 class DataProxy(object):
@@ -26,8 +26,9 @@ class DataProxy(object):
         if not os.path.exists(self.__operation_path__):
             os.makedirs(self.__operation_path__)
 
-        self.book_dict = BaseObjectStore(os.path.join(self.__path__, 'books'), Book, new=True)
-        self.reader_dict = BaseObjectStore(os.path.join(self.__path__, 'readers'), Reader, new=True)
+        self.book_dict = ShelveWrapper(os.path.join(self.__path__, 'books'), Book)
+        self.reader_dict = ShelveWrapper(os.path.join(self.__path__, 'readers'), Reader)
+        self.event_dict = ShelveWrapper(os.path.join(self.__path__, 'events'), Event)
 
         self.__db_writeback__ = writeback
         self.__books__, self.__events__, self.__readers__ = None, None, None
@@ -47,7 +48,7 @@ class DataProxy(object):
                 inducted_events_dict[event.reader_id] = OrderedList(Event, by_attr)
             inducted_events_dict[event.reader_id].append(event)
 
-        inducted_events_db = ShelveWrapper.init_from(
+        inducted_events_db = ShelveDict.init_from(
             inducted_events_dict,
             os.path.join(self.__path__, 'inducted_events'),
             writeback=False
@@ -76,7 +77,7 @@ class DataProxy(object):
         if self.__readers__ is None:
             db_path = os.path.join(self.__path__, 'readers')
             try:
-                self.__readers__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Reader)
+                self.__readers__ = self.reader_dict.to_data_dict()
                 self.log.debug('DataDict converted from {}'.format(db_path))
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
@@ -88,7 +89,7 @@ class DataProxy(object):
         if self.__books__ is None:
             db_path = os.path.join(self.__path__, 'books')
             try:
-                self.__books__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Book)
+                self.__books__ = self.book_dict.to_data_dict()
                 self.log.debug('DataDict converted from {}'.format(db_path))
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
@@ -100,7 +101,7 @@ class DataProxy(object):
         if self.__events__ is None:
             db_path = os.path.join(self.__path__, 'events')
             try:
-                self.__events__ = ShelveWrapper(db_path, writeback=self.__db_writeback__).convert_to_data_dict(Event)
+                self.__events__ = self.event_dict.to_data_dict()
                 self.log.debug('DataDict converted from {}'.format(db_path))
             except FileNotFoundError:
                 raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
@@ -111,39 +112,39 @@ class DataProxy(object):
     def inducted_events(self):
         if self.__inducted_events__ is None:
             try:
-                self.__inducted_events__ = ShelveWrapper(os.path.join(self.__path__, 'inducted_events'))
+                self.__inducted_events__ = ShelveDict(os.path.join(self.__path__, 'inducted_events'))
             except FileNotFoundError:
                 pass
 
         if self.__inducted_events__ is None:
             raise RuntimeError('Events should be inducted before calling inducted events')
 
-        assert isinstance(self.__inducted_events__, ShelveWrapper)
+        assert isinstance(self.__inducted_events__, ShelveDict)
         return self.__inducted_events__
 
     def close(self):
-        if isinstance(self.__books__, ShelveWrapper):
+        if isinstance(self.__books__, ShelveDict):
             self.__books__.close()
 
-        if isinstance(self.__readers__, ShelveWrapper):
+        if isinstance(self.__readers__, ShelveDict):
             self.__readers__.close()
 
-        if isinstance(self.__events__, ShelveWrapper):
+        if isinstance(self.__events__, ShelveDict):
             self.__events__.close()
 
-        if isinstance(self.__inducted_events__, ShelveWrapper):
+        if isinstance(self.__inducted_events__, ShelveDict):
             self.__inducted_events__.close()
 
     def get_shelve(self, db_name: str, new=False):
         if new is False:
             if os.path.exists(os.path.join(self.__operation_path__, db_name)):
-                return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
+                return ShelveDict(os.path.join(self.__operation_path__, db_name))
             else:
                 raise FileNotFoundError(
                     'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
                 )
         else:
-            return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
+            return ShelveDict(os.path.join(self.__operation_path__, db_name))
 
 
 def store_record_data():
@@ -180,17 +181,17 @@ def store_record_data():
         else:
             events[value.hashable_key] = value
 
-    book_store = ShelveWrapper(os.path.join(env.data_path, 'books'), new=True)
+    book_store = ShelveDict(os.path.join(env.data_path, 'books'), new=True)
     for key, book in books.items():
         book_store[key] = book.get_state_str()
     book_store.close()
 
-    reader_store = ShelveWrapper(os.path.join(env.data_path, 'readers'), new=True)
+    reader_store = ShelveDict(os.path.join(env.data_path, 'readers'), new=True)
     for key, reader in readers.items():
         reader_store[key] = reader.get_state_str()
     reader_store.close()
 
-    event_store = ShelveWrapper(os.path.join(env.data_path, 'events'), new=True)
+    event_store = ShelveDict(os.path.join(env.data_path, 'events'), new=True)
     for key, event in events.items():
         event_store[key] = event.get_state_str()
     event_store.close()
@@ -223,12 +224,13 @@ if __name__ == '__main__':
     # ------------------------------
     from Environment import Environment
     env_instance = Environment()
-    store_readers_and_books()
+    store_record_data()
+    # store_readers_and_books()
     # data_manager = DataManager(writeback=False)
 
     # data_proxy = DataProxy()
     # data_proxy.execute_events_induction('date')
     # data_proxy.close()
 
-    store_events_by_date()
+    # store_events_by_date()
     # ------------------------------

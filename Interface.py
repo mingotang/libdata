@@ -1,18 +1,37 @@
 # -*- encoding: UTF-8 -*-
-from abc import ABCMeta, abstractmethod
+import json
+
+from abc import abstractmethod
 
 
-def get_root_path():
-    """
-    获取根目录绝对值
-    :return: str
-    """
-    from os import path
-    return path.abspath(path.dirname(__file__))
+class AbstractDataObject(object):
+    __attributes__ = tuple()
 
+    def __init__(self, *args, **kwargs):
+        pass
 
-class AbstractDataObject:
-    __metaclass__ = ABCMeta
+    def __repr__(self):
+        return "{}({})".format(
+            self.__class__.__name__,
+            ', '.join([str(var) + ': ' + str(getattr(self, var)) for var in self.__attributes__])
+        )
+
+    @classmethod
+    def set_state_str(cls, state: str):
+        return cls.set_state_dict(json.loads(state))
+
+    def get_state_str(self):
+        return json.dumps(self.get_state_dict())
+
+    @classmethod
+    def set_state_dict(cls, state: dict):
+        return cls(**state)
+
+    def get_state_dict(self):
+        state = dict()
+        for tag in self.__attributes__:
+            state[tag] = getattr(self, tag)
+        return state
 
     @property
     def hashable_key(self):
@@ -31,64 +50,4 @@ class AbstractDataObject:
     @abstractmethod
     def compare_by(self, *args, **kwargs):
         """根据相关信息进行数据比较 -> DataObject"""
-        raise NotImplementedError
-
-
-class AbstractCollector:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def add(self, *args, **kwargs):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete(self):
-        raise NotImplementedError
-
-
-class AbstractPersist:
-    __metaclass__ = ABCMeta
-
-    def set_state(self, type_s: type, state):
-        """
-        从 state 信息设定对象
-        :param type_s: state 数据类型
-        :param state: 数据内容
-        :return: None
-        """
-        assert isinstance(state, type_s)
-        raise NotImplementedError
-
-    def get_state(self, type_s: type):
-        """
-        获取对象数据内容 state
-        :param type_s: state 的数据类型
-        :return: type_s
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def set_state_str(cls, state: str):
-        raise NotImplementedError
-
-    def get_state_str(self):
-        raise NotImplementedError
-
-    @classmethod
-    def set_state_dict(cls, state: dict):
-        raise NotImplementedError
-
-    def get_state_dict(self):
-        raise NotImplementedError
-
-
-class AbstractRecordable:
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def record(self):
-        """
-        记录相关数据
-        :return: dict
-        """
         raise NotImplementedError
