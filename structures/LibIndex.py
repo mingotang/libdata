@@ -11,6 +11,7 @@ class LibIndex(object):
 
     @property
     def index_class(self):
+        """索书号包含的类型"""
         if '/' in self.__data__:
             return self.__data__.split('/')[0]
         elif ' ' in self.__data__:

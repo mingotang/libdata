@@ -90,6 +90,7 @@ class Event(AbstractDataObject):
 
     @property
     def month_from_reader_register(self):
+        """从注册时间开始到借阅事件为止的月数"""
         reader = self.correspond_reader
         if reader.register_date is None:
             return None
