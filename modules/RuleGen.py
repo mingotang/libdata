@@ -54,29 +54,37 @@ class RuleGenerator(object):
         """"""
         from collections import defaultdict
         from tqdm import tqdm
-        from structures import CountingDict, Event
+        from structures import Book, CountingDict, Event
         from utils.FileSupport import save_csv
 
-        book_weight_dict = defaultdict(CountingDict)
-        for event in tqdm(self.__data_proxy__.events.values(), desc='collect book_weight_dict'):
-            assert isinstance(event, Event)
-            try:
-                book_weight_dict[event.book_id].count(event.date.year - event.correspond_book.publish_year)
-            except TypeError:
-                book_weight_dict[event.book_id].count(1)
+        one_book = self.__data_proxy__.books[list(self.__data_proxy__.books.keys())[0]]
+        assert isinstance(one_book, Book)
 
-        book_weight = CountingDict()
-        for book_id, book_count in tqdm(book_weight_dict.items(), desc='collect book_weight'):
-            weighted_sum = 0
-            for k, v in book_count.items():
-                weighted_sum += k * v
-            book_weight.set(book_id, weighted_sum / book_count.sum)
+        for lib_index_key, event_dict in self.__data_proxy__.events.group_by(
+                'correspond_book.book_lib_index.index_class'):
 
-        self.log.debug_running('outputing result')
-        output_csv = [['book_name', 'weight'], ]
-        for key in book_weight.sort(inverse=True):
-            output_csv.append([self.__data_proxy__.books[key].name, book_weight.get(key)])
-        save_csv(output_csv, self.__operation_path__, '..', 'book_weight_one.csv')
+            book_weight_dict = defaultdict(CountingDict)
+            for event in tqdm(event_dict.values(), desc='collect book_weight_dict'):
+                assert isinstance(event, Event)
+                try:
+                    book_weight_dict[event.book_id].count(event.date.year - event.correspond_book.publish_year)
+                except TypeError:
+                    book_weight_dict[event.book_id].count(1)
+
+            book_weight = CountingDict()
+            for book_id, book_count in tqdm(book_weight_dict.items(), desc='collect book_weight'):
+                weighted_sum = 0
+                for k, v in book_count.items():
+                    weighted_sum += k * v
+                book_weight.set(book_id, weighted_sum / book_count.sum)
+
+            self.log.debug_running('outputing result')
+            output_csv = [['book_name', 'weight'], ]
+            for key in book_weight.sort(inverse=True):
+                output_csv.append([self.__data_proxy__.books[key].name, book_weight.get(key)])
+            save_csv(output_csv, self.__operation_path__, '..', 'book_weight_one_{}.csv'.format(
+                one_book.book_lib_index.index_class_map[lib_index_key]
+            ))
 
     @staticmethod
     def __evaluation_list__(evaluator, top_n: int = 10):

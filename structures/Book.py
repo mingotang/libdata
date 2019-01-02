@@ -3,8 +3,8 @@ import datetime
 
 from Interface import AbstractDataObject
 from structures.BookName import BookName
-from structures.ISBN import ISBN
-from structures.LibIndex import LibIndex
+from structures.BookISBN import BookISBN
+from structures.BookLibIndex import BookLibIndex
 
 
 class Book(AbstractDataObject):
@@ -44,11 +44,11 @@ class Book(AbstractDataObject):
 
     @property
     def book_isbn(self):
-        return ISBN(self.isbn)
+        return BookISBN(self.isbn)
 
     @property
     def book_lib_index(self):
-        return LibIndex(self.lib_index)
+        return BookLibIndex(self.lib_index)
 
     def update_from(self, value):
         if isinstance(value, type(self)):

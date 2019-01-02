@@ -2,7 +2,7 @@
 # ---------------------------------import------------------------------------
 
 
-class LibIndex(object):
+class BookLibIndex(object):
     __index_class_map__ = None
 
     def __init__(self, data_lib_index: str):
@@ -38,16 +38,16 @@ class LibIndex(object):
 
     @property
     def index_class_map(self):
-        if LibIndex.__index_class_map__ is None:
+        if BookLibIndex.__index_class_map__ is None:
             from os import path
             from pandas import read_csv
             pd_data = read_csv(path.join('..', 'data', 'ChineseLibraryBookClassification.csv'), header=None)
             i_c_map = dict()
             for index in pd_data.index:
                 i_c_map[pd_data.loc[index, 0]] = pd_data.loc[index, 1]
-            LibIndex.__index_class_map__ = i_c_map
-        assert isinstance(LibIndex.__index_class_map__, dict), type(LibIndex.__index_class_map__)
-        return LibIndex.__index_class_map__
+            BookLibIndex.__index_class_map__ = i_c_map
+        assert isinstance(BookLibIndex.__index_class_map__, dict), type(BookLibIndex.__index_class_map__)
+        return BookLibIndex.__index_class_map__
 
 
 if __name__ == '__main__':

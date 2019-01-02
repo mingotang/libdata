@@ -6,8 +6,8 @@ from .CountingDict import CountingDict
 from .DataDict import DataDict
 from .Evaluator import Evaluator
 from .Event import Event
-from .ISBN import ISBN
-from .LibIndex import LibIndex
+from .BookISBN import BookISBN
+from .BookLibIndex import BookLibIndex
 from .OrderedList import OrderedList
 from .Reader import Reader
 from .RecommendResult import RecoResult

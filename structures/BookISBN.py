@@ -3,7 +3,7 @@
 import re
 
 
-class ISBN(object):
+class BookISBN(object):
     """国际标准书号（International Standard Book Number）"""
 
     def __init__(self, data_isbn: str):
