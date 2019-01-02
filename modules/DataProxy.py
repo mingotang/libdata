@@ -2,23 +2,18 @@
 # ---------------------------------import------------------------------------
 import os
 
-from modules.DataStore import BaseObjectStore, DateEventStore, RegisterMonthEventStore
+from modules.DataStore import BaseObjectStore
 from structures import Book, Event, Reader, DataDict
 from structures import ShelveWrapper, ShelveObjectDict
 
 
 class DataProxy(object):
 
-    def __init__(self, data_path: str = None, writeback: bool = False,):
-        from Environment import Environment
+    def __init__(self, data_path: str, writeback: bool = False,):
         from utils import get_logger
         self.log = get_logger(self.__class__.__name__)
-        env = Environment.get_instance()
 
-        if data_path is None:
-            self.__path__ = env.data_path
-        else:
-            self.__path__ = data_path
+        self.__path__ = data_path
         if not os.path.exists(self.__path__):
             os.makedirs(self.__path__)
 
@@ -35,42 +30,6 @@ class DataProxy(object):
         self.__inducted_events__ = None
         self.__event_store_by_date__ = None
         self.__event_store_by_register_month__ = None
-
-    def execute_events_induction(self, by_attr: str = 'date'):
-        from tqdm import tqdm
-        from structures import OrderedList
-
-        inducted_events_dict = dict()
-
-        for event in tqdm(self.events.values(), desc='inducting'):
-            assert isinstance(event, Event)
-            if event.reader_id not in inducted_events_dict:
-                inducted_events_dict[event.reader_id] = OrderedList(Event, by_attr)
-            inducted_events_dict[event.reader_id].append(event)
-
-        inducted_events_db = ShelveWrapper.init_from(
-            inducted_events_dict,
-            os.path.join(self.__path__, 'inducted_events'),
-            writeback=False
-        )
-        self.__inducted_events__ = inducted_events_db
-
-        return inducted_events_db
-
-    @property
-    def event_store_by_date(self):
-        if self.__event_store_by_date__ is None:
-            self.__event_store_by_date__ = DateEventStore(folder_path=os.path.join(self.__path__, 'events_by_date'))
-
-        return self.__event_store_by_date__
-
-    @property
-    def event_store_by_register_month(self):
-        if self.__event_store_by_register_month__ is None:
-            self.__event_store_by_register_month__ = RegisterMonthEventStore(
-                folder_path=os.path.join(self.__path__, 'events_by_register_month'))
-
-        return self.__event_store_by_register_month__
 
     @property
     def readers(self):
@@ -204,20 +163,6 @@ def store_readers_and_books():
     reader_dict = BaseObjectStore(os.path.join(env.data_path, 'readers'), Reader, new=True)
     book_dict.store(env.data_proxy.books)
     reader_dict.store(env.data_proxy.readers)
-
-
-def store_events_by_date():
-    from Environment import Environment
-    env = Environment.get_instance()
-    d_s = DateEventStore(folder_path=os.path.join(env.data_path, 'events_by_date'), new=True)
-    d_s.store(env.data_proxy.events)
-
-
-def store_events_by_register_month():
-    from Environment import Environment
-    env = Environment.get_instance()
-    d_s = RegisterMonthEventStore(folder_path=os.path.join(env.data_path, 'events_by_register_month'), new=True)
-    d_s.store(env.data_proxy.events)
 
 
 if __name__ == '__main__':

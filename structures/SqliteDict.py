@@ -1,7 +1,7 @@
 # -*- encoding: UTF-8 -*-
-from sqlalchemy import MetaData, Table, Column, String, Integer
 
-from structures import Book, Event, Reader
+from collections import Mapping, Iterable
+from sqlalchemy import MetaData, Table, Column, String, Integer
 
 
 def define_book_table(meta):
@@ -42,16 +42,16 @@ def define_event_table(meta: MetaData):
 
 
 class SqliteWrapper(object):
-    def __init__(self, db_path='', exist_optimize=True, action_limit=True):
+    def __init__(self, db_path: str):
         from sqlalchemy import create_engine, MetaData
         from sqlalchemy.orm import sessionmaker
-
+        # 建立连接
         self.engine = create_engine('sqlite:///{host}'.format(host=db_path), echo=False)
         self.metadata = MetaData(bind=self.engine)
         self.__table_definition__()
-
         # 若目标表格不存在则创建
         self.metadata.create_all(bind=self.engine, checkfirst=True)
+        # 建立表格映射
         self.__table_mapping__()
         session = sessionmaker(bind=self.engine)
         self.session = session()
@@ -66,25 +66,10 @@ class SqliteWrapper(object):
 
     def __table_mapping__(self):
         from sqlalchemy.orm import mapper
+        from structures import Book, Event, Reader
         mapper(Reader, self.user_table)
         mapper(Book, self.book_table)
         mapper(Event, self.events_table)
-
-    def __optimize_book_check__(self):
-        tmp = self.session.query(Book).all()  # TODO: 数据量比较大的时候需要只 select index
-        self.__book_dict__ = {var.index: None for var in tmp}
-
-    def __optimize_reader_check__(self):
-        tmp = self.session.query(Reader).all()
-        self.__reader_dict__ = {var.index: None for var in tmp}
-
-    def __optimize_event_check__(self):
-        tmp = self.session.query(Event).all()
-        self.__event_dict__ = dict()
-        for event in tmp:
-            key = event.hashable_key
-            if key not in self.__event_dict__:
-                self.__event_dict__[key] = None
 
     def add_all(self, obj):
         if len(obj) > 0:
@@ -95,12 +80,12 @@ class SqliteWrapper(object):
         self.session.add(obj)
         self.session.commit()
 
-    def drop_tables(self, table):
+    def delete_table(self, table):
         from sqlalchemy import Table
         assert isinstance(table, Table), str(TypeError('table should be of type sqlalchemy.Table'))
         self.metadata.remove(table)
 
-    def clear_db(self):
+    def clean(self):
         self.metadata.drop_all()
 
     def get_all(self, obj_type: type, **filter_by):
@@ -110,60 +95,48 @@ class SqliteWrapper(object):
     def get_one(self, obj_type: type, **filter_by):
         return self.session.query(obj_type).filter_by(**filter_by).one()
 
-    def exists_book(self, value: Book):
-        from sqlalchemy.orm.exc import NoResultFound
-        try:
-            return value.index in self.__book_dict__
-        except TypeError:
-            try:
-                self.session.query(Book).filter_by(index=value.index).one()
-                return True
-            except NoResultFound:
-                return False
-
-    def exists_reader(self, value: Reader):
-        from sqlalchemy.orm.exc import NoResultFound
-        try:
-            return value.index in self.__reader_dict__
-        except TypeError:
-            try:
-                self.session.query(Reader).filter_by(index=value.index).one()
-                return True
-            except NoResultFound:
-                return False
-
-    def exists_event(self, event: Event):
-        from sqlalchemy.orm.exc import NoResultFound
-        try:
-            return event.hashable_key in self.__event_dict__
-        except TypeError:
-            try:
-                self.session.query(Event).filter_by(
-                    book_id=event.book_id, reader_id=event.reader_id,
-                    event_date=event.event_date, event_type=event.event_type
-                ).one()
-                return True
-            except NoResultFound:
-                return False
-
-    def exists(self, obj):
-        """wrapper.exists(obj) -> bool -- check whether obj exits in database"""
-        if isinstance(obj, (list, tuple, set)):
-            check_list = list()
-            for i in range(len(obj)):
-                check_list.append(self.exists(obj[i]))
-            return check_list
-        elif isinstance(obj, Book):
-            return self.exists_book(obj)
-        elif isinstance(obj, Reader):
-            return self.exists_reader(obj)
-        elif isinstance(obj, Event):
-            return self.exists_event(obj)
-        else:
-            raise TypeError
+    # def exists_reader(self, value: Reader):
+    #     from sqlalchemy.orm.exc import NoResultFound
+    #     try:
+    #         return value.index in self.__reader_dict__
+    #     except TypeError:
+    #         try:
+    #             self.session.query(Reader).filter_by(index=value.index).one()
+    #             return True
+    #         except NoResultFound:
+    #             return False
 
     def merge(self, inst, **kwargs):
         self.session.merge(inst, load=kwargs.get('load', True))
+
+
+class SqliteDict(SqliteWrapper, Mapping, Iterable):
+    def __init__(self, db_path: str, obj_type: type, obj_index_attr: str):
+        SqliteWrapper.__init__(self, db_path=db_path)
+        self.__obj_type__ = obj_type
+        self.__obj_index_attr__ = obj_index_attr
+
+    def __setitem__(self, key: str, value):
+        assert hasattr(value, self.__obj_index_attr__) and isinstance(value, self.__obj_type__)
+        self.add(value)
+
+    def __getitem__(self, key: str):
+        return self.get_one(self.__obj_type__, **{self.__obj_index_attr__: key})
+
+    def keys(self):
+        for obj in self.values():
+            yield getattr(obj, self.__obj_index_attr__)
+
+    def values(self):
+        for obj in self.session.query(self.__obj_type__).all():
+            yield obj
+
+    def items(self):
+        for obj in self.values():
+            yield getattr(obj, self.__obj_index_attr__), obj
+
+    def __len__(self):
+        return len(self.session.query(self.__obj_type__).all())
 
 
 if __name__ == '__main__':

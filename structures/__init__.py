@@ -10,6 +10,7 @@ from .BookLibIndex import BookLibIndex
 from .Reader import Reader
 from .ShelveDict import ShelveWrapper, ShelveObjectDict
 from .SparseVector import SparseVector
+from .SqliteDict import SqliteDict
 from .TimeRange import TimeRange, StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 

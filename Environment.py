@@ -29,13 +29,13 @@ class Environment(object):
         返回已经创建的 Environment 对象
         """
         if Environment._env is None:
-            raise RuntimeError("Environment has not been created.")
+            Environment._env = Environment()
         assert isinstance(Environment._env, Environment)
         return Environment._env
 
     @property
     def data_path(self):
-        d_path = self.config.get('Resources', dict()).get('ShelveDataPath')
+        d_path = self.config.get('Resources', dict()).get('DataPath')
         if not os.path.exists(d_path):
             os.makedirs(d_path)
         return d_path
@@ -43,10 +43,7 @@ class Environment(object):
     @property
     def data_proxy(self):
         from modules.DataProxy import DataProxy
+        if self.__data_proxy__ is None:
+            self.__data_proxy__ = DataProxy(data_path=self.config.get('Resources', dict()).get('DataPath'))
         assert isinstance(self.__data_proxy__, DataProxy), 'set DataProxy before using.'
         return self.__data_proxy__
-
-    def set_data_proxy(self, data_proxy):
-        from modules.DataProxy import DataProxy
-        assert isinstance(data_proxy, DataProxy), type(data_proxy)
-        self.__data_proxy__ = data_proxy
