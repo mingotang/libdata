@@ -31,6 +31,47 @@ def load_yaml(path: str):
         return yaml.load(y_f)
 
 
+def __check_type__(file_path: str, file_type: str):
+    if '.' in file_path:
+        if file_path.split('.')[-1] == file_type:
+            return file_path
+        else:
+            return '.'.join([file_path, file_type])
+    else:
+        return '.'.join([file_path, file_type])
+
+
+def save_csv(content, *path, **kwargs):
+    """
+    save csv
+    :param content: list of str in lists
+    :param path: path
+    :param kwargs: encoding,
+    :return:
+    """
+    import csv
+    import os
+    import pandas as pd
+    assert len(path) > 0
+    file_path = __check_type__(os.path.sep.join(path), 'csv')
+
+    # optional parameters
+    file_encoding = kwargs.get('encoding', 'utf-8')
+    assert isinstance(file_encoding, str), repr(TypeError)
+
+    # saving data
+    if isinstance(content, list):
+        csv_file = open(file_path, 'w', newline='', encoding=file_encoding)
+        spam_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        spam_writer.writerows(content)
+        csv_file.close()
+    elif isinstance(content, pd.DataFrame):
+        content.to_csv(file_path, encoding=file_encoding)
+    else:
+        from utils.Exceptions import ParamTypeError
+        raise ParamTypeError('content', 'list(list)/pd.DataFrame', content)
+
+
 def set_logging(level: int):
     # import logging
     logging.basicConfig(
@@ -147,10 +188,9 @@ LOG_LEVEL_MAP = {
 }
 
 
-def get_logger(module_name: str=''):
+def get_logger(module_name: str = ''):
     """
 
-    :param level: logging level
     :param module_name: str
     :return: :class:`~logging.Logger`
     """

@@ -6,7 +6,7 @@ import sys
 
 from collections import defaultdict
 
-from structures import ShelveDict
+from structures import ShelveWrapper
 from utils import get_logger
 
 
@@ -75,7 +75,7 @@ class AprioriResult(object):
                 print('\t' + str(__item__[0]) + ' ---> ' + str(__item__[1]) + ' , conf: ' + str(__item__[2]))
 
     def save_rules(self, min_conf: float, name: str, sep='|'):
-        from utils.FileSupport import save_csv
+        from utils import save_csv
         assert isinstance(sep, str)
         rules = self.generate_rules(min_conf)
         content_list = [['X', 'Y', 'confidence']]
@@ -112,7 +112,7 @@ class Apriori(object):
         if self.__in_memory__ is True:
             if isinstance(data_sets, list):
                 self.data_sets = [set(var) for var in data_sets.copy()]
-            elif isinstance(data_sets, (dict, ShelveDict)):
+            elif isinstance(data_sets, (dict, ShelveWrapper)):
                 self.data_sets = [set(var) for var in data_sets.values()]
             else:
                 from utils.Exceptions import ParamTypeError
@@ -123,15 +123,15 @@ class Apriori(object):
                 '__aprioi_temp_{}__'.format(datetime.datetime.now().strftime('%Y%m%d %H%M%S.%f'))
             )
             if isinstance(data_sets, list):
-                self.data_sets = ShelveDict.init_from(
+                self.data_sets = ShelveWrapper.init_from(
                     dict(zip([str(i) for i in range(len(data_sets))], [set(var) for var in data_sets])),
                     local_path, writeback=False
                 )
             elif isinstance(data_sets, dict):
-                self.data_sets = ShelveDict.init_from(
+                self.data_sets = ShelveWrapper.init_from(
                     dict(zip([str(i) for i in range(len(data_sets))], [set(var) for var in data_sets.values()])),
                     local_path, writeback=False)
-            elif isinstance(data_sets, ShelveDict):
+            elif isinstance(data_sets, ShelveWrapper):
                 self.data_sets = data_sets
                 self.__origin_db__ = True
             else:
@@ -184,7 +184,7 @@ class Apriori(object):
                 for item in self.data_sets[transaction_index]:
                     basic_freq[frozenset([item])] += 1
         else:
-            assert isinstance(self.data_sets, ShelveDict)
+            assert isinstance(self.data_sets, ShelveWrapper)
             for goods_set in self.data_sets.values():
                 for item in goods_set:
                     basic_freq[frozenset([item])] += 1
@@ -218,7 +218,7 @@ class Apriori(object):
                     if can.issubset(self.data_sets[index]):
                         freq_count[can] += 1
         else:
-            assert isinstance(self.data_sets, ShelveDict)
+            assert isinstance(self.data_sets, ShelveWrapper)
             for can in freq_sets:
                 for goods_set in self.data_sets.values():
                     if can.issubset(goods_set):
@@ -260,7 +260,7 @@ class Apriori(object):
             assert isinstance(self.data_sets, list)
             self.data_sets.clear()
         else:
-            assert isinstance(self.data_sets, ShelveDict)
+            assert isinstance(self.data_sets, ShelveWrapper)
             if self.__origin_db__ is False:
                 self.data_sets.delete()
 
@@ -273,7 +273,7 @@ class BasketCollector(object):
             from os import path
             from datetime import datetime
             from Environment import Environment
-            self.data = ShelveDict(os.path.join(
+            self.data = ShelveWrapper(os.path.join(
                 Environment.get_instance().data_path,
                 '__temp_shelve_{}__'.format(datetime.now().strftime('%Y%m%d %H%M%S'))
             ))
@@ -289,13 +289,13 @@ class BasketCollector(object):
         return [set(self.data[var]) for var in self.data.keys()]
 
     def to_dict(self):
-        if isinstance(self.data, ShelveDict):
+        if isinstance(self.data, ShelveWrapper):
             return self.data.to_dict()
         else:
             return self.data
 
     def delete(self):
-        if isinstance(self.data, ShelveDict):
+        if isinstance(self.data, ShelveWrapper):
             self.data.delete()
         del self.data
 

@@ -51,3 +51,6 @@ class AbstractDataObject(object):
     def compare_by(self, *args, **kwargs):
         """根据相关信息进行数据比较 -> DataObject"""
         raise NotImplementedError
+
+
+# class AbstractDataStructure()

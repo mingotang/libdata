@@ -55,7 +55,7 @@ class RuleGenerator(object):
         from collections import defaultdict
         from tqdm import tqdm
         from structures import Book, CountingDict, Event
-        from utils.FileSupport import save_csv
+        from utils import save_csv
 
         one_book = self.__data_proxy__.books[list(self.__data_proxy__.books.keys())[0]]
         assert isinstance(one_book, Book)
@@ -108,7 +108,7 @@ class RuleGenerator(object):
 
     def evaluate_result_similarity(self, result_01, result_02, top_n: int = 10, descrip: str = ''):
         from structures import Evaluator
-        from utils.FileSupport import save_csv
+        from utils import save_csv
         result_01 = self.__load_result__(result_01).derive_top(top_n)
         result_02 = self.__load_result__(result_02).derive_top(top_n)
         evaluator = Evaluator(result_01, result_02)
@@ -125,7 +125,7 @@ class RuleGenerator(object):
     def evaluate_single_result(self, result_data, time_range, top_n: int = 10, descrip: str = ''):
         """评价单个结果并以csv文件形式输出"""
         from structures import Evaluator, TimeRange
-        from utils.FileSupport import save_csv
+        from utils import save_csv
         assert isinstance(time_range, TimeRange)
 
         result = self.__load_result__(result_data).derive_top(top_n)

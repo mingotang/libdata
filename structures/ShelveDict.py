@@ -5,7 +5,7 @@ import shelve
 from collections import Mapping, Sized
 
 
-class ShelveDict(Mapping, Sized):
+class ShelveWrapper(Mapping, Sized):
 
     def __init__(self, db_path: str, writeback: bool = False, new: bool = False):
         from utils import get_logger
@@ -149,9 +149,9 @@ class ShelveDict(Mapping, Sized):
             raise ParamTypeError('data', 'Mapping', data)
 
 
-class ShelveWrapper(ShelveDict):
+class ShelveObjectDict(ShelveWrapper):
     def __init__(self, db_path: str, obj_type: type, writeback: bool = False, new: bool = False):
-        ShelveDict.__init__(self, db_path=db_path, writeback=writeback, new=new)
+        ShelveWrapper.__init__(self, db_path=db_path, writeback=writeback, new=new)
         self.__obj_type__ = obj_type
 
     def __setitem__(self, key: str, value):
@@ -170,7 +170,8 @@ class ShelveWrapper(ShelveDict):
             new_d[key] = self.__getitem__(key)
         return new_d
 
+
 if __name__ == '__main__':
-    shelve_db = ShelveDict('/Users/mingo/Downloads/persisted_libdata/test.db')
+    shelve_db = ShelveWrapper('/Users/mingo/Downloads/persisted_libdata/test.db')
     shelve_db.log.debug('status: {}'.format(shelve_db.is_active))
     shelve_db.close()
