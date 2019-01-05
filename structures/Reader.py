@@ -146,10 +146,9 @@ class Reader(AbstractDataObject):
 
 if __name__ == '__main__':
     from Environment import Environment
-    from modules.DataProxy import DataProxy
     env = Environment()
-    data_proxy = DataProxy()
-    for reader in data_proxy.readers.values():
+
+    for reader in env.data_proxy.readers.values():
         if not isinstance(reader.register_year, int):
             # continue
             if reader.is_outer_reader:

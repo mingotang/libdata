@@ -1,15 +1,16 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+from extended import CountingDict, DataDict
 
-from structures import CountingDict, DataDict, SparseVector
+from structures import SparseVector
 from structures import Event
 
 
 class BipartiteNetwork(object):
 
     def __init__(self, event_dict, in_memory: bool = True):
+        from extended import ShelveWrapper
         from Environment import Environment
-        from structures import ShelveWrapper
         from utils import get_logger
         self.log = get_logger(module_name=self.__class__.__name__)
         self.env = Environment.get_instance()
@@ -18,7 +19,7 @@ class BipartiteNetwork(object):
             if isinstance(event_dict, DataDict):
                 self.__event_dict__ = event_dict
             elif isinstance(event_dict, (dict, ShelveWrapper)):
-                self.__event_dict__ = DataDict.init_from(Event, event_dict)
+                self.__event_dict__ = DataDict.init_from(event_dict)
             else:
                 from utils.Exceptions import ParamTypeError
                 raise ParamTypeError('event_dict', 'dict/ShelveWrapper/DataDict', event_dict)
@@ -35,7 +36,7 @@ class BipartiteNetwork(object):
         if isinstance(self.__event_dict__, DataDict):
             data_dict = self.__event_dict__
         else:
-            data_dict = DataDict.init_from(Event, self.__event_dict__)
+            data_dict = DataDict.init_from(self.__event_dict__)
         new_vector = SparseVector(len(data_dict.collect_attr_set(tag)))
         new_vector.update(CountingDict.init_from(data_dict.collect_attr_list(tag)))
         return new_vector
@@ -117,9 +118,7 @@ class BipartiteNetwork(object):
 if __name__ == '__main__':
     import datetime
     from Environment import Environment
-    from modules.DataProxy import DataProxy
     env = Environment()
-    env.set_data_proxy(DataProxy())
 
     bn = BipartiteNetwork(env.data_proxy.events.trim_between_range(
         'date', datetime.date(2013, 1, 1), datetime.date(2013, 2, 1)))
