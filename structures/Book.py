@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import datetime
+import json
 
 from Interface import AbstractDataObject
 from structures.BookName import BookName
@@ -62,7 +63,7 @@ class Book(AbstractDataObject):
                             self.__dict__[tag] = value.__dict__[tag]
             return self
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', '{}'.format(self.__class__.__name__), value)
 
     def compare_by(self, **kwargs):
@@ -88,26 +89,39 @@ class Book(AbstractDataObject):
                 op_dt=value['event_date'],
             )
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict', value)
         return new
+
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData, Table, Column, String
+        assert isinstance(meta, MetaData)
+        return Table(
+            'books', meta,
+            Column('index', String, nullable=False, primary_key=True),
+            Column('lib_index', String),
+            Column('name', String),
+            Column('isbn', String),
+            Column('author', String),
+            Column('year', String),
+            Column('publisher', String),
+            Column('op_dt', String)
+        )
 
 
 if __name__ == '__main__':
     from Environment import Environment
-    from modules.DataProxy import DataProxy
     from structures import Book
 
     env_inst = Environment()
-    d_p = DataProxy()
-    env_inst.set_data_proxy(d_p)
 
     try:
-        for book in d_p.books.values():
+        for book in env_inst.data_proxy.books.values():
             assert isinstance(book, Book)
             if book.publish_year is None:
                 print(book.lib_index, book)
     except KeyboardInterrupt:
-        d_p.close()
+        env_inst.exit()
     finally:
-        d_p.close()
+        env_inst.exit()

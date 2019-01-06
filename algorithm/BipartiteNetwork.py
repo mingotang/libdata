@@ -21,7 +21,7 @@ class BipartiteNetwork(object):
             elif isinstance(event_dict, (dict, ShelveWrapper)):
                 self.__event_dict__ = DataDict.init_from(event_dict)
             else:
-                from utils.Exceptions import ParamTypeError
+                from extended.Exceptions import ParamTypeError
                 raise ParamTypeError('event_dict', 'dict/ShelveWrapper/DataDict', event_dict)
         else:
             raise NotImplementedError

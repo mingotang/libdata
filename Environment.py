@@ -47,3 +47,11 @@ class Environment(object):
             self.__data_proxy__ = DataProxy(data_path=self.config.get('Resources', dict()).get('DataPath'))
         assert isinstance(self.__data_proxy__, DataProxy), 'set DataProxy before using.'
         return self.__data_proxy__
+
+    def exit(self):
+        from extended import SqliteWrapper
+        for obj in SqliteWrapper.connection_dict.values():
+            obj.close()
+
+        if self.__data_proxy__ is not None:
+            self.__data_proxy__.close()

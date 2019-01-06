@@ -4,7 +4,8 @@ import os
 import json
 import datetime
 
-from structures import Event, DataDict
+from extended import DataDict
+from structures import Event
 
 
 class BaseEventStore(object):
@@ -162,3 +163,13 @@ class BaseObjectStore(object):
     def iter(self):
         for tag in self.keys():
             yield self.get(tag)
+
+
+if __name__ == '__main__':
+    def store_readers_and_books():
+        from Environment import Environment
+        env = Environment.get_instance()
+        book_dict = BaseObjectStore(os.path.join(env.data_path, 'books'), Book, new=True)
+        reader_dict = BaseObjectStore(os.path.join(env.data_path, 'readers'), Reader, new=True)
+        book_dict.store(env.data_proxy.books)
+        reader_dict.store(env.data_proxy.readers)

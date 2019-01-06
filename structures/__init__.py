@@ -11,7 +11,6 @@ from .BookISBN import BookISBN
 from .BookLibIndex import BookLibIndex
 from .Reader import Reader
 from .SparseVector import SparseVector
-from .SqliteDict import SqliteDict
 
 
 class RecoResult(dict):

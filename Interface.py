@@ -2,9 +2,10 @@
 import json
 
 from abc import abstractmethod
+from extended import AbstractPersistObject
 
 
-class AbstractDataObject(object):
+class AbstractDataObject(AbstractPersistObject):
     __attributes__ = tuple()
 
     def __init__(self, *args, **kwargs):
@@ -16,22 +17,16 @@ class AbstractDataObject(object):
             ', '.join([str(var) + ': ' + str(getattr(self, var)) for var in self.__attributes__])
         )
 
-    @classmethod
-    def set_state_str(cls, state: str):
-        return cls.set_state_dict(json.loads(state))
-
-    def get_state_str(self):
-        return json.dumps(self.get_state_dict())
-
-    @classmethod
-    def set_state_dict(cls, state: dict):
-        return cls(**state)
-
-    def get_state_dict(self):
-        state = dict()
+    def get_state(self):
+        new_d = dict()
         for tag in self.__attributes__:
-            state[tag] = getattr(self, tag)
-        return state
+            new_d[tag] = getattr(self, tag)
+        return json.dumps(new_d)
+
+    @classmethod
+    def set_state(cls, state: str):
+        new_d = json.loads(state)
+        return cls(**new_d)
 
     @property
     def hashable_key(self):
@@ -52,5 +47,8 @@ class AbstractDataObject(object):
         """根据相关信息进行数据比较 -> DataObject"""
         raise NotImplementedError
 
-
-# class AbstractDataStructure()
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData
+        assert isinstance(meta, MetaData)
+        raise NotImplementedError

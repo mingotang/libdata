@@ -1,10 +1,11 @@
 # -*- encoding: UTF-8 -*-
 import datetime
 
+from extended import DataDict
 from algorithm.CollaborativeFiltering import CF_NeighborType, CF_SimilarityType
 from modules.RuleGen import RuleGenerator
 from structures import Book, Event, Reader
-from structures import DataDict, RecoResult, SparseVector
+from structures import RecoResult, SparseVector
 from structures import StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 
@@ -62,8 +63,8 @@ class RuleGenCF(RuleGenerator):
         for i in range(len(stage_list)):
             stage = stage_list[i]
 
-            this_event = DataDict(data_type=Event)
-            next_event = DataDict(data_type=Event)
+            this_event = DataDict()
+            next_event = DataDict()
             for key, value in events_data.items():
                 # assert isinstance(value, Event)
                 this_growth = getattr(readers[value.reader_id], stage_tag).__call__(time_range.end_time.date())
@@ -102,7 +103,6 @@ class RuleGenCF(RuleGenerator):
     def apply_refered_slipped_collaborative_filtering(self, similarity_type, neighbor_type, time_range):
         from algorithm import CollaborativeFiltering
         from structures import RecoResult
-        from structures import DataDict, Event
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, GrowthTimeRange)
 
@@ -130,7 +130,7 @@ class RuleGenCF(RuleGenerator):
         for i in range(len(stage_list)):
             stage = stage_list[i]
 
-            this_event = DataDict(data_type=Event)
+            this_event = DataDict()
             for key, value in events_data.items():
                 # assert isinstance(value, Event)
                 this_growth = getattr(readers[value.reader_id], stage_tag).__call__(time_range.end_time.date())

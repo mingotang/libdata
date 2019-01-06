@@ -2,10 +2,54 @@
 # ---------------------------------import------------------------------------
 import os
 
-from extended import DataDict, ShelveWrapper
+from collections.abc import Mapping, Iterable
+from extended import DataDict, ShelveWrapper, SqliteWrapper
 
-from modules.DataStore import BaseObjectStore
 from structures import Book, Event, Reader
+
+
+class SqliteDict(Mapping, Iterable):
+
+    def __init__(self, db_path: str, obj_type: type, obj_index_attr: str):
+        self.db = SqliteWrapper.get_instance(db_path=db_path)
+
+        assert hasattr(obj_type, 'define_table')
+        self.__obj_type__ = obj_type
+        self.__obj_index_attr__ = obj_index_attr
+
+        self.db.map(self.__obj_type__, getattr(self.__obj_type__, 'define_table').__call__(self.db.metadata))
+
+    def __setitem__(self, key: str, value):
+        assert hasattr(value, self.__obj_index_attr__) and isinstance(value, self.__obj_type__)
+        self.db.add(value)
+
+    def __getitem__(self, key: str):
+        return self.db.session.query(self.__obj_type__).filter_by(**{self.__obj_index_attr__: key}).one()
+
+    @property
+    def query(self):
+        return self.db.session.query
+
+    def keys(self):
+        for obj in self.values():
+            yield getattr(obj, self.__obj_index_attr__)
+
+    def values(self):
+        for obj in self.db.session.query(self.__obj_type__).all():
+            yield obj
+
+    def items(self):
+        for obj in self.values():
+            yield getattr(obj, self.__obj_index_attr__), obj
+
+    def __len__(self):
+        return len(self.db.session.query(self.__obj_type__).all())
+
+    def to_data_dict(self):
+        new_d = DataDict()
+        for k, v in self.items():
+            new_d[k] = v
+        return new_d
 
 
 class ShelveObjectDict(ShelveWrapper):
@@ -57,37 +101,22 @@ class DataProxy(object):
     @property
     def readers(self):
         if self.__readers__ is None:
-            db_path = os.path.join(self.__path__, 'readers')
-            try:
-                self.__readers__ = self.reader_dict.to_data_dict()
-                self.log.debug('DataDict converted from {}'.format(db_path))
-            except FileNotFoundError:
-                raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
-        assert isinstance(self.__readers__, DataDict)
+            self.__readers__ = SqliteDict(os.path.join(self.__path__, 'libdata.db'), Reader, 'index')
+        assert isinstance(self.__readers__, SqliteDict)
         return self.__readers__
 
     @property
     def books(self):
         if self.__books__ is None:
-            db_path = os.path.join(self.__path__, 'books')
-            try:
-                self.__books__ = self.book_dict.to_data_dict()
-                self.log.debug('DataDict converted from {}'.format(db_path))
-            except FileNotFoundError:
-                raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
-        assert isinstance(self.__books__, DataDict)
+            self.__books__ = SqliteDict(os.path.join(self.__path__, 'libdata.db'), Book, 'index')
+        assert isinstance(self.__books__, SqliteDict)
         return self.__books__
 
     @property
     def events(self):
         if self.__events__ is None:
-            db_path = os.path.join(self.__path__, 'events')
-            try:
-                self.__events__ = self.event_dict.to_data_dict()
-                self.log.debug('DataDict converted from {}'.format(db_path))
-            except FileNotFoundError:
-                raise RuntimeError('No db {} exists, create new before using.'.format(db_path))
-        assert isinstance(self.__events__, DataDict)
+                self.__events__ = SqliteDict(os.path.join(self.__path__, 'libdata.db'), Event, 'hashable_key')
+        assert isinstance(self.__events__, SqliteDict)
         return self.__events__
 
     @property
@@ -137,19 +166,32 @@ def store_record_data():
     env = Environment.get_instance()
     books, events, readers = dict(), dict(), dict()
 
+    db = SqliteWrapper.get_instance(os.path.join(env.data_path, 'libdata.db'))
+    book_table, reader_table = Book.define_table(db.metadata), Reader.define_table(db.metadata)
+    event_table = Event.define_table(db.metadata)
+    db.metadata.drop_all()
+    db.metadata.create_all(checkfirst=True)
+    db.map(Book, book_table)
+    db.map(Event, event_table)
+    db.map(Reader, reader_table)
+
     for d_object in tqdm(
             RawDataProcessor.iter_data_object(),
             desc='storing record data'
     ):
         value = Book.init_from(d_object)
-        if value.index in books:
+        if len(value.index) == 0:
+            pass
+        elif value.index in books:
             stored = books[value.index]
             stored.update_from(value)
             books[value.index] = stored
         else:
             books[value.index] = value
         value = Reader.init_from(d_object)
-        if value.index in readers:
+        if len(value.index) == 0:
+            pass
+        elif value.index in readers:
             stored = readers[value.index]
             stored.update_from(value)
             readers[value.index] = stored
@@ -163,29 +205,26 @@ def store_record_data():
         else:
             events[value.hashable_key] = value
 
-    book_store = ShelveWrapper(os.path.join(env.data_path, 'books'), new=True)
+    db.add_all(books.values())
+    db.add_all(readers.values())
+    db.add_all(events.values())
+
+    book_store = dict()
     for key, book in books.items():
-        book_store[key] = book.get_state_str()
-    book_store.close()
+        book_store[key] = book.get_state()
+    ShelveWrapper.init_from(book_store, os.path.join(env.data_path, 'books')).close()
 
-    reader_store = ShelveWrapper(os.path.join(env.data_path, 'readers'), new=True)
+    reader_store = dict()
     for key, reader in readers.items():
-        reader_store[key] = reader.get_state_str()
-    reader_store.close()
+        reader_store[key] = reader.get_state()
+    ShelveWrapper.init_from(reader_store, os.path.join(env.data_path, 'readers')).close()
 
-    event_store = ShelveWrapper(os.path.join(env.data_path, 'events'), new=True)
+    event_store = dict()
     for key, event in events.items():
-        event_store[key] = event.get_state_str()
-    event_store.close()
+        event_store[key] = event.get_state()
+    ShelveWrapper.init_from(event_store, os.path.join(env.data_path, 'events')).close()
 
-
-def store_readers_and_books():
-    from Environment import Environment
-    env = Environment.get_instance()
-    book_dict = BaseObjectStore(os.path.join(env.data_path, 'books'), Book, new=True)
-    reader_dict = BaseObjectStore(os.path.join(env.data_path, 'readers'), Reader, new=True)
-    book_dict.store(env.data_proxy.books)
-    reader_dict.store(env.data_proxy.readers)
+    db.close()
 
 
 if __name__ == '__main__':
@@ -193,6 +232,7 @@ if __name__ == '__main__':
     from Environment import Environment
     env_instance = Environment()
     store_record_data()
+    env_instance.exit()
     # store_readers_and_books()
     # data_manager = DataManager(writeback=False)
 

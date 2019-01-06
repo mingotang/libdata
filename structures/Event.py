@@ -15,7 +15,7 @@ class Event(AbstractDataObject):
         self.reader_id = reader_id
         self.event_date = event_date
         self.event_type = event_type
-        self.times = kwargs.get('times', 1)
+        self.times = int(kwargs.get('times', 1))
 
     def __eq__(self, other):
         if type(self) == type(other):
@@ -64,7 +64,7 @@ class Event(AbstractDataObject):
                 event_type=value['event_type'],
             )
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)
         return new
 
@@ -99,3 +99,16 @@ class Event(AbstractDataObject):
                 return 0
             else:
                 return int(((self.date - reader.register_date) / datetime.timedelta(days=1)) / 30)
+
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData, Table, Column, String, Integer
+        assert isinstance(meta, MetaData)
+        return Table(
+            'events', meta,
+            Column('book_id', String, primary_key=True),
+            Column('reader_id', String, primary_key=True),
+            Column('event_date', String, primary_key=True),
+            Column('event_type', String, primary_key=True),
+            Column('times', Integer),
+        )

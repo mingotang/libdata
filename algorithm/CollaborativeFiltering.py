@@ -2,7 +2,8 @@
 # ---------------------------------import------------------------------------
 from enum import Enum
 
-from structures import CountingDict, RecoResult, SparseVector
+from extended import CountingDict, DataDict
+from structures import RecoResult, SparseVector
 from structures import Event
 
 
@@ -191,7 +192,6 @@ class CollaborativeFiltering(object):
 
 class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
     def __init__(self, events_dict, next_vec_data):
-        from structures import DataDict
         CollaborativeFiltering.__init__(self, events_dict)
         assert isinstance(next_vec_data, DataDict)
         self.__next_event__ = next_vec_data

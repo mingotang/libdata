@@ -194,7 +194,6 @@ if __name__ == '__main__':
     from Environment import Environment
     from modules.DataProxy import DataProxy
     env_inst = Environment()
-    env_inst.set_data_proxy(DataProxy())
 
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()

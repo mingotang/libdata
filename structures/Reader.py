@@ -143,6 +143,18 @@ class Reader(AbstractDataObject):
     def is_outer_reader(self):
         return self.rtype in OTHER_INDIVIDUAL_TYPES
 
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData, Table, Column, String
+        assert isinstance(meta, MetaData)
+        return Table(
+            'users', meta,
+            Column('index', String, nullable=False, primary_key=True),
+            Column('rtype', String, nullable=False),
+            Column('college', String),
+            Column('op_dt', String),
+        )
+
 
 if __name__ == '__main__':
     from Environment import Environment
