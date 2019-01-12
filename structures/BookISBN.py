@@ -86,12 +86,10 @@ class BookISBN(object):
 
 if __name__ == '__main__':
     from Environment import Environment
-    from modules.DataProxy import DataProxy
     from structures import Book
 
     env_inst = Environment()
-    d_p = DataProxy()
-    env_inst.set_data_proxy(d_p)
+    d_p = env_inst.data_proxy
 
     try:
         for book in d_p.book_dict.values():

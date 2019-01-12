@@ -10,14 +10,14 @@ from structures import Book, Event, Reader
 
 class SqliteDict(Mapping, Iterable):
 
-    def __init__(self, db_path: str, obj_type: type, obj_index_attr: str):
-        self.db = SqliteWrapper.get_instance(db_path=db_path)
-
+    def __init__(self, db: SqliteWrapper, obj_type: type, obj_index_attr: str):
+        self.db = db
         assert hasattr(obj_type, 'define_table')
         self.__obj_type__ = obj_type
         self.__obj_index_attr__ = obj_index_attr
 
-        self.db.map(self.__obj_type__, getattr(self.__obj_type__, 'define_table').__call__(self.db.metadata))
+    def __iter__(self):
+        return self.keys()
 
     def __setitem__(self, key: str, value):
         assert hasattr(value, self.__obj_index_attr__) and isinstance(value, self.__obj_type__)
@@ -75,8 +75,9 @@ class ShelveObjectDict(ShelveWrapper):
 
 
 class DataProxy(object):
+    __db__ = None
 
-    def __init__(self, data_path: str, writeback: bool = False,):
+    def __init__(self, data_path: str,):
         from utils import get_logger
         self.log = get_logger(self.__class__.__name__)
 
@@ -88,35 +89,38 @@ class DataProxy(object):
         if not os.path.exists(self.__operation_path__):
             os.makedirs(self.__operation_path__)
 
-        self.book_dict = ShelveObjectDict(os.path.join(self.__path__, 'books'), Book)
-        self.reader_dict = ShelveObjectDict(os.path.join(self.__path__, 'readers'), Reader)
-        self.event_dict = ShelveObjectDict(os.path.join(self.__path__, 'events'), Event)
+        if DataProxy.__db__ is None:
+            DataProxy.__db__ = SqliteWrapper(db_path=os.path.join(self.__path__, 'libdata.db'))
+            DataProxy.__db__.map(Book, Book.define_table(self.__db__.metadata))
+            DataProxy.__db__.map(Event, Event.define_table(self.__db__.metadata))
+            DataProxy.__db__.map(Reader, Reader.define_table(self.__db__.metadata))
 
-        self.__db_writeback__ = writeback
+        self.book_dict = SqliteDict(self.__db__, Book, 'index')
+        self.reader_dict = SqliteDict(self.__db__, Reader, 'index')
+        self.event_dict = SqliteDict(self.__db__, Event, 'hashable_key')
+
         self.__books__, self.__events__, self.__readers__ = None, None, None
         self.__inducted_events__ = None
-        self.__event_store_by_date__ = None
-        self.__event_store_by_register_month__ = None
 
     @property
     def readers(self):
         if self.__readers__ is None:
-            self.__readers__ = SqliteDict(os.path.join(self.__path__, 'libdata.db'), Reader, 'index')
-        assert isinstance(self.__readers__, SqliteDict)
+            self.__readers__ = self.reader_dict.to_data_dict()
+        assert isinstance(self.__readers__, DataDict)
         return self.__readers__
 
     @property
     def books(self):
         if self.__books__ is None:
-            self.__books__ = SqliteDict(os.path.join(self.__path__, 'libdata.db'), Book, 'index')
-        assert isinstance(self.__books__, SqliteDict)
+            self.__books__ = self.book_dict.to_data_dict()
+        assert isinstance(self.__books__, DataDict)
         return self.__books__
 
     @property
     def events(self):
         if self.__events__ is None:
-                self.__events__ = SqliteDict(os.path.join(self.__path__, 'libdata.db'), Event, 'hashable_key')
-        assert isinstance(self.__events__, SqliteDict)
+                self.__events__ = self.event_dict.to_data_dict()
+        assert isinstance(self.__events__, DataDict)
         return self.__events__
 
     @property
@@ -145,17 +149,6 @@ class DataProxy(object):
 
         if isinstance(self.__inducted_events__, ShelveWrapper):
             self.__inducted_events__.close()
-
-    def get_shelve(self, db_name: str, new=False):
-        if new is False:
-            if os.path.exists(os.path.join(self.__operation_path__, db_name)):
-                return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
-            else:
-                raise FileNotFoundError(
-                    'Shelve database {} not exists.'.format(os.path.join(self.__operation_path__, db_name))
-                )
-        else:
-            return ShelveWrapper(os.path.join(self.__operation_path__, db_name))
 
 
 def store_record_data():

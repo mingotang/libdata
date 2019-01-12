@@ -3,21 +3,16 @@
 import os
 import datetime
 
+from Interface import AbstractEnvObject
 
-class RuleGenerator(object):
+
+class RuleGenerator(AbstractEnvObject):
     def __init__(self):
-        from Environment import Environment
-        from modules.DataProxy import DataProxy
-        # from structures import TextRecorder
         from utils import get_logger
         self.__logger__ = get_logger(self.__class__.__name__)
 
-        env = Environment.get_instance()
-        self.__data_path__ = env.data_path
+        self.__data_path__ = self.env.data_path
         self.__operation_path__ = os.path.join(self.__data_path__, 'this_operation')
-        # self.__recorder__ = TextRecorder()
-
-        self.__data_proxy__ = DataProxy(data_path=self.__data_path__)
 
     def __load_result__(self, result_data):
         import os
@@ -29,19 +24,19 @@ class RuleGenerator(object):
         elif isinstance(result_data, RecoResult):
             result = result_data
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('result_data', (str, RecoResult), result_data)
 
         return result
 
     def simple_statistic(self):
-        readers = self.__data_proxy__.readers
+        readers = self.env.data_proxy.readers
         print('total readers: {}'.format(len(readers)))
 
-        books = self.__data_proxy__.books
+        books = self.env.data_proxy.books
         print('total books: {}'.format(len(books)))
 
-        events = self.__data_proxy__.events
+        events = self.env.data_proxy.events
         print('total events: {}'.format(len(events)))
         print('2013 events: {}'.format(
             events.trim_between_range('date', datetime.date(2013, 1, 1), datetime.date(2014, 1, 1))))
@@ -53,15 +48,12 @@ class RuleGenerator(object):
     def statistic_one(self):
         """"""
         from collections import defaultdict
+        from extended import CountingDict
+        from structures import Book, Event
         from tqdm import tqdm
-        from structures import Book, CountingDict, Event
         from utils import save_csv
 
-        one_book = self.__data_proxy__.books[list(self.__data_proxy__.books.keys())[0]]
-        assert isinstance(one_book, Book)
-
-        for lib_index_key, event_dict in self.__data_proxy__.events.group_by(
-                'correspond_book.book_lib_index.index_class'):
+        for lib_index_key, event_dict in self.env.data_proxy.events.group_by_attr('book_index_class').items():
 
             book_weight_dict = defaultdict(CountingDict)
             for event in tqdm(event_dict.values(), desc='collect book_weight_dict'):
@@ -81,9 +73,9 @@ class RuleGenerator(object):
             self.log.debug_running('outputing result')
             output_csv = [['book_name', 'weight'], ]
             for key in book_weight.sort(inverse=True):
-                output_csv.append([self.__data_proxy__.books[key].name, book_weight.get(key)])
+                output_csv.append([self.env.data_proxy.books[key].name, book_weight.get(key)])
             save_csv(output_csv, self.__operation_path__, '..', 'book_weight_one_{}.csv'.format(
-                one_book.book_lib_index.index_class_map[lib_index_key]
+                self.env.book_lib_index_code_name_map[lib_index_key],
             ))
 
     @staticmethod
@@ -186,14 +178,10 @@ class RuleGenerator(object):
     def log(self):
         return self.__logger__
 
-    def close(self):
-        self.__data_proxy__.close()
-
 
 if __name__ == '__main__':
     from Environment import Environment
-    from modules.DataProxy import DataProxy
-    env_inst = Environment()
+    env_inst = Environment.get_instance()
 
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()
@@ -202,9 +190,9 @@ if __name__ == '__main__':
         rule_generator.statistic_one()
 
     except KeyboardInterrupt:
-        rule_generator.close()
+        env_inst.exit()
     finally:
-        rule_generator.close()
+        env_inst.exit()
 
     rule_generator.log.time_sleep(1)
     rule_generator.log.print_time_passed()

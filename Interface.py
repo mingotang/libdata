@@ -5,6 +5,16 @@ from abc import abstractmethod
 from extended import AbstractPersistObject
 
 
+class AbstractEnvObject:
+
+    @property
+    def env(self):
+        from Environment import Environment
+        env = Environment.get_instance()
+        assert isinstance(env, Environment)
+        return env
+
+
 class AbstractDataObject(AbstractPersistObject):
     __attributes__ = tuple()
 

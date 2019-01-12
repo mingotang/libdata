@@ -1,8 +1,9 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
+from Interface import AbstractEnvObject
 
 
-class BookLibIndex(object):
+class BookLibIndex(AbstractEnvObject):
     __index_class_map__ = None
 
     def __init__(self, data_lib_index: str):
@@ -13,59 +14,53 @@ class BookLibIndex(object):
     def index_class(self):
         """索书号包含的类型"""
         if '/' in self.__data__:
-            return self.__data__.split('/')[0]
+            check_str = self.__data__.split('/')[0]
         elif ' ' in self.__data__:
-            return self.__data__.split(' ')[0]
+            check_str = self.__data__.split(' ')[0]
         elif '#' in self.__data__:
-            return self.__data__.split('#')[0]
+            check_str = self.__data__.split('#')[0]
         elif len(self.__data__.replace(' ', '')) == 0:
-            return ''
+            check_str = ''
         else:
-            if self.__data__ in self.index_class_map:
-                return self.__data__
-            else:
-                for i in range(min(len(self.__data__), 8), 0, -1):
-                    if self.__data__[:i] in self.index_class_map:
-                        return self.__data__[:i]
-                return ''
+            check_str = self.__data__
+
+        if check_str in self.env.book_lib_index_code_name_map:
+            return check_str
+        else:
+            for i in range(min(len(check_str), 8), -1, -1):
+                if check_str[:i] in self.env.book_lib_index_code_name_map:
+                    return check_str[:i]
+            return ''
 
     @property
     def index_class_name(self):
         if len(self.index_class) > 0:
-            return self.index_class_map[self.index_class]
+            return self.env.book_lib_index_code_name_map[self.index_class]
         else:
             return ''
-
-    @property
-    def index_class_map(self):
-        if BookLibIndex.__index_class_map__ is None:
-            from os import path
-            from pandas import read_csv
-            pd_data = read_csv(path.join('..', 'data', 'ChineseLibraryBookClassification.csv'), header=None)
-            i_c_map = dict()
-            for index in pd_data.index:
-                i_c_map[pd_data.loc[index, 0]] = pd_data.loc[index, 1]
-            BookLibIndex.__index_class_map__ = i_c_map
-        assert isinstance(BookLibIndex.__index_class_map__, dict), type(BookLibIndex.__index_class_map__)
-        return BookLibIndex.__index_class_map__
 
 
 if __name__ == '__main__':
     from Environment import Environment
-    from modules.DataProxy import DataProxy
     from structures import Book
 
     env_inst = Environment()
-    d_p = DataProxy()
-    env_inst.set_data_proxy(d_p)
+    d_p = env_inst.data_proxy
 
     try:
-        for book in d_p.books.values():
+        this_dict = dict()
+        for book in d_p.book_dict.values():
             assert isinstance(book, Book)
             lib_index = book.book_lib_index
-            # lib_index.index_class_map
-            if lib_index.index_class is None:
-                print(book.lib_index, book)
+            if not isinstance(lib_index.index_class_name, str):
+                this_dict[lib_index.index_class] = book
+        this_set = set(this_dict.keys())
+        this_list = list(this_set)
+        this_list.sort()
+        for tag in this_list:
+            print('lib_index: {}, book: {}'.format(tag, this_dict[tag]))
+            # if len(lib_index.index_class_name) == 0:
+            #     print(lib_index.index_class, lib_index.index_class_name)
     except KeyboardInterrupt:
         d_p.close()
     finally:

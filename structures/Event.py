@@ -1,11 +1,11 @@
 # -*- encoding: UTF-8 -*-
 import datetime
 
-from Interface import AbstractDataObject
+from Interface import AbstractDataObject, AbstractEnvObject
 from utils import attributes_repr
 
 
-class Event(AbstractDataObject):
+class Event(AbstractDataObject, AbstractEnvObject):
     __attributes__ = ('book_id', 'reader_id', 'event_date', 'event_type', 'times')
     __repr__ = attributes_repr
 
@@ -32,7 +32,20 @@ class Event(AbstractDataObject):
 
     @property
     def date(self):
+        """事件日期"""
         return datetime.datetime.strptime(self.event_date, '%Y%m%d').date()
+
+    @property
+    def month_from_reader_register(self):
+        """从注册时间开始到借阅事件为止的月数"""
+        reader = self.correspond_reader
+        if reader.register_date is None:
+            return None
+        else:
+            if reader.register_date >= self.date:
+                return 0
+            else:
+                return int(((self.date - reader.register_date) / datetime.timedelta(days=1)) / 30)
 
     def update_from(self, value):
         if isinstance(value, type(self)):
@@ -42,7 +55,7 @@ class Event(AbstractDataObject):
                 pass
             return self
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', '{}'.format(self.__class__.__name__), value)
 
     def compare_by(self, **kwargs):
@@ -74,31 +87,22 @@ class Event(AbstractDataObject):
 
     @property
     def correspond_reader(self):
-        from Environment import Environment
         from structures.Reader import Reader
-        reader = Environment.get_instance().data_proxy.readers[self.reader_id]
+        reader = self.env.data_proxy.readers[self.reader_id]
         assert isinstance(reader, Reader), str(self)
         return reader
 
     @property
     def correspond_book(self):
-        from Environment import Environment
         from structures.Book import Book
-        book = Environment.get_instance().data_proxy.books[self.book_id]
+        book = self.env.data_proxy.books[self.book_id]
         assert isinstance(book, Book), str(self)
         return book
 
     @property
-    def month_from_reader_register(self):
-        """从注册时间开始到借阅事件为止的月数"""
-        reader = self.correspond_reader
-        if reader.register_date is None:
-            return None
-        else:
-            if reader.register_date >= self.date:
-                return 0
-            else:
-                return int(((self.date - reader.register_date) / datetime.timedelta(days=1)) / 30)
+    def book_index_class(self):
+        """书目索引号类别"""
+        return self.correspond_book.book_lib_index.index_class
 
     @staticmethod
     def define_table(meta):

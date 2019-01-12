@@ -302,13 +302,10 @@ class BasketCollector(object):
 
 def collect_baskets(events_bag, book_tag: str):
     from collections import Iterable, Mapping
-    from modules.DataProxy import DataProxy
     from modules.DataProxy import Book
     from structures.Event import Event
 
     logger.debug_running('collect_baskets', 'start')
-
-    books = DataProxy().books
 
     new_basket = BasketCollector()
     if isinstance(events_bag, Iterable):

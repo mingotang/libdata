@@ -224,16 +224,11 @@ class RuleGenCF(RuleGenerator):
     def log(self):
         return self.__logger__
 
-    def close(self):
-        self.__data_proxy__.close()
-
 
 if __name__ == '__main__':
     import datetime
     from Environment import Environment
-    from modules.DataProxy import DataProxy
     env = Environment()
-    env.set_data_proxy(DataProxy())
 
     rule_generator = RuleGenCF()
     rule_generator.log.initiate_time_counter()

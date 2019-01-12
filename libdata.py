@@ -17,12 +17,9 @@ if __name__ == '__main__':
 
     # -------- get data --------
     from Environment import Environment
-    from modules.DataProxy import DataProxy, store_events_by_date, store_events_by_register_month, store_readers_and_books
+    from modules.DataProxy import store_events_by_date, store_events_by_register_month, store_readers_and_books
 
     env = Environment()
-    env.set_data_proxy(DataProxy())
-    # store_events_by_date()
-    # store_events_by_register_month()
     store_readers_and_books()
 
     # --------  --------

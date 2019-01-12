@@ -1,6 +1,5 @@
 # -*- encoding: UTF-8 -*-
 import datetime
-import json
 
 from Interface import AbstractDataObject
 from structures.BookName import BookName
