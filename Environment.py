@@ -21,7 +21,7 @@ class Environment(object):
         self.config = load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.yaml'))
 
         # private
-        self.__init_on_first_call_data__ = dict()
+        self.__data__ = dict()
 
     @classmethod
     def get_instance(cls):
@@ -43,26 +43,45 @@ class Environment(object):
     @property
     def data_proxy(self):
         from modules.DataProxy import DataProxy
-        data_proxy = self.__init_on_first_call_data__.get('data_proxy')
+        data_proxy = self.__data__.get('data_proxy')
         if data_proxy is None:
             data_proxy = DataProxy(data_path=self.config.get('Resources', dict()).get('DataPath'))
-            self.__init_on_first_call_data__.__setitem__('data_proxy', data_proxy)
+            self.__data__.__setitem__('data_proxy', data_proxy)
         assert isinstance(data_proxy, DataProxy), 'set DataProxy before using.'
         return data_proxy
 
     @property
     def book_lib_index_code_name_map(self):
-        book_lib_index_code_name_map = self.__init_on_first_call_data__.get('book_lib_index_code_name_map')
+        """索引号 编码 - 名称 的字典 -> dict"""
+        book_lib_index_code_name_map = self.__data__.get('book_lib_index_code_name_map')
         if book_lib_index_code_name_map is None:
-            from pandas import read_csv
-            pd_data = read_csv(
-                os.path.join(self.root_path, 'data', 'ChineseLibraryBookClassification.csv'), header=None)
-            book_lib_index_code_name_map = dict()
-            for index in pd_data.index:
-                book_lib_index_code_name_map[pd_data.loc[index, 0]] = pd_data.loc[index, 1]
-            self.__init_on_first_call_data__['book_lib_index_code_name_map'] = book_lib_index_code_name_map
+            self.__load_book_index_info__()
+            book_lib_index_code_name_map = self.book_lib_index_code_name_map
         assert isinstance(book_lib_index_code_name_map, dict)
         return book_lib_index_code_name_map
+
+    def __load_book_index_info__(self):
+        from pandas import read_csv
+        from structures import LibIndexClassObject
+        pd_data = read_csv(
+            os.path.join(self.root_path, 'data', 'ChineseLibraryBookClassification.csv'),
+            header=None,
+        )
+        pd_data.fillna(value='', inplace=True)
+        book_lib_index_code_name_map = dict()
+        for index in pd_data.index:
+            new_obj = LibIndexClassObject(
+                pd_data.loc[index, 0], pd_data.loc[index, 1], pd_data.loc[index, 2], pd_data.loc[index, 3]
+            )
+            if len(new_obj.base_class) > 0:
+                book_lib_index_code_name_map[new_obj.base_class] = new_obj
+            elif len(new_obj.sub_class) > 0:
+                book_lib_index_code_name_map[new_obj.sub_class] = new_obj
+            elif len(new_obj.main_class) > 0:
+                book_lib_index_code_name_map[new_obj.main_class] = new_obj
+            else:
+                raise NotImplementedError(new_obj)
+        self.__data__.__setitem__('book_lib_index_code_name_map', book_lib_index_code_name_map)
 
     @property
     def root_path(self):
@@ -73,5 +92,5 @@ class Environment(object):
         for obj in SqliteWrapper.connection_dict.values():
             obj.close()
 
-        if 'data_proxy' in self.__init_on_first_call_data__:
-            self.__init_on_first_call_data__['data_proxy'].close()
+        if 'data_proxy' in self.__data__:
+            self.__data__['data_proxy'].close()

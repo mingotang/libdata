@@ -2,15 +2,21 @@
 # ---------------------------------import------------------------------------
 import datetime
 
+from collections import namedtuple
+
 from .Book import Book
 from .BookName import BookName
 from .DataObject import OrderedList
 from .Evaluator import Evaluator
 from .Event import Event
 from .BookISBN import BookISBN
-from .BookLibIndex import BookLibIndex
 from .Reader import Reader
 from .SparseVector import SparseVector
+
+
+LibIndexClassObject = namedtuple('LibIndexClassObject', [
+    'main_class', 'sub_class', 'base_class', 'name',
+])
 
 
 class RecoResult(dict):

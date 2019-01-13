@@ -100,9 +100,22 @@ class Event(AbstractDataObject, AbstractEnvObject):
         return book
 
     @property
-    def book_index_class(self):
+    def book_index_main_class(self):
         """书目索引号类别"""
-        return self.correspond_book.book_lib_index.index_class
+        return self.correspond_book.book_lib_index.main_class
+
+    @property
+    def book_index_sub_class(self):
+        return self.correspond_book.book_lib_index.sub_class
+
+    @property
+    def book_index_base_class(self):
+        return self.correspond_book.book_lib_index.base_class
+
+    @property
+    def book_index_name(self):
+        """书目索引号类别"""
+        return self.correspond_book.book_lib_index.name
 
     @staticmethod
     def define_table(meta):

@@ -53,8 +53,8 @@ class RuleGenerator(AbstractEnvObject):
         from tqdm import tqdm
         from utils import save_csv
 
-        for lib_index_key, event_dict in self.env.data_proxy.events.group_by_attr('book_index_class').items():
-
+        for lib_index_key, event_dict in self.env.data_proxy.events.group_by_attr('book_index_main_class').items():
+            self.log.debug_running('statistic_one', lib_index_key)
             book_weight_dict = defaultdict(CountingDict)
             for event in tqdm(event_dict.values(), desc='collect book_weight_dict'):
                 assert isinstance(event, Event)
@@ -71,11 +71,15 @@ class RuleGenerator(AbstractEnvObject):
                 book_weight.set(book_id, weighted_sum / book_count.sum)
 
             self.log.debug_running('outputing result')
-            output_csv = [['book_name', 'weight'], ]
+            output_csv = [['book_name', 'author', 'weight'], ]
             for key in book_weight.sort(inverse=True):
-                output_csv.append([self.env.data_proxy.books[key].name, book_weight.get(key)])
+                if len(key) == 0:
+                    continue
+                book = self.env.data_proxy.books[key]
+                assert isinstance(book, Book)
+                output_csv.append([book.name, book.author, book_weight.get(key)])
             save_csv(output_csv, self.__operation_path__, '..', 'book_weight_one_{}.csv'.format(
-                self.env.book_lib_index_code_name_map[lib_index_key],
+                self.env.book_lib_index_code_name_map[lib_index_key].name,
             ))
 
     @staticmethod

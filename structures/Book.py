@@ -1,13 +1,12 @@
 # -*- encoding: UTF-8 -*-
 import datetime
 
-from Interface import AbstractDataObject
+from Interface import AbstractDataObject, AbstractEnvObject
 from structures.BookName import BookName
 from structures.BookISBN import BookISBN
-from structures.BookLibIndex import BookLibIndex
 
 
-class Book(AbstractDataObject):
+class Book(AbstractDataObject, AbstractEnvObject):
     __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher', 'op_dt')
 
     def __init__(self, index: str, lib_index: str, name: str, isbn: str,
@@ -48,7 +47,29 @@ class Book(AbstractDataObject):
 
     @property
     def book_lib_index(self):
-        return BookLibIndex(self.lib_index)
+        from structures import LibIndexClassObject
+        if '/' in self.lib_index:
+            check_str = self.lib_index.split('/')[0]
+        elif ' ' in self.lib_index:
+            check_str = self.lib_index.split(' ')[0]
+        elif '#' in self.lib_index:
+            check_str = self.lib_index.split('#')[0]
+        elif len(self.lib_index.replace(' ', '')) == 0:
+            check_str = ''
+        else:
+            check_str = self.lib_index
+
+        obj = LibIndexClassObject('', '', '', '')
+        if len(check_str) == 0:
+            pass
+        elif check_str in self.env.book_lib_index_code_name_map:
+            obj = self.env.book_lib_index_code_name_map[check_str]
+        else:
+            for i in range(min(len(check_str), 8), -1, -1):
+                if check_str[:i] in self.env.book_lib_index_code_name_map:
+                    obj = self.env.book_lib_index_code_name_map[check_str[:i]]
+        assert isinstance(obj, LibIndexClassObject)
+        return obj
 
     def update_from(self, value):
         if isinstance(value, type(self)):
@@ -118,8 +139,8 @@ if __name__ == '__main__':
     try:
         for book in env_inst.data_proxy.books.values():
             assert isinstance(book, Book)
-            if book.publish_year is None:
-                print(book.lib_index, book)
+            if isinstance(book.book_lib_index.main_class, float):
+                print(book.book_lib_index, book)
     except KeyboardInterrupt:
         env_inst.exit()
     finally:

@@ -4,7 +4,6 @@ import re
 import os
 
 from utils.Constants import event_type_chinese_map
-from utils import get_logger
 
 
 class DataObject(dict):
@@ -146,10 +145,78 @@ class RawDataProcessor(object):
                 return list()
 
 
+def convert_pdf_2_text(path: str):
+    from io import StringIO
+    from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+    from pdfminer.converter import TextConverter
+    from pdfminer.layout import LAParams
+    from pdfminer.pdfpage import PDFPage
+    retstr = StringIO()
+    rsrcmgr = PDFResourceManager()
+    device = TextConverter(rsrcmgr, retstr, codec='utf-8', laparams=LAParams())
+    interpreter = PDFPageInterpreter(rsrcmgr, device)
+    with open(path, 'rb') as fp:
+        for page in PDFPage.get_pages(fp, set()):
+            interpreter.process_page(page)
+        text = retstr.getvalue()
+    device.close()
+    retstr.close()
+    text_line = text.split('\n')
+    for line_no, line in enumerate(text_line):
+        print(line_no, line)
+    return text
+
+
+def compare_string(left: str, right: str):
+    if len(left) == 0 or len(right) == 0:
+        raise RuntimeWarning
+    count = 0
+    for item in left:
+        if item in right:
+            count += 1
+    return count * count / (len(left) * len(right))
+
+
+def load_listst_one():
+    """2014新生专题书架-207种"""
+    from Environment import Environment
+    from extended import CountingDict
+    from structures import Book
+    from utils import save_csv
+    env = Environment()
+    content = convert_pdf_2_text('/Users/mingo/Nutstore Files/我的坚果云/清华大学图书馆-系列书单推荐/2014新生专题书架-207种.pdf')
+    book_index_list = list()
+    content_to_be_processed = list()
+    content_to_be_processed.append(('book_name', 'possible'))
+    for line in content.split('\n'):
+        if len(line.replace(' ', '')) == 0:
+            continue
+        counter = CountingDict()
+        for book in env.data_proxy.books.values():
+            assert isinstance(book, Book)
+            if len(book.name) == 0:
+                continue
+            counter.__setitem__(book.index, compare_string(line, book.name))
+        counter.trim(lower_limit=0.9)
+        if len(counter) == 1:
+            book_index_list.append(list(counter.keys())[0])
+        elif len(counter) == 0:
+            continue
+        else:
+            content_to_be_processed.append((line, ''))
+            for b_i in counter.sort(inverse=True):
+                content_to_be_processed.append(('', str(env.data_proxy.books[b_i])))
+                # print(b_i, env.data_proxy.books[b_i], counter[b_i])
+            # raise NotImplementedError
+    save_csv(content_to_be_processed, os.path.expanduser('~/Downloads/test.csv'))
+    print(book_index_list)
+
+
 if __name__ == '__main__':
     import time
     start_time = time.time()
     # ------------------------------
+    load_listst_one()
     # ------------------------------
     end_time = time.time()
     duration = end_time - start_time
