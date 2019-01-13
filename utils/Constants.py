@@ -74,3 +74,7 @@ STUDENT_TYPES = tuple(__student_type__)
 OTHER_INDIVIDUAL_TYPES = ('41', '42', '43', '44', '45')
 
 NONE_INDIVIDUAL_TYPES = ('51', '52')
+
+QINGHUA_RECOMMEND_LIST = [
+    '2014新生专题书架-207种', '2017“走近小平”专题书架书目',
+]

@@ -181,11 +181,12 @@ def load_listst_one():
     """2014新生专题书架-207种"""
     from Environment import Environment
     from extended import CountingDict
-    from structures import Book
+    from structures import Book, RecommendListObject
     from utils import save_csv
     env = Environment()
     content = convert_pdf_2_text('/Users/mingo/Nutstore Files/我的坚果云/清华大学图书馆-系列书单推荐/2014新生专题书架-207种.pdf')
-    book_index_list = list()
+    # book_index_list = list()
+    book_set = set()
     content_to_be_processed = list()
     content_to_be_processed.append(('book_name', 'possible'))
     for line in content.split('\n'):
@@ -196,10 +197,17 @@ def load_listst_one():
             assert isinstance(book, Book)
             if len(book.name) == 0:
                 continue
-            counter.__setitem__(book.index, compare_string(line, book.name))
-        counter.trim(lower_limit=0.9)
+            similarity = compare_string(line, book.name)
+            if similarity >= 0.9:
+                counter.__setitem__(book.index, similarity)
+        counter.trim(lower_limit=0.92)
         if len(counter) == 1:
-            book_index_list.append(list(counter.keys())[0])
+            book_id = list(counter.keys())[0]
+            if book_id in book_set:
+                continue
+            env.data_proxy.sqlite.add(RecommendListObject('2014新生专题书架-207种', book_id))
+            book_set.add(book_id)
+            # book_index_list.append(list(counter.keys())[0])
         elif len(counter) == 0:
             continue
         else:
@@ -209,7 +217,7 @@ def load_listst_one():
                 # print(b_i, env.data_proxy.books[b_i], counter[b_i])
             # raise NotImplementedError
     save_csv(content_to_be_processed, os.path.expanduser('~/Downloads/test.csv'))
-    print(book_index_list)
+    # print(book_index_list)
 
 
 if __name__ == '__main__':

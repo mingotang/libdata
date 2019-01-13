@@ -19,6 +19,22 @@ LibIndexClassObject = namedtuple('LibIndexClassObject', [
 ])
 
 
+class RecommendListObject(object):
+    def __init__(self, list_name: str, book_index: str, rank: int = -1):
+        self.list_name, self.book_index, self.rank = list_name, book_index, rank
+
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData, Table, Column, String, Integer
+        assert isinstance(meta, MetaData)
+        return Table(
+            'recommend_list', meta,
+            Column('list_name', String, nullable=False, primary_key=True),
+            Column('book_index', String, nullable=False, primary_key=True),
+            Column('rank', Integer),
+        )
+
+
 class RecoResult(dict):
     def __init__(self):
         dict.__init__(self)
@@ -34,7 +50,7 @@ class RecoResult(dict):
 
     def derive_top(self, n: int = 1):
         if n < 1:
-            from utils.Exceptions import ParamOutOfRangeError
+            from extended.Exceptions import ParamOutOfRangeError
             raise ParamOutOfRangeError('n', (1, 'inf'), n)
         assert n >= 1
 
@@ -99,7 +115,7 @@ class TimeRange(object):
         elif isinstance(date, datetime.date):
             return datetime.datetime.combine(date, datetime.time())
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('date', (datetime.datetime, datetime.date), date)
 
     @property
@@ -125,9 +141,9 @@ class GrowthTimeRange(TimeRange):
         self.__growth_stage_tag__ = None
 
     def set_growth_stage(self, stage_tag: str, stage_list: list):
-        from utils.Exceptions import ParamTypeError
+        from extended.Exceptions import ParamTypeError
         if len(stage_list) == 0:
-            from utils.Exceptions import ParamNoContentError
+            from extended.Exceptions import ParamNoContentError
             raise ParamNoContentError('stage')
 
         if isinstance(stage_list[0], int):
