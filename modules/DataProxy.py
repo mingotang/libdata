@@ -78,8 +78,9 @@ class DataProxy(object):
             self.sqlite.metadata.create_all(checkfirst=True)
 
         self.book_dict = SqliteDict(self.__db__, Book, 'index')
-        self.reader_dict = SqliteDict(self.__db__, Reader, 'index')
         self.event_dict = SqliteDict(self.__db__, Event, 'hashable_key')
+        self.reader_dict = SqliteDict(self.__db__, Reader, 'index')
+        self.sum_book_dict = SqliteDict(self.__db__, SumBook, 'index')
 
         self.__books__, self.__events__, self.__readers__ = None, None, None
         self.__inducted_events__ = None
