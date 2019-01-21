@@ -5,7 +5,7 @@ import os
 from collections.abc import Mapping, Iterable
 from extended import DataDict, ShelveWrapper, SqliteWrapper
 
-from structures import Book, Event, Reader, RecommendListObject
+from structures import Book, BookMap, Event, Reader, RecommendListObject, SumBook
 
 
 class SqliteDict(Mapping, Iterable):
@@ -70,9 +70,11 @@ class DataProxy(object):
         if DataProxy.__db__ is None:
             DataProxy.__db__ = SqliteWrapper(db_path=os.path.join(self.__path__, 'libdata.db'))
             DataProxy.__db__.map(Book, Book.define_table(self.__db__.metadata))
+            DataProxy.__db__.map(BookMap, BookMap.define_table(self.__db__.metadata))
             DataProxy.__db__.map(Event, Event.define_table(self.__db__.metadata))
             DataProxy.__db__.map(Reader, Reader.define_table(self.__db__.metadata))
             DataProxy.__db__.map(RecommendListObject, RecommendListObject.define_table(self.__db__.metadata))
+            DataProxy.__db__.map(SumBook, SumBook.define_table(self.__db__.metadata))
             self.sqlite.metadata.create_all(checkfirst=True)
 
         self.book_dict = SqliteDict(self.__db__, Book, 'index')
@@ -203,6 +205,11 @@ def store_record_data():
     ShelveWrapper.init_from(event_store, os.path.join(env.data_path, 'events')).close()
 
     db.close()
+
+
+def store_sum_book():
+    from Environment import Environment
+
 
 
 if __name__ == '__main__':

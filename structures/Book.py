@@ -2,48 +2,26 @@
 import datetime
 
 from Interface import AbstractDataObject, AbstractEnvObject
-from structures.BookName import BookName
-from structures.BookISBN import BookISBN
 
 
-class Book(AbstractDataObject, AbstractEnvObject):
-    __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher', 'op_dt')
+class SumBook(AbstractDataObject, AbstractEnvObject):
+    __attributes__ = ('index', 'lib_index', 'name', 'author', )
 
-    def __init__(self, index: str, lib_index: str, name: str, isbn: str,
-                 author: str, year: str, publisher: str, op_dt=None):
+    def __init__(self, index: str, lib_index: str, name: str, author: str, ):
         AbstractDataObject.__init__(self)
         self.index = index
         self.lib_index = lib_index
         self.name = name
-        self.isbn = isbn
         self.author = author
-        self.year = year
-        self.publisher = publisher
-        self.op_dt = op_dt
 
     @property
     def hashable_key(self):
         return self.index
 
     @property
-    def publish_year(self):
-        year = int(self.year)
-        if 1800 <= year <= datetime.date.today().year:
-            return year
-        else:
-            return None
-
-    @property
     def book_name(self):
+        from structures.BookName import BookName
         return BookName(self.name)
-
-    @property
-    def update_date(self):
-        return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
-
-    @property
-    def book_isbn(self):
-        return BookISBN(self.isbn)
 
     @property
     def book_lib_index(self):
@@ -70,6 +48,47 @@ class Book(AbstractDataObject, AbstractEnvObject):
                     obj = self.env.book_lib_index_code_name_map[check_str[:i]]
         assert isinstance(obj, LibIndexClassObject)
         return obj
+
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData, Table, Column, String
+        assert isinstance(meta, MetaData)
+        return Table(
+            'sum_books', meta,
+            Column('index', String, nullable=False, primary_key=True),
+            Column('lib_index', String),
+            Column('name', String),
+            Column('author', String),
+        )
+
+
+class Book(SumBook):
+    __attributes__ = ('index', 'lib_index', 'name', 'isbn', 'author', 'year', 'publisher', 'op_dt')
+
+    def __init__(self, index: str, lib_index: str, name: str, isbn: str,
+                 author: str, year: str, publisher: str, op_dt=None):
+        SumBook.__init__(self, index=index, lib_index=lib_index, name=name, author=author)
+        self.isbn = isbn
+        self.year = year
+        self.publisher = publisher
+        self.op_dt = op_dt
+
+    @property
+    def book_isbn(self):
+        from structures.BookISBN import BookISBN
+        return BookISBN(self.isbn)
+
+    @property
+    def publish_year(self):
+        year = int(self.year)
+        if 1800 <= year <= datetime.date.today().year:
+            return year
+        else:
+            return None
+
+    @property
+    def update_date(self):
+        return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
 
     def update_from(self, value):
         if isinstance(value, type(self)):

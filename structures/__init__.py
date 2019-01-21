@@ -4,7 +4,7 @@ import datetime
 
 from collections import namedtuple
 
-from .Book import Book
+from .Book import Book, SumBook
 from .BookName import BookName
 from .DataObject import OrderedList
 from .Evaluator import Evaluator
@@ -32,6 +32,21 @@ class RecommendListObject(object):
             Column('list_name', String, nullable=False, primary_key=True),
             Column('book_index', String, nullable=False, primary_key=True),
             Column('rank', Integer),
+        )
+
+
+class BookMap(object):
+    def __init__(self, raw_book_id: str, content_id: str):
+        self.raw_book_id, self.content_id = raw_book_id, content_id
+
+    @staticmethod
+    def define_table(meta):
+        from sqlalchemy import MetaData, Table, Column, String
+        assert isinstance(meta, MetaData)
+        return Table(
+            'book_map', meta,
+            Column('raw_book_id', String, nullable=False, primary_key=True),
+            Column('content_id', String, nullable=False, primary_key=True),
         )
 
 
