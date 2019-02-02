@@ -68,7 +68,7 @@ def save_csv(content, *path, **kwargs):
     elif isinstance(content, pd.DataFrame):
         content.to_csv(file_path, encoding=file_encoding)
     else:
-        from utils.Exceptions import ParamTypeError
+        from extended.Exceptions import ParamTypeError
         raise ParamTypeError('content', 'list(list)/pd.DataFrame', content)
 
 

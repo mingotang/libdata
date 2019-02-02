@@ -78,6 +78,7 @@ class DataProxy(object):
             self.sqlite.metadata.create_all(checkfirst=True)
 
         self.book_dict = SqliteDict(self.__db__, Book, 'index')
+        self.book_map_dict = SqliteDict(self.__db__, BookMap, 'raw_book_id')
         self.event_dict = SqliteDict(self.__db__, Event, 'hashable_key')
         self.reader_dict = SqliteDict(self.__db__, Reader, 'index')
         self.sum_book_dict = SqliteDict(self.__db__, SumBook, 'index')
@@ -210,14 +211,33 @@ def store_record_data():
 
 def store_sum_book():
     from Environment import Environment
-
+    env = Environment.get_instance()
+    sum_book_dict = DataDict()
+    book_map_list = list()
+    for book in env.data_proxy.book_dict.values():
+        env.log.debug('{} {}'.format(len(sum_book_dict), str(book)))
+        assert isinstance(book, Book)
+        try:
+            sum_book_dict.find_value_where(lib_index=book.book_lib_index.main_class).find_value(
+                name=book.name, author=book.cleaned_author)
+        except ValueError:
+            sum_book = SumBook(
+                index=str(len(sum_book_dict) + 1), lib_index=book.book_lib_index.main_class,
+                name=book.name, author=book.cleaned_author
+            )
+            assert isinstance(sum_book, SumBook)
+            sum_book_dict[sum_book.index] = sum_book
+            book_map_list.append(BookMap(book.index, sum_book.index))
+    env.data_proxy.__db__.add_all(list(sum_book_dict.values()))
+    env.data_proxy.__db__.add_all(book_map_list)
 
 
 if __name__ == '__main__':
     # ------------------------------
     from Environment import Environment
     env_instance = Environment()
-    store_record_data()
+    # store_record_data()
+    store_sum_book()
     env_instance.exit()
     # store_readers_and_books()
     # data_manager = DataManager(writeback=False)

@@ -6,7 +6,6 @@ from collections import namedtuple
 
 from .Book import Book, SumBook
 from .BookName import BookName
-from .DataObject import OrderedList
 from .Evaluator import Evaluator
 from .Event import Event
 from .BookISBN import BookISBN

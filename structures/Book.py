@@ -1,5 +1,6 @@
 # -*- encoding: UTF-8 -*-
 import datetime
+import re
 
 from Interface import AbstractDataObject, AbstractEnvObject
 
@@ -51,7 +52,7 @@ class SumBook(AbstractDataObject, AbstractEnvObject):
 
     @staticmethod
     def define_table(meta):
-        from sqlalchemy import MetaData, Table, Column, String
+        from sqlalchemy import MetaData, Table, Column, String, Integer
         assert isinstance(meta, MetaData)
         return Table(
             'sum_books', meta,
@@ -72,6 +73,22 @@ class Book(SumBook):
         self.year = year
         self.publisher = publisher
         self.op_dt = op_dt
+
+    @property
+    def cleaned_author(self):
+        from extended import is_chinese_char
+        if len(self.author) > 0:
+            chi_count = 0
+            for char in self.author:
+                if is_chinese_char(char):
+                    chi_count += 1
+            # 中文作者名
+            if chi_count >= 0.5:
+                return re.sub(r'\W', '', self.author)
+            else:
+                return self.author
+        else:
+            return ''
 
     @property
     def book_isbn(self):
@@ -158,8 +175,7 @@ if __name__ == '__main__':
     try:
         for book in env_inst.data_proxy.books.values():
             assert isinstance(book, Book)
-            if isinstance(book.book_lib_index.main_class, float):
-                print(book.book_lib_index, book)
+            print(book.cleaned_author)
     except KeyboardInterrupt:
         env_inst.exit()
     finally:

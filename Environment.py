@@ -11,7 +11,7 @@ class Environment(object):
     _env = None
 
     def __init__(self):
-        from utils import load_yaml
+        from utils import load_yaml, get_logger
         if Environment._env is None:
             Environment._env = self
         else:
@@ -19,6 +19,7 @@ class Environment(object):
 
         # public
         self.config = load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.yaml'))
+        self.log = get_logger(self.__class__.__name__)
 
         # private
         self.__data__ = dict()
