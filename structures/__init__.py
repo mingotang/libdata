@@ -5,10 +5,8 @@ import datetime
 from collections import namedtuple
 
 from .Book import Book, SumBook
-from .BookName import BookName
 from .Evaluator import Evaluator
 from .Event import Event
-from .BookISBN import BookISBN
 from .Reader import Reader
 from .SparseVector import SparseVector
 

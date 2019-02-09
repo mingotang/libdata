@@ -47,6 +47,53 @@ class Event(AbstractDataObject, AbstractEnvObject):
             else:
                 return int(((self.date - reader.register_date) / datetime.timedelta(days=1)) / 30)
 
+    @property
+    def sum_book_id(self):
+        return self.env.data_proxy.book_map_dict.get(self.book_id).content_id
+
+    @property
+    def hashable_key(self):
+        return '|'.join([self.book_id, self.reader_id, self.event_date, self.event_type])
+
+    @property
+    def correspond_sum_book(self):
+        from structures.Book import SumBook
+        sum_book = self.env.data_proxy.sum_book_dict.get(self.sum_book_id)
+        assert isinstance(sum_book, SumBook)
+        return sum_book
+
+    @property
+    def correspond_reader(self):
+        from structures.Reader import Reader
+        reader = self.env.data_proxy.readers[self.reader_id]
+        assert isinstance(reader, Reader), str(self)
+        return reader
+
+    @property
+    def correspond_book(self):
+        from structures.Book import Book
+        book = self.env.data_proxy.books[self.book_id]
+        assert isinstance(book, Book), str(self)
+        return book
+
+    @property
+    def book_index_main_class(self):
+        """书目索引号类别"""
+        return self.correspond_book.book_lib_index.main_class
+
+    @property
+    def book_index_sub_class(self):
+        return self.correspond_book.book_lib_index.sub_class
+
+    @property
+    def book_index_base_class(self):
+        return self.correspond_book.book_lib_index.base_class
+
+    @property
+    def book_index_name(self):
+        """书目索引号类别"""
+        return self.correspond_book.book_lib_index.name
+
     def update_from(self, value):
         if isinstance(value, type(self)):
             if self == value:
@@ -80,42 +127,6 @@ class Event(AbstractDataObject, AbstractEnvObject):
             from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)
         return new
-
-    @property
-    def hashable_key(self):
-        return '|'.join([self.book_id, self.reader_id, self.event_date, self.event_type])
-
-    @property
-    def correspond_reader(self):
-        from structures.Reader import Reader
-        reader = self.env.data_proxy.readers[self.reader_id]
-        assert isinstance(reader, Reader), str(self)
-        return reader
-
-    @property
-    def correspond_book(self):
-        from structures.Book import Book
-        book = self.env.data_proxy.books[self.book_id]
-        assert isinstance(book, Book), str(self)
-        return book
-
-    @property
-    def book_index_main_class(self):
-        """书目索引号类别"""
-        return self.correspond_book.book_lib_index.main_class
-
-    @property
-    def book_index_sub_class(self):
-        return self.correspond_book.book_lib_index.sub_class
-
-    @property
-    def book_index_base_class(self):
-        return self.correspond_book.book_lib_index.base_class
-
-    @property
-    def book_index_name(self):
-        """书目索引号类别"""
-        return self.correspond_book.book_lib_index.name
 
     @staticmethod
     def define_table(meta):

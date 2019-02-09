@@ -17,7 +17,7 @@ class RuleGenCF(RuleGenerator):
         from algorithm.CollaborativeFiltering import CollaborativeFiltering
         assert isinstance(time_range, StandardTimeRange)
 
-        events_data = self.__data_proxy__.events
+        events_data = self.env.data_proxy.events
         self.log.debug_running('trimming event data from date {} to date {}'.format(
             time_range.start_time.date(), time_range.end_time.date()))
         events_data.trim_between_range(
@@ -32,7 +32,7 @@ class RuleGenCF(RuleGenerator):
         cf_result.set_item_vector_value_tag('times')
         cf_result = cf_result.run(fixed_size=5, max_recommend_list=100)
 
-        readers = self.__data_proxy__.readers
+        readers = self.env.data_proxy.readers
         for key in list(cf_result.keys()):
             reader = readers[key]
             from structures import Reader
@@ -50,7 +50,7 @@ class RuleGenCF(RuleGenerator):
             time_range.start_time.date(), time_range.end_time.date()
         ))
         self.log.debug_running('trimming event data by event_type 50/62/63')
-        events_data = self.__data_proxy__.events.trim_between_range(
+        events_data = self.env.data_proxy.events.trim_between_range(
             attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
             include_start=True, include_end=False, inline=True
         ).trim_by_range('event_type', ('50', '62', '63'), inline=True)
@@ -59,7 +59,7 @@ class RuleGenCF(RuleGenerator):
 
         stage_tag, stage_list = time_range.growth_stage
         cf_result = RecoResult()
-        readers = self.__data_proxy__.readers
+        readers = self.env.data_proxy.readers
         for i in range(len(stage_list)):
             stage = stage_list[i]
 

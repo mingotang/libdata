@@ -5,6 +5,11 @@
 class Evaluator(object):
 
     def __init__(self, actual_data, predicted_data):
+        """
+
+        :param actual_data: dict{ reader_id: list(book1, book2, ...)}
+        :param predicted_data:
+        """
         from collections import Mapping
         assert isinstance(actual_data, Mapping)
         assert isinstance(predicted_data, Mapping)
@@ -35,9 +40,9 @@ class Evaluator(object):
         return len(recommend_set) / len(data_set)
 
     def f_value(self):
-        presicion = self.precision_accuracy()
+        precision = self.precision_accuracy()
         recall = self.recall_accuracy()
-        return 2 * presicion * recall / (presicion + recall)
+        return 2 * precision * recall / (precision + recall)
 
     def recall_accuracy(self):
 
@@ -87,7 +92,7 @@ class Evaluator(object):
     def top_n_accuracy(self, n: int):
         """评价单个预测结果落在前n个实际结果中的比例 -> float"""
         if n < 1:
-            from utils.Exceptions import ParamOutOfRangeError
+            from extended.Exceptions import ParamOutOfRangeError
             raise ParamOutOfRangeError('n', (1, 'inf'), n)
 
         match_count, hit_count = 0, 0.0
@@ -115,7 +120,7 @@ class Evaluator(object):
 
         return hit_count / match_count
 
-    def front_i_top_n_accuracy(self, i: int=1, n: int=100):
+    def front_i_top_n_accuracy(self, i: int = 1, n: int = 100):
         """评价若干个预测结果可以覆盖多少比例的实际结果 -> float"""
         assert i >= 1 and n >= 1
         match_count, hit_count = 0, 0.0

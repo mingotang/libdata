@@ -40,11 +40,10 @@ class CollaborativeFiltering(object):
 
         :param events_dict: DataDict
         """
-        from structures import DataDict
         from utils import get_logger
         self.__logger__ = get_logger(module_name=self.__class__.__name__)
 
-        assert isinstance(events_dict, DataDict)
+        assert isinstance(events_dict, dict)
         self.__events__ = events_dict
 
         self.__main_tag__, self.__item_tag__ = None, None
