@@ -20,12 +20,12 @@ class RuleGenCF(RuleGenerator):
         events_data = self.env.data_proxy.events
         self.log.debug_running('trimming event data from date {} to date {}'.format(
             time_range.start_time.date(), time_range.end_time.date()))
-        events_data.trim_between_range(
+        events_data.trim_include_between_attr_value(
             attr_tag='date', range_start=time_range.start_time.date(), range_end=time_range.end_time.date(),
             include_start=True, include_end=False, inline=True, )
 
         self.log.debug_running('trimming event data by event_type 50/62/63')
-        events_data.trim_by_range('event_type', ('50', '62', '63'), inline=True)
+        events_data.trim_include_by_attr_value('event_type', ('50', '62', '63'), inline=True)
 
         cf_result = CollaborativeFiltering(events_data).set_relation_tag('reader_id', 'book_id')
         cf_result.set_neighbor_type(CF_NeighborType.FixSize).set_similarity_type(CF_SimilarityType.Cosine)

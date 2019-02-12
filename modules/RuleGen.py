@@ -45,42 +45,9 @@ class RuleGenerator(AbstractEnvObject):
         print('2015 events: {}'.format(
             events.trim_between_range('date', datetime.date(2015, 1, 1), datetime.date(2016, 1, 1))))
 
-    def statistic_one(self):
+    def statistic(self):
         """"""
-        from collections import defaultdict
-        from extended import CountingDict
-        from structures import Book, Event
-        from tqdm import tqdm
-        from utils import save_csv
-
-        for lib_index_key, event_dict in self.env.data_proxy.events.group_by_attr('book_index_main_class').items():
-            self.log.debug_running('statistic_one', lib_index_key)
-            book_weight_dict = defaultdict(CountingDict)
-            for event in tqdm(event_dict.values(), desc='collect book_weight_dict'):
-                assert isinstance(event, Event)
-                try:
-                    book_weight_dict[event.book_id].count(event.date.year - event.correspond_book.publish_year)
-                except TypeError:
-                    book_weight_dict[event.book_id].count(1)
-
-            book_weight = CountingDict()
-            for book_id, book_count in tqdm(book_weight_dict.items(), desc='collect book_weight'):
-                weighted_sum = 0
-                for k, v in book_count.items():
-                    weighted_sum += k * v
-                book_weight.set(book_id, weighted_sum / book_count.sum)
-
-            self.log.debug_running('outputing result')
-            output_csv = [['book_name', 'author', 'weight'], ]
-            for key in book_weight.sort(inverse=True):
-                if len(key) == 0:
-                    continue
-                book = self.env.data_proxy.books[key]
-                assert isinstance(book, Book)
-                output_csv.append([book.name, book.author, book_weight.get(key)])
-            save_csv(output_csv, self.__operation_path__, '..', 'book_weight_one_{}.csv'.format(
-                self.env.book_lib_index_code_name_map[lib_index_key].name,
-            ))
+        pass
 
     @staticmethod
     def __evaluation_list__(evaluator, top_n: int = 10):
@@ -135,7 +102,7 @@ class RuleGenerator(AbstractEnvObject):
         #         time_range.end_time.date() + datetime.timedelta(days=30), inline=True
         #     ).sort_by_attr('date').to_attr_list('book_id')
         #     actual_data[reco_key] = events_list
-        inducted_events = self.__data_proxy__.inducted_events.to_dict()
+        inducted_events = self.env.data_proxy.inducted_events.to_dict()
         for reco_key, events_list in inducted_events.items():
             # from structures import OrderedList
             # assert isinstance(events_list, OrderedList)
@@ -191,7 +158,7 @@ if __name__ == '__main__':
     rule_generator.log.initiate_time_counter()
 
     try:
-        rule_generator.statistic_one()
+        rule_generator.statistic()
 
     except KeyboardInterrupt:
         env_inst.exit()
