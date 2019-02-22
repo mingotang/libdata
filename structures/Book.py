@@ -164,10 +164,10 @@ class Book(SumBook):
         )
 
 
-BOOK_NAME_BLACK_LIST = (
-    '与', '和', '的', '及', '及其',
-    'a', 's', 'of', 'or', 'for', 'and', 'on', 'in', 'to', 'the',
-)
+# BOOK_NAME_BLACK_LIST = (
+#     '与', '和', '的', '及', '及其',
+#     'a', 's', 'of', 'or', 'for', 'and', 'on', 'in', 'to', 'the',
+# )
 
 
 class BookName(object):
@@ -177,15 +177,26 @@ class BookName(object):
 
     @property
     def cleaned_list(self):
-        import jieba
+        import time
+        # import jieba
+        # import jieba.analyse
+        import jieba.posseg
         name_list = list()
-        for item in list(jieba.cut(re.sub(r'\W', ' ', self.__data__))):
+        # for item in jieba.lcut(re.sub(r'[^+\w]', ' ', self.__data__)):
+        for item, flag in jieba.posseg.cut(re.sub(r'[^+\w]', ' ', self.__data__)):
+            # for item in jieba.analyse.textrank(
+            #         re.sub(r'[^+\w]', ' ', self.__data__), allowPOS=('ns', 'n', 'vn')
+            # ):
+            if flag in ('uj', 'p', 'c'):
+                continue
             if len(re.sub(r' ', '', item)) == 0:
                 continue
-            if item.lower() in BOOK_NAME_BLACK_LIST:
-                continue
+            # if item.lower() in BOOK_NAME_BLACK_LIST:
+            #     continue
             if item.isdigit():
                 continue
+            print(item, flag)
+            time.sleep(0.3)
             name_list.append(item.lower())
         return name_list
 
@@ -280,7 +291,13 @@ if __name__ == '__main__':
     try:
         for book in env_inst.data_proxy.books.values():
             assert isinstance(book, Book)
-            print(book.cleaned_author)
+            book.log.info('book_name: {}, key_words: {}'.format(book.name, book.book_name.cleaned_list))
+            # print_list = list()
+            # for item in book.book_name.cleaned_list:
+            #     if len(item) == 1:
+            #         print_list.append(item)
+            # if len(print_list) > 0:
+            #     book.log.info("{} - {}".format(print_list, book))
     except KeyboardInterrupt:
         env_inst.exit()
     finally:

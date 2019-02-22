@@ -45,7 +45,7 @@ class Reader(AbstractDataObject):
                             self.__dict__[tag] = value.__dict__[tag]
             return self
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', '{}'.format(self.__class__.__name__), value)
 
     def compare_by(self, **kwargs):
@@ -67,7 +67,7 @@ class Reader(AbstractDataObject):
                 op_dt=value['event_date'],
             )
         else:
-            from utils.Exceptions import ParamTypeError
+            from extended.Exceptions import ParamTypeError
             raise ParamTypeError('value', 'dict/DataObject', value)
         return new
 

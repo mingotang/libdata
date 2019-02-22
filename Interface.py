@@ -14,6 +14,13 @@ class AbstractEnvObject:
         assert isinstance(env, Environment)
         return env
 
+    @property
+    def log(self):
+        from utils import LogWrapper
+        logger = self.env.log
+        assert isinstance(logger, LogWrapper)
+        return logger
+
 
 class AbstractDataObject(AbstractPersistObject):
     __attributes__ = tuple()

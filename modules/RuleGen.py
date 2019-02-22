@@ -47,7 +47,11 @@ class RuleGenerator(AbstractEnvObject):
 
     def statistic(self):
         """"""
-        pass
+        # 获取 2013-2015 年注册的用户数量
+        readers = self.env.data_proxy.reader_dict.to_data_dict()
+        print('2013年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2013))))
+        print('2014年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2014))))
+        print('2015年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2015))))
 
     @staticmethod
     def __evaluation_list__(evaluator, top_n: int = 10):

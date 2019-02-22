@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import platform
 
 
 class Environment(object):
@@ -36,7 +37,10 @@ class Environment(object):
 
     @property
     def data_path(self):
-        d_path = self.config.get('Resources', dict()).get('DataPath')
+        if platform.system() == 'Darwin':
+            d_path = os.path.expanduser(self.config.get('Resources', dict()).get('MacDataPath'))
+        else:
+            raise NotImplementedError(platform.system())
         if not os.path.exists(d_path):
             os.makedirs(d_path)
         return d_path
@@ -46,7 +50,7 @@ class Environment(object):
         from modules.DataProxy import DataProxy
         data_proxy = self.__data__.get('data_proxy')
         if data_proxy is None:
-            data_proxy = DataProxy(data_path=self.config.get('Resources', dict()).get('DataPath'))
+            data_proxy = DataProxy(data_path=self.data_path)
             self.__data__.__setitem__('data_proxy', data_proxy)
         assert isinstance(data_proxy, DataProxy), 'set DataProxy before using.'
         return data_proxy
