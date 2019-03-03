@@ -55,15 +55,96 @@ class Environment(object):
         assert isinstance(data_proxy, DataProxy), 'set DataProxy before using.'
         return data_proxy
 
-    @property
-    def book_lib_index_code_name_map(self):
-        """索引号 编码 - 名称 的字典 -> dict"""
+    # @property
+    # def book_lib_index_code_name_map(self):
+    #     """索引号 编码 - 名称 的字典 -> dict"""
+    #     book_lib_index_code_name_map = self.__data__.get('book_lib_index_code_name_map')
+    #     if book_lib_index_code_name_map is None:
+    #         from pandas import read_csv
+    #         from structures import LibIndexClassObject
+    #         pd_data = read_csv(
+    #             os.path.join(self.root_path, 'data', 'ChineseLibraryBookClassification.csv'),
+    #             header=None,
+    #         )
+    #         pd_data.fillna(value='', inplace=True)
+    #         book_lib_index_code_name_map = dict()
+    #         for index in pd_data.index:
+    #             code_name_map = book_lib_index_code_name_map
+    #             new_obj = LibIndexClassObject(
+    #                 pd_data.loc[index, 0], pd_data.loc[index, 1], pd_data.loc[index, 2], pd_data.loc[index, 3]
+    #             )
+    #             if len(new_obj.base_class) > 0:
+    #                 tag = new_obj.base_class
+    #             elif len(new_obj.sub_class) > 0:
+    #                 tag = new_obj.sub_class
+    #             elif len(new_obj.main_class) > 0:
+    #                 tag = new_obj.main_class
+    #             else:
+    #                 raise NotImplementedError(new_obj)
+    #             for char in tag:
+    #                 if char == '.':
+    #                     break
+    #                 if char not in code_name_map:
+    #                     code_name_map[char] = dict()
+    #                 code_name_map = code_name_map[char]
+    #             code_name_map[None] = new_obj
+    #         self.__data__.__setitem__('book_lib_index_code_name_map', book_lib_index_code_name_map)
+    #     assert isinstance(book_lib_index_code_name_map, dict)
+    #     return book_lib_index_code_name_map
+
+    def find_book_lib_index(self, lib_index: str):
+        from structures import LibIndexClassObject
         book_lib_index_code_name_map = self.__data__.get('book_lib_index_code_name_map')
         if book_lib_index_code_name_map is None:
-            self.__load_book_index_info__()
-            book_lib_index_code_name_map = self.book_lib_index_code_name_map
+            from pandas import read_csv
+            pd_data = read_csv(
+                os.path.join(self.root_path, 'data', 'ChineseLibraryBookClassification.csv'),
+                header=None,
+            )
+            pd_data.fillna(value='', inplace=True)
+            book_lib_index_code_name_map = dict()
+            for index in pd_data.index:
+                code_name_map = book_lib_index_code_name_map
+                new_obj = LibIndexClassObject(
+                    pd_data.loc[index, 0], pd_data.loc[index, 1], pd_data.loc[index, 2], pd_data.loc[index, 3]
+                )
+                if len(new_obj.base_class) > 0:
+                    tag = new_obj.base_class
+                elif len(new_obj.sub_class) > 0:
+                    tag = new_obj.sub_class
+                elif len(new_obj.main_class) > 0:
+                    tag = new_obj.main_class
+                else:
+                    raise NotImplementedError(new_obj)
+                for char in tag:
+                    if char == '.':
+                        break
+                    if char not in code_name_map:
+                        code_name_map[char] = dict()
+                    code_name_map = code_name_map[char]
+                code_name_map[None] = new_obj
+            self.__data__.__setitem__('book_lib_index_code_name_map', book_lib_index_code_name_map)
         assert isinstance(book_lib_index_code_name_map, dict)
-        return book_lib_index_code_name_map
+        code_name_map = book_lib_index_code_name_map
+        obj, last_obj = None, None
+        for char in lib_index:
+            if char in code_name_map:
+                code_name_map = code_name_map[char]
+            else:
+                try:
+                    obj = code_name_map[None]
+                except KeyError:
+                    obj = last_obj
+                break
+            if None in code_name_map:
+                last_obj = code_name_map[None]
+        if obj is None:
+            try:
+                obj = code_name_map[None]
+            except KeyError:
+                return None
+        assert isinstance(obj, LibIndexClassObject)
+        return obj
 
     def __load_book_index_info__(self):
         from pandas import read_csv

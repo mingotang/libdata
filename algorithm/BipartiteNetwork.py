@@ -1,44 +1,47 @@
 # -*- encoding: UTF-8 -*-
 # ---------------------------------import------------------------------------
-from extended import CountingDict, DataDict
-
 from structures import SparseVector
 from structures import Event
+
+from extended import CountingDict, ObjectList
+
+
+class BipartiteNetworkBaseConnection(object):
+    def __init__(self, subject: str, item: str, weight: float):
+        self.subject = subject
+        self.item = item
+        self.weight = weight
 
 
 class BipartiteNetwork(object):
 
-    def __init__(self, event_dict, in_memory: bool = True):
-        from extended import ShelveWrapper
+    def __init__(self, con_list):
+        from collections import Iterable
         from Environment import Environment
         from utils import get_logger
+        assert isinstance(con_list, Iterable)
         self.log = get_logger(module_name=self.__class__.__name__)
         self.env = Environment.get_instance()
 
-        if in_memory is True:
-            if isinstance(event_dict, DataDict):
-                self.__event_dict__ = event_dict
-            elif isinstance(event_dict, (dict, ShelveWrapper)):
-                self.__event_dict__ = DataDict.init_from(event_dict)
+        self.con_list = ObjectList()
+        for obj in con_list:
+            if isinstance(obj, BipartiteNetworkBaseConnection):
+                self.con_list.append(obj)
             else:
-                from extended.Exceptions import ParamTypeError
-                raise ParamTypeError('event_dict', 'dict/ShelveWrapper/DataDict', event_dict)
-        else:
-            raise NotImplementedError
+                raise NotImplementedError(type(obj))
 
-        self.log.debug_running('init', 'book_weight/reader_weight')
-        self.book_weight = self.__init_weight__('book_id')    # 书籍权重
-        self.reader_weight = self.__init_weight__('reader_id')    # 读者权重
-        # self.__calculated_bw__ = SparseVector()    # 计算书籍权重
-        # self.__calculated_rw__ = SparseVector()     # 计算读者权重
+        self.subject_weight = self.__init_weight__('subject')
+        self.item_weight = self.__init_weight__('item')
+        self.subject2item_dict = self.con_list.group_attr_set_by('item', 'subject')
+        self.item2subject_connection = dict()
 
     def __init_weight__(self, tag: str):
-        if isinstance(self.__event_dict__, DataDict):
-            data_dict = self.__event_dict__
-        else:
-            data_dict = DataDict.init_from(self.__event_dict__)
-        new_vector = SparseVector(len(data_dict.collect_attr_set(tag)))
-        new_vector.update(CountingDict.init_from(data_dict.collect_attr_list(tag)))
+        new_vector = SparseVector(len(self.con_list.collect_attr_set(tag)))
+        count_d = CountingDict()
+        for obj in self.con_list:
+            assert isinstance(obj, BipartiteNetworkBaseConnection)
+            count_d.count(getattr(obj, tag), obj.weight)
+        new_vector.update(count_d)
         return new_vector
 
     def __collect_max_book_occupy__(self):
@@ -71,11 +74,7 @@ class BipartiteNetwork(object):
         return max_occupy
 
     def run(self, reader_weight_first: bool = True, book_check: float = 0.01, reader_check: float = 0.01):
-        from tqdm import tqdm
-        if isinstance(self.__event_dict__, DataDict):
-            b_w, r_w = SparseVector(len(self.book_weight)), SparseVector(len(self.reader_weight))
-        else:
-            raise NotImplementedError
+        b_w, r_w = SparseVector(len(self.book_weight)), SparseVector(len(self.reader_weight))
 
         # self.__logger__.debug_running('init', 'repeat_times')
         repeat_times = dict()
@@ -87,12 +86,7 @@ class BipartiteNetwork(object):
         self.log.debug_running('init', 'book_count')
         book_count = self.__collect_max_book_occupy__()
 
-        self.log.debug_running('init', 'reader2book')
-        reader2book = self.__event_dict__.group_attr_set_by('book_id', 'reader_id')
-
         round_i = 0
-        # self.log.debug_running('round {} book weight'.format(round_i), str(self.book_weight))
-        # self.log.debug_running('round {} reader weight'.format(round_i), str(self.reader_weight))
         left_check, right_check = (self.book_weight - b_w).sum_squared, (self.reader_weight - r_w).sum_squared
         self.log.debug_running('round {}\tbook_check: {}'.format(round_i, left_check),
                                'reader_check: {}'.format(right_check))
@@ -101,7 +95,7 @@ class BipartiteNetwork(object):
             for book_id in self.book_weight.keys():
                 b_w[book_id] = self.reader_weight * repeat_times[book_id]
             for reader_id in self.reader_weight.keys():
-                r_w[reader_id] = sum([(self.book_weight[var] / book_count[var]) for var in reader2book[reader_id]])
+                r_w[reader_id] = sum([(self.book_weight[var] / book_count[var]) for var in self.subject2item[reader_id]])
             self.book_weight, self.reader_weight = b_w * (1.0 / b_w.sum), r_w * (1.0 / r_w.sum)
             # self.log.debug_running('round {} book weight'.format(round_i), str(self.book_weight))
             # self.log.debug_running('round {} reader weight'.format(round_i), str(self.reader_weight))

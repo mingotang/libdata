@@ -25,29 +25,7 @@ class SumBook(AbstractDataObject, AbstractEnvObject):
 
     @property
     def book_lib_index(self):
-        from structures import LibIndexClassObject
-        if '/' in self.lib_index:
-            check_str = self.lib_index.split('/')[0]
-        elif ' ' in self.lib_index:
-            check_str = self.lib_index.split(' ')[0]
-        elif '#' in self.lib_index:
-            check_str = self.lib_index.split('#')[0]
-        elif len(self.lib_index.replace(' ', '')) == 0:
-            check_str = ''
-        else:
-            check_str = self.lib_index
-
-        obj = LibIndexClassObject('', '', '', '')
-        if len(check_str) == 0:
-            pass
-        elif check_str in self.env.book_lib_index_code_name_map:
-            obj = self.env.book_lib_index_code_name_map[check_str]
-        else:
-            for i in range(min(len(check_str), 8), -1, -1):
-                if check_str[:i] in self.env.book_lib_index_code_name_map:
-                    obj = self.env.book_lib_index_code_name_map[check_str[:i]]
-        assert isinstance(obj, LibIndexClassObject)
-        return obj
+        return self.env.find_book_lib_index(self.lib_index)
 
     @staticmethod
     def define_table(meta):
@@ -177,7 +155,7 @@ class BookName(object):
 
     @property
     def cleaned_list(self):
-        import time
+        # import time
         # import jieba
         # import jieba.analyse
         import jieba.posseg
@@ -191,12 +169,10 @@ class BookName(object):
                 continue
             if len(re.sub(r' ', '', item)) == 0:
                 continue
-            # if item.lower() in BOOK_NAME_BLACK_LIST:
-            #     continue
             if item.isdigit():
                 continue
-            print(item, flag)
-            time.sleep(0.3)
+            # print(item, flag)
+            # time.sleep(0.3)
             name_list.append(item.lower())
         return name_list
 
@@ -289,15 +265,25 @@ if __name__ == '__main__':
     env_inst = Environment()
 
     try:
-        for book in env_inst.data_proxy.books.values():
+        from structures import LibIndexClassObject
+        unqualified_list = list()
+        for book in env_inst.data_proxy.book_dict.values():
             assert isinstance(book, Book)
-            book.log.info('book_name: {}, key_words: {}'.format(book.name, book.book_name.cleaned_list))
-            # print_list = list()
-            # for item in book.book_name.cleaned_list:
-            #     if len(item) == 1:
-            #         print_list.append(item)
-            # if len(print_list) > 0:
-            #     book.log.info("{} - {}".format(print_list, book))
+            book_lib_index = book.book_lib_index
+            # if book.book_lib_index is None:
+            #     print('\n'+'='*50)
+            #     print(book.book_lib_index)
+            #     print(book.lib_index)
+            #     print(book.name)
+            #     unqualified_list.append(book)
+            if isinstance(book_lib_index, LibIndexClassObject):
+                if len(book_lib_index.sub_class) == 0:
+                    print('\n'+'='*50)
+                    print(book.book_lib_index)
+                    print(book.lib_index)
+                    print(book.name)
+                    unqualified_list.append(book)
+        print(len(unqualified_list))
     except KeyboardInterrupt:
         env_inst.exit()
     finally:

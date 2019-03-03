@@ -212,7 +212,7 @@ def load_listst_one():
             continue
         else:
             content_to_be_processed.append((line, ''))
-            for b_i in counter.sort(inverse=True):
+            for b_i in counter.sort(reverse=True):
                 content_to_be_processed.append(('', str(env.data_proxy.books[b_i])))
                 # print(b_i, env.data_proxy.books[b_i], counter[b_i])
             # raise NotImplementedError

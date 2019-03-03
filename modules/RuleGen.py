@@ -4,6 +4,7 @@ import os
 import datetime
 
 from Interface import AbstractEnvObject
+from structures import Book, Event, Reader
 
 
 class RuleGenerator(AbstractEnvObject):
@@ -47,11 +48,127 @@ class RuleGenerator(AbstractEnvObject):
 
     def statistic(self):
         """"""
-        # 获取 2013-2015 年注册的用户数量
-        readers = self.env.data_proxy.reader_dict.to_data_dict()
-        print('2013年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2013))))
-        print('2014年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2014))))
-        print('2015年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2015))))
+        # ------------------------------------------ #
+        # # 获取 2013-2015 年注册的用户数量
+        # readers = self.env.data_proxy.reader_dict.to_data_dict()
+        # print('2013年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2013))))
+        # print('2014年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2014))))
+        # print('2015年注册的学生数量: {}'.format(len(readers.find_value_where(register_year=2015))))
+
+        # ------------------------------------------ #
+        # from os import path
+        # from tqdm import tqdm
+        # from structures import LibIndexClassObject
+        # from extended import CountingDict, ObjectDict, TextObjDict
+        #
+        # lib_class_event_dict = dict()
+        # books = self.env.data_proxy.book_dict.to_data_dict()
+        #
+        # for reader in tqdm(self.env.data_proxy.reader_dict.values(), desc='collect Event by lib index'):
+        #     assert isinstance(reader, Reader)
+        #
+        #     # 排除2013年之前注册的无法确定初次接触某个类别的学生
+        #     if reader.register_year is None:
+        #         continue
+        #     if reader.register_year < 2013:
+        #         continue
+        #
+        #     # events = self.env.data_proxy.events.find_value_where(reader_id=reader.index)
+        #     events = self.env.data_proxy.event_dict.query(Event).filter_by(
+        #         reader_id=reader.index).order_by('event_date').all()
+        #
+        #     for event in events:
+        #         assert isinstance(event, Event)
+        #
+        #         # 排除书籍归还事件
+        #         if event.event_type == '61':
+        #             continue
+        #
+        #         book = books[event.book_id]
+        #         assert isinstance(book, Book)
+        #
+        #         book_lib_index = book.book_lib_index
+        #         # 排除无法判断书籍类别的书籍
+        #         if book_lib_index is None:
+        #             continue
+        #         assert isinstance(book_lib_index, LibIndexClassObject)
+        #         if len(book_lib_index.sub_class) == 0:
+        #             continue
+        #
+        #         if book_lib_index.sub_class not in lib_class_event_dict:
+        #             lib_class_event_dict[book_lib_index.sub_class] = TextObjDict(
+        #                 path.join(self.env.data_path, 'lib_sub_class_events', book_lib_index.sub_class), Event,
+        #             )
+        #
+        #         lib_class_event_dict[book_lib_index.sub_class][event.hashable_key] = event
+
+        # ------------------------------------------ #
+        # from os import listdir, path
+        # from structures import Event
+        # from extended import CountingDict, TextObjDict
+        # counter = CountingDict()
+        # for tag in listdir(path.join(self.env.data_path, 'lib_sub_class_events')):
+        #     if tag.startswith('.'):
+        #         continue
+        #     counter.set(tag, len(TextObjDict(path.join(self.env.data_path, 'lib_sub_class_events', tag), Event)))
+        #
+        # csv_list = list()
+        #
+        # for tag in counter.sort(reverse=True):
+        #     lib_index = self.env.find_book_lib_index(tag)
+        #     event_dict = TextObjDict(path.join(self.env.data_path, 'lib_sub_class_events', tag), Event).to_object_dict()
+        #     length2013 = len(event_dict.find_value_where(date_year=2013))
+        #     length2014 = len(event_dict.find_value_where(date_year=2014))
+        #     length2015 = len(event_dict.find_value_where(date_year=2015))
+        #     print(tag, lib_index.name, counter.get(tag), length2013, length2014, length2015)
+        #
+        #     csv_list.append([tag, lib_index.name, counter.get(tag), length2013, length2014, length2015])
+        # print(len(counter))
+
+        # ------------------------------------------ #
+        from os import path
+        from extended import TextObjDict
+        lib_class = 'TP'
+        event_dict = TextObjDict(
+            path.join(self.env.data_path, 'lib_sub_class_events', lib_class), Event
+        ).to_object_dict()
+
+        # for lib_class_tag, event_dict in lib_class_event_dict.items():
+        #     csv_line_list = list()
+        #     assert isinstance(event_dict, ObjectDict)
+        #     book_name_keyword_dict = CountingDict()
+        #     for event in event_dict.values():
+        #         assert isinstance(event, Event)
+        #         book_name = event.correspond_book.book_name
+        #         assert isinstance(book_name, BookName)
+        #         for item in book_name.cleaned_list:
+        #             book_name_keyword_dict.count(item)
+        #
+        #     key_word_list = book_name_keyword_dict.sort(reverse=True)
+        #
+        #     csv_line_list.append(lib_class_tag)
+        #     csv_line_list.extend(key_word_list)
+        #
+        #     print(lib_class_tag, key_word_list)
+        #
+        #     csv_list.append(csv_line_list)
+        #
+        # from os import path
+        # from utils import save_csv
+        # save_csv(csv_list, path.expanduser('~/Downloads/output.csv'))
+
+        # # 获取书籍类别
+        # from structures import LibIndexClassObject
+        # books = self.env.data_proxy.book_dict.to_data_dict()
+        # for book in books.values():
+        #     assert isinstance(book, Book)
+        #     lib_index = book.book_lib_index
+        #     if lib_index is None:
+        #         continue
+        #     assert isinstance(lib_index, LibIndexClassObject)
+
+        from utils import save_csv
+        save_csv(csv_list, path.expanduser('~/Downloads/output.csv'))
 
     @staticmethod
     def __evaluation_list__(evaluator, top_n: int = 10):

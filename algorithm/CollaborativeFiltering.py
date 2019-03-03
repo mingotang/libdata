@@ -178,7 +178,7 @@ class CollaborativeFiltering(object):
 
     def __find_all_neighbors__(self, ui_tag: str, simi_type):
         """find all neighborhoods ordered by similarity -> list"""
-        return self.__calculate_neighbors__(ui_tag, simi_type).sort(inverse=True)
+        return self.__calculate_neighbors__(ui_tag, simi_type).sort(reverse=True)
 
     def __find_k_neighbors__(self, ui_tag: str, k_num: int, simi_type):
         assert k_num > 0
@@ -186,7 +186,7 @@ class CollaborativeFiltering(object):
 
     def __find_limited_neighbors__(self, ui_tag: str, limit: float, simi_type):
         simi = self.__calculate_neighbors__(ui_tag, simi_type).trim(lower_limit=limit)
-        return simi.sort(inverse=True)
+        return simi.sort(reverse=True)
 
 
 class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):

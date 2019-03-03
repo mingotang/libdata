@@ -36,6 +36,11 @@ class Event(AbstractDataObject, AbstractEnvObject):
         return datetime.datetime.strptime(self.event_date, '%Y%m%d').date()
 
     @property
+    def date_year(self):
+        """事件发生年份 -> int"""
+        return self.date.year
+
+    @property
     def month_from_reader_register(self):
         """从注册时间开始到借阅事件为止的月数"""
         reader = self.correspond_reader
@@ -75,24 +80,6 @@ class Event(AbstractDataObject, AbstractEnvObject):
         book = self.env.data_proxy.books[self.book_id]
         assert isinstance(book, Book), str(self)
         return book
-
-    @property
-    def book_index_main_class(self):
-        """书目索引号类别"""
-        return self.correspond_book.book_lib_index.main_class
-
-    @property
-    def book_index_sub_class(self):
-        return self.correspond_book.book_lib_index.sub_class
-
-    @property
-    def book_index_base_class(self):
-        return self.correspond_book.book_lib_index.base_class
-
-    @property
-    def book_index_name(self):
-        """书目索引号类别"""
-        return self.correspond_book.book_lib_index.name
 
     def update_from(self, value):
         if isinstance(value, type(self)):
