@@ -47,7 +47,7 @@ class BookMap(object):
         )
 
 
-class RecoResult(dict):
+class RecommendResult(dict):
     def __init__(self):
         dict.__init__(self)
 
@@ -66,7 +66,7 @@ class RecoResult(dict):
             raise ParamOutOfRangeError('n', (1, 'inf'), n)
         assert n >= 1
 
-        result = RecoResult()
+        result = RecommendResult()
         for key, value in self.items():
             if len(value) >= n:
                 result.add_list(key, value[:n])

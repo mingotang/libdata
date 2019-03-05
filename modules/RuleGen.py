@@ -17,16 +17,16 @@ class RuleGenerator(AbstractEnvObject):
 
     def __load_result__(self, result_data):
         import os
-        from structures import RecoResult
+        from structures import RecommendResult
 
         if isinstance(result_data, str):
             result_data = os.path.join(self.__operation_path__, result_data)
-            result = RecoResult.load_csv(result_data)
-        elif isinstance(result_data, RecoResult):
+            result = RecommendResult.load_csv(result_data)
+        elif isinstance(result_data, RecommendResult):
             result = result_data
         else:
             from extended.Exceptions import ParamTypeError
-            raise ParamTypeError('result_data', (str, RecoResult), result_data)
+            raise ParamTypeError('result_data', (str, RecommendResult), result_data)
 
         return result
 
@@ -116,7 +116,9 @@ class RuleGenerator(AbstractEnvObject):
         #
         # for tag in counter.sort(reverse=True):
         #     lib_index = self.env.find_book_lib_index(tag)
-        #     event_dict = TextObjDict(path.join(self.env.data_path, 'lib_sub_class_events', tag), Event).to_object_dict()
+        #     event_dict = TextObjDict(
+        #         path.join(self.env.data_path, 'lib_sub_class_events', tag), Event
+        #     ).to_object_dict()
         #     length2013 = len(event_dict.find_value_where(date_year=2013))
         #     length2014 = len(event_dict.find_value_where(date_year=2014))
         #     length2015 = len(event_dict.find_value_where(date_year=2015))
@@ -126,33 +128,149 @@ class RuleGenerator(AbstractEnvObject):
         # print(len(counter))
 
         # ------------------------------------------ #
-        from os import path
-        from extended import TextObjDict
-        lib_class = 'TP'
-        event_dict = TextObjDict(
-            path.join(self.env.data_path, 'lib_sub_class_events', lib_class), Event
-        ).to_object_dict()
-
-        # for lib_class_tag, event_dict in lib_class_event_dict.items():
-        #     csv_line_list = list()
-        #     assert isinstance(event_dict, ObjectDict)
-        #     book_name_keyword_dict = CountingDict()
-        #     for event in event_dict.values():
+        # from os import path
+        # from json import dump as json_dump
+        # # from pickle import dump as pickle_dump
+        # from collections import defaultdict
+        # start_date, end_date = datetime.date(2013, 1, 1), datetime.date(2015, 12, 31)
+        # max_occupy, now_occupy = defaultdict(int), defaultdict(int)
+        #
+        # now_date = start_date
+        # while now_date <= end_date:
+        #     self.log.debug('seaching events {}'.format(now_date))
+        #     for event in self.env.data_proxy.event_dict.query(Event).filter_by(
+        #             event_date=now_date.strftime('%Y%m%d')).all():
         #         assert isinstance(event, Event)
-        #         book_name = event.correspond_book.book_name
-        #         assert isinstance(book_name, BookName)
-        #         for item in book_name.cleaned_list:
-        #             book_name_keyword_dict.count(item)
+        #         if event.event_type == '61':  # 还书
+        #             if now_occupy[event.book_id] > 0:
+        #                 if max_occupy[event.book_id] < now_occupy[event.book_id]:
+        #                     max_occupy[event.book_id] = now_occupy[event.book_id]
+        #                 else:
+        #                     pass
+        #                 now_occupy[event.book_id] = now_occupy[event.book_id] - 1
+        #             else:
+        #                 if max_occupy[event.book_id] < 1:
+        #                     max_occupy[event.book_id] = 1
+        #                 else:
+        #                     pass
+        #         else:
+        #             now_occupy[event.book_id] = now_occupy[event.book_id] + 1
+        #             if max_occupy[event.book_id] < now_occupy[event.book_id]:
+        #                 max_occupy[event.book_id] = now_occupy[event.book_id]
+        #             else:
+        #                 pass
+        #     now_date += datetime.timedelta(days=1)
+        # json_dump(max_occupy.copy(), open(path.expanduser('~/Downloads/output.pick'), 'w'))
+
+        # ------------------------------------------ #
+        # from os import path
+        # from json import load as json_load
+        # from json import dump as json_dump
+        # from algorithm.BipartiteNetwork import BipartiteNetworkBaseConnection, BipartiteNetwork
+        # from extended import CountingDict, TextObjDict
+        # lib_class = 'TP'
+        # event_dict = TextObjDict(
+        #     path.join(self.env.data_path, 'lib_sub_class_events', lib_class), Event
+        # ).to_object_dict()
+        # bn0, bn1, bn2 = list(), list(), list()
         #
-        #     key_word_list = book_name_keyword_dict.sort(reverse=True)
+        # for reader_id, sub_event_dict in event_dict.group_by_attr('reader_id').items():
+        #     reader = self.env.data_proxy.readers[reader_id]
+        #     assert isinstance(reader, Reader)
         #
-        #     csv_line_list.append(lib_class_tag)
-        #     csv_line_list.extend(key_word_list)
+        #     first_date = min(sub_event_dict.collect_attr_set('date'))
+        #     assert isinstance(first_date, datetime.date)
+        #     # last_date = max(sub_event_dict.collect_attr_set('date'))
         #
-        #     print(lib_class_tag, key_word_list)
+        #     for event in sub_event_dict.values():
+        #         assert isinstance(event, Event), str(type(event))
         #
-        #     csv_list.append(csv_line_list)
+        #         if event.date.year - first_date.year == 0:
+        #             bn_list = bn0
+        #         elif event.date.year - first_date.year == 1:
+        #             bn_list = bn1
+        #         elif event.date.year - first_date.year == 2:
+        #             bn_list = bn2
+        #         else:
+        #             continue
+        #         for w in event.correspond_book.book_name.cleaned_list:
+        #             # words.count(w, 1)
+        #             bn_list.append(BipartiteNetworkBaseConnection(event.reader_id, w, 1.0))
         #
+        # result_list = list()
+        # for bn_list in (bn0, bn1, bn2):
+        #     max_running_keywords = CountingDict()
+        #     max_running_book = json_load(open(path.expanduser('~/Downloads/output.json'), mode='r'))
+        #     for book_id in max_running_book.keys():
+        #         book = self.env.data_proxy.books[book_id]
+        #         assert isinstance(book, Book)
+        #         for w in book.book_name.cleaned_list:
+        #             max_running_keywords.count(w, max_running_book[book_id])
+        #     # print(max_running_book)
+        #     bn_net = BipartiteNetwork(bn_list, max_running_keywords)
+        #     reader_weight, keyword_weight = bn_net.run()
+        #     sorted_result = CountingDict.init_from(keyword_weight).sort(reverse=True)
+        #     result_list.append(sorted_result)
+        #     print(sorted_result)
+        #
+        # json_dump(result_list, open(path.expanduser('~/Downloads/result_list.json'), mode='w'))
+
+        # ------------------------------------------ #
+        from os import path
+        from json import load as json_load
+        from extended import CountingDict
+
+        result_list = json_load(open(path.expanduser('~/Downloads/result_list.json'), mode='r'))
+
+        keyword_set = set()
+        for sorted_result in result_list:
+            keyword_set.update(sorted_result)
+
+        def check_next_larger(content_list: list, strict: bool = True):
+            for i in range(len(content_list)):
+                for j in range(i + 1, len(content_list)):
+                    if strict is True:
+                        if content_list[i] >= content_list[j]:
+                            return False
+                    else:
+                        if content_list[i] > content_list[j]:
+                            return False
+            return True
+
+        def check_next_smaller(content_list: list, strict: bool = True):
+            for i in range(len(content_list)):
+                for j in range(i + 1, len(content_list)):
+                    if strict is True:
+                        if content_list[i] <= content_list[j]:
+                            return False
+                    else:
+                        if content_list[i] < content_list[j]:
+                            return False
+            return True
+
+        from numpy import std as np_std
+        increasing_important_dict = CountingDict()
+        decreasing_important_dict = CountingDict()
+        for keyword in keyword_set:
+            index_list = list()
+            for sorted_result in result_list:
+                assert isinstance(sorted_result, list)
+                try:
+                    index_list.append(sorted_result.index(keyword))
+                except ValueError:
+                    continue
+            if len(index_list) <= 0:
+                continue
+            # 随着发展重要程度上升
+            if check_next_smaller(index_list):
+                increasing_important_dict[keyword] = np_std(index_list)
+            # 随着发展重要程度下降
+            if check_next_larger(index_list):
+                decreasing_important_dict[keyword] = np_std(index_list)
+
+        print(increasing_important_dict.sort(reverse=True))
+        print(decreasing_important_dict.sort(reverse=True))
+
         # from os import path
         # from utils import save_csv
         # save_csv(csv_list, path.expanduser('~/Downloads/output.csv'))
@@ -167,8 +285,8 @@ class RuleGenerator(AbstractEnvObject):
         #         continue
         #     assert isinstance(lib_index, LibIndexClassObject)
 
-        from utils import save_csv
-        save_csv(csv_list, path.expanduser('~/Downloads/output.csv'))
+        # from utils import save_csv
+        # save_csv(csv_list, path.expanduser('~/Downloads/output.csv'))
 
     @staticmethod
     def __evaluation_list__(evaluator, top_n: int = 10):
@@ -247,10 +365,10 @@ class RuleGenerator(AbstractEnvObject):
 
     def merge_result(self, result_01, result_02, top_n: int = 10):
         """把两个结果合并在一起"""
-        from structures import RecoResult
+        from structures import RecommendResult
         result_01 = self.__load_result__(result_01).derive_top(top_n)
         result_02 = self.__load_result__(result_02).derive_top(top_n)
-        result = RecoResult()
+        result = RecommendResult()
         tag_set = set(list(result_01.keys()))
         tag_set.update(set(list(result_02.keys())))
         for tag in tag_set:

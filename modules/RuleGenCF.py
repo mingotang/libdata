@@ -5,7 +5,7 @@ from extended import DataDict
 from algorithm.CollaborativeFiltering import CF_NeighborType, CF_SimilarityType
 from modules.RuleGen import RuleGenerator
 from structures import Book, Event, Reader
-from structures import RecoResult, SparseVector
+from structures import RecommendResult, SparseVector
 from structures import StandardTimeRange, GrowthTimeRange, DateBackTimeRange
 
 
@@ -58,7 +58,7 @@ class RuleGenCF(RuleGenerator):
         self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
 
         stage_tag, stage_list = time_range.growth_stage
-        cf_result = RecoResult()
+        cf_result = RecommendResult()
         readers = self.env.data_proxy.readers
         for i in range(len(stage_list)):
             stage = stage_list[i]
@@ -102,7 +102,7 @@ class RuleGenCF(RuleGenerator):
 
     def apply_refered_slipped_collaborative_filtering(self, similarity_type, neighbor_type, time_range):
         from algorithm import CollaborativeFiltering
-        from structures import RecoResult
+        from structures import RecommendResult
         assert isinstance(neighbor_type, CF_NeighborType)
         assert isinstance(time_range, GrowthTimeRange)
 
@@ -125,7 +125,7 @@ class RuleGenCF(RuleGenerator):
         self.log.debug_running('TimeRange.{}'.format(time_range.__class__.__name__))
 
         stage_tag, stage_list = time_range.growth_stage
-        cf_result = RecoResult()
+        cf_result = RecommendResult()
         readers = self.__data_proxy__.readers
         for i in range(len(stage_list)):
             stage = stage_list[i]

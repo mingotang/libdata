@@ -3,7 +3,7 @@
 from enum import Enum
 
 from extended import CountingDict, DataDict
-from structures import RecoResult, SparseVector
+from structures import RecommendResult, SparseVector
 from structures import Event
 
 
@@ -11,11 +11,6 @@ from utils.Maths import (
         CosineSimilarity, EuclideanSimilarity,
         PearsonCorrelationCoefficient, TanimotoCoefficient
     )
-
-
-class CF_BaseType(Enum):
-    ReaderBase = 'ReaderBase'
-    BookBase = 'BookBase'
 
 
 class CF_NeighborType(Enum):
@@ -35,28 +30,21 @@ class CollaborativeFiltering(object):
     """
     CF: finding neighbors
     """
-    def __init__(self, events_dict):
-        """
-
-        :param events_dict: DataDict
-        """
+    def __init__(self, vec_data: dict):
+        """ """
         from utils import get_logger
         self.__logger__ = get_logger(module_name=self.__class__.__name__)
 
-        assert isinstance(events_dict, dict)
-        self.__events__ = events_dict
+        self.vec_data = dict()
+        for k, v in vec_data.items():
+            if isinstance(v, SparseVector):
+                self.vec_data.__setitem__(k, v)
+            else:
+                raise NotImplementedError(type(v))
 
-        self.__main_tag__, self.__item_tag__ = None, None
         self.__neighbor_type__ = CF_NeighborType.All
         self.__similarity_type__ = CF_SimilarityType.Cosine
-        self.__item_vector_value_tag__ = None               # Event 对象中获取向量值的属性
-
-        self.vec_data = None
         self.__possible_neighbor_dict__ = None
-
-    def set_relation_tag(self, main_tag: str, item_tag: str):
-        self.__main_tag__, self.__item_tag__ = main_tag, item_tag
-        return self
 
     def set_neighbor_type(self, n_t: CF_NeighborType):
         self.__neighbor_type__ = n_t
@@ -66,97 +54,83 @@ class CollaborativeFiltering(object):
         self.__similarity_type__ = s_t
         return self
 
-    def set_item_vector_value_tag(self, v_tag: str):
-        self.__item_vector_value_tag__ = v_tag
-        return self
+    # def __collect_vec_data__(self):
+    #     from collections import defaultdict
+    #     self.vec_data = SparseVectorCollector()
+    #     main2item, item2main = defaultdict(set), defaultdict(set)
+    #     self.__possible_neighbor_dict__ = defaultdict(set)
+    #
+    #     for value in self.__events__.values():
+    #         assert isinstance(value, Event)
+    #         main_value, item_value = getattr(value, self.__main_tag__), getattr(value, self.__item_tag__)
+    #         if isinstance(item_value, str):
+    #             self.vec_data.add(main_value, item_value, getattr(value, self.__item_vector_value_tag__))
+    #             main2item[main_value].add(item_value)
+    #             item2main[item_value].add(main_value)
+    #         else:
+    #             raise NotImplementedError
+    #
+    #     self.vec_data = self.vec_data.finish(with_length=len(self.__events__.collect_attr_set(self.__item_tag__)))
+    #     for m_tag, m_value in main2item.items():
+    #         for i_tag in m_value:
+    #             self.__possible_neighbor_dict__[m_tag].update(item2main[i_tag])
 
-    def __collect_vec_data__(self):
-        from collections import defaultdict
-        self.vec_data = SparseVectorCollector()
-        main2item, item2main = defaultdict(set), defaultdict(set)
-        self.__possible_neighbor_dict__ = defaultdict(set)
-
-        for value in self.__events__.values():
-            assert isinstance(value, Event)
-            main_value, item_value = getattr(value, self.__main_tag__), getattr(value, self.__item_tag__)
-            if isinstance(item_value, str):
-                self.vec_data.add(main_value, item_value, getattr(value, self.__item_vector_value_tag__))
-                main2item[main_value].add(item_value)
-                item2main[item_value].add(main_value)
-            else:
-                raise NotImplementedError
-
-        self.vec_data = self.vec_data.finish(with_length=len(self.__events__.collect_attr_set(self.__item_tag__)))
-        for m_tag, m_value in main2item.items():
-            for i_tag in m_value:
-                self.__possible_neighbor_dict__[m_tag].update(item2main[i_tag])
-
-    def run(self, fixed_size: int = None, limited_size: int = None, max_recommend_list: int = 100):
+    def run(self, fixed_size: int = None, limited_size: int = None):
+        """ -> dict(vector_id: CountingDict(item: similarity, ), )"""
         from tqdm import tqdm
         self.__logger__.debug_running('running CollaborativeFiltering')
 
-        self.__logger__.debug_running('collecting neighbors')
-        self.__collect_vec_data__()
-
-        self.__logger__.debug_running('collecting neighbors')
-
-        simi_result = RecoResult()
+        result_dict = dict()
         if self.__neighbor_type__ == CF_NeighborType.All:
             for u_i in tqdm(list(self.vec_data.keys()), desc='collect neighbors'):
-                simi_result.add_list(u_i, self.__find_all_neighbors__(u_i, self.__similarity_type__))
+                result_dict[u_i] = self.__find_all_neighbors__(u_i, self.__similarity_type__)
+                # simi_result.add_list(u_i, self.__find_all_neighbors__(u_i, self.__similarity_type__))
 
         elif self.__neighbor_type__ == CF_NeighborType.FixSize:
             if fixed_size is None:
-                from utils.Exceptions import ParamMissingError
+                from extended.Exceptions import ParamMissingError
                 raise ParamMissingError('fixed_size')
 
             if fixed_size > 0:
                 for u_i in tqdm(list(self.vec_data.keys()), desc='collect neighbors'):
-                    simi_result.add_list(u_i, self.__find_k_neighbors__(u_i, fixed_size, self.__similarity_type__))
+                    result_dict[u_i] = self.__find_k_neighbors__(u_i, fixed_size, self.__similarity_type__)
             else:
-                from utils.Exceptions import ParamOutOfRangeError
+                from extended.Exceptions import ParamOutOfRangeError
                 raise ParamOutOfRangeError('fixed_size', (1, 'inf'), fixed_size)
 
         elif self.__neighbor_type__ == CF_NeighborType.ThresholdBased:
             if limited_size is None:
-                from utils.Exceptions import ParamMissingError
+                from extended.Exceptions import ParamMissingError
                 raise ParamMissingError('limited_size')
 
             if limited_size > 0:
                 for u_i in tqdm(list(self.vec_data.keys()), desc='collect neighbors'):
-                    simi_result.add_list(u_i, self.__find_limited_neighbors__(
-                        u_i, limited_size, self.__similarity_type__))
+                    result_dict[u_i] = self.__find_limited_neighbors__(u_i, limited_size, self.__similarity_type__)
             else:
-                from utils.Exceptions import ParamOutOfRangeError
+                from extended.Exceptions import ParamOutOfRangeError
                 raise ParamOutOfRangeError('limited_size', (1, 'inf'), limited_size)
         else:
             raise RuntimeError
 
-        self.__logger__.debug_running('collecting recommend list')
+        return result_dict
 
-        if max_recommend_list <= 0:
-            from utils.Exceptions import ParamOutOfRangeError
-            raise ParamOutOfRangeError('max_recommend_list', (0, 'inf'), max_recommend_list)
-
-        return self.__collect_neighbors__(simi_result, max_recommend_list)
-
-    def __collect_neighbors__(self, simi_result: RecoResult, max_recommend_list: int):
-        from tqdm import tqdm
-        used_data = self.__events__.group_attr_set_by(self.__item_tag__, self.__main_tag__)
-        reco_result = RecoResult()
-        for u_i, simi_list in tqdm(simi_result.items(), desc='collect recommendation'):
-            reco_list = list()
-            main_set = used_data[u_i]
-            for sub_i in simi_list:
-                sub_set = used_data[sub_i]
-                reco_set = sub_set - main_set
-                for item in reco_set:
-                    if len(reco_list) > max_recommend_list:
-                        continue
-                    if item not in reco_list:
-                        reco_list.append(item)
-            reco_result.add_list(u_i, reco_list)
-        return reco_result
+    # def __collect_neighbors__(self, simi_result: RecoResult, max_recommend_list: int):
+    #     from tqdm import tqdm
+    #     used_data = self.__events__.group_attr_set_by(self.__item_tag__, self.__main_tag__)
+    #     reco_result = RecoResult()
+    #     for u_i, simi_list in tqdm(simi_result.items(), desc='collect recommendation'):
+    #         reco_list = list()
+    #         main_set = used_data[u_i]
+    #         for sub_i in simi_list:
+    #             sub_set = used_data[sub_i]
+    #             reco_set = sub_set - main_set
+    #             for item in reco_set:
+    #                 if len(reco_list) > max_recommend_list:
+    #                     continue
+    #                 if item not in reco_list:
+    #                     reco_list.append(item)
+    #         reco_result.add_list(u_i, reco_list)
+    #     return reco_result
 
     def __calculate_neighbors__(self, ui_tag: str, sim_type):
         result = CountingDict()
@@ -178,15 +152,14 @@ class CollaborativeFiltering(object):
 
     def __find_all_neighbors__(self, ui_tag: str, simi_type):
         """find all neighborhoods ordered by similarity -> list"""
-        return self.__calculate_neighbors__(ui_tag, simi_type).sort(reverse=True)
+        return self.__calculate_neighbors__(ui_tag, simi_type)
 
     def __find_k_neighbors__(self, ui_tag: str, k_num: int, simi_type):
-        assert k_num > 0
-        return self.__find_all_neighbors__(ui_tag, simi_type)[:k_num]
+        result = self.__calculate_neighbors__(ui_tag, simi_type)
+        return result.sub_dict(result.sort(reverse=True)[: k_num])
 
     def __find_limited_neighbors__(self, ui_tag: str, limit: float, simi_type):
-        simi = self.__calculate_neighbors__(ui_tag, simi_type).trim(lower_limit=limit)
-        return simi.sort(reverse=True)
+        return self.__calculate_neighbors__(ui_tag, simi_type).trim(lower_limit=limit)
 
 
 class SlippingRangeCollaborativeFiltering(CollaborativeFiltering):
@@ -287,14 +260,14 @@ class DateBackCollaborativeFiltering(CollaborativeFiltering):
                 result.set(tag, abs(sim_type.__call__(self.vec_data[ui_tag], self.vec_data[tag])))
         return result
 
-    def collect_recommend_list(self, simi_result: RecoResult, max_recommend_list: int=100):
+    def collect_recommend_list(self, simi_result: RecommendResult, max_recommend_list: int=100):
         if max_recommend_list <= 0:
             from utils.Exceptions import ParamOutOfRangeError
             raise ParamOutOfRangeError('max_recommend_list', (0, 'inf'), max_recommend_list)
 
         self.__logger__.debug_running('collecting recommend list')
 
-        reco_result = RecoResult()
+        reco_result = RecommendResult()
         for u_i, simi_list in simi_result.items():
             reco_list = list()
             main_set = self.used_data[u_i]
