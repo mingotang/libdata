@@ -91,14 +91,17 @@ class BipartiteNetwork(object):
     #                     pass
     #     return max_occupy
 
-    def run(self, subject_first: bool = True, item_check: float = 0.01, subject_check: float = 0.01):
+    def run(self, max_round: int = 30, subject_first: bool = True,
+            item_check: float = 0.01, subject_check: float = 0.01):
         b_w, r_w = SparseVector(len(self.item_weight)), SparseVector(len(self.subject_weight))
 
         round_i = 0
         left_check, right_check = (self.item_weight - b_w).sum_squared, (self.subject_weight - r_w).sum_squared
+        last_left_check, last_right_check = left_check, right_check
+        last_subject_weight, last_item_weight = self.subject_weight, self.item_weight
         self.log.debug_running('round {}\tbook_check: {}, reader_check: {}'.format(round_i, left_check, right_check), )
 
-        while left_check > item_check and right_check > subject_check:
+        while left_check > item_check and right_check > subject_check and round_i <= max_round:
             round_i += 1
             for book_id in self.item_weight.keys():
                 b_w[book_id] = self.subject_weight * self.item2subject_connection[book_id]
@@ -108,12 +111,14 @@ class BipartiteNetwork(object):
                 ])
             self.item_weight, self.subject_weight = b_w * (1.0 / b_w.sum), r_w * (1.0 / r_w.sum)
             left_check, right_check = (self.item_weight - b_w).sum_squared, (self.subject_weight - r_w).sum_squared
-            self.log.debug_running('round {}\tbook_check: {}'.format(round_i, left_check),
-                                   'reader_check: {}'.format(right_check))
+            if last_left_check > left_check and last_right_check > right_check:
+                last_subject_weight = self.subject_weight
+                last_item_weight = self.item_weight
+            last_left_check, last_right_check = left_check, right_check
         if subject_first:
-            return self.subject_weight, self.item_weight
+            return last_subject_weight, last_item_weight
         else:
-            return self.item_weight, self.subject_weight
+            return last_item_weight, last_subject_weight
 
 
 if __name__ == '__main__':

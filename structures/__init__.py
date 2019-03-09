@@ -9,42 +9,14 @@ from .Evaluator import Evaluator
 from .Event import Event
 from .Reader import Reader
 from .SparseVector import SparseVector
+from .SqlObject import (
+    BookMap, ReaderLibClassAccessDay, RecommendListObject
+)
 
 
 LibIndexClassObject = namedtuple('LibIndexClassObject', [
     'main_class', 'sub_class', 'base_class', 'name',
 ])
-
-
-class RecommendListObject(object):
-    def __init__(self, list_name: str, book_index: str, rank: int = -1):
-        self.list_name, self.book_index, self.rank = list_name, book_index, rank
-
-    @staticmethod
-    def define_table(meta):
-        from sqlalchemy import MetaData, Table, Column, String, Integer
-        assert isinstance(meta, MetaData)
-        return Table(
-            'recommend_list', meta,
-            Column('list_name', String, nullable=False, primary_key=True),
-            Column('book_index', String, nullable=False, primary_key=True),
-            Column('rank', Integer),
-        )
-
-
-class BookMap(object):
-    def __init__(self, raw_book_id: str, content_id: str):
-        self.raw_book_id, self.content_id = raw_book_id, content_id
-
-    @staticmethod
-    def define_table(meta):
-        from sqlalchemy import MetaData, Table, Column, String
-        assert isinstance(meta, MetaData)
-        return Table(
-            'book_map', meta,
-            Column('raw_book_id', String, nullable=False, primary_key=True),
-            Column('content_id', String, nullable=False, primary_key=True),
-        )
 
 
 class RecommendResult(dict):

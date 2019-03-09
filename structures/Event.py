@@ -81,6 +81,15 @@ class Event(AbstractDataObject, AbstractEnvObject):
         assert isinstance(book, Book), str(self)
         return book
 
+    @property
+    def correspond_book_lib_index_sub_class(self):
+        from structures import LibIndexClassObject
+        book_lib_index = self.correspond_book.book_lib_index
+        if isinstance(book_lib_index, LibIndexClassObject):
+            return book_lib_index.sub_class
+        else:
+            return None
+
     def update_from(self, value):
         if isinstance(value, type(self)):
             if self == value:

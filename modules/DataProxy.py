@@ -68,14 +68,8 @@ class DataProxy(object):
             os.makedirs(self.__operation_path__)
 
         if DataProxy.__db__ is None:
-            DataProxy.__db__ = SqliteWrapper(db_path=os.path.join(self.__path__, 'libdata.db'))
-            DataProxy.__db__.map(Book, Book.define_table(self.__db__.metadata))
-            DataProxy.__db__.map(BookMap, BookMap.define_table(self.__db__.metadata))
-            DataProxy.__db__.map(Event, Event.define_table(self.__db__.metadata))
-            DataProxy.__db__.map(Reader, Reader.define_table(self.__db__.metadata))
-            DataProxy.__db__.map(RecommendListObject, RecommendListObject.define_table(self.__db__.metadata))
-            DataProxy.__db__.map(SumBook, SumBook.define_table(self.__db__.metadata))
-            self.sqlite.metadata.create_all(checkfirst=True)
+            from Environment import Environment
+            DataProxy.__db__ = Environment.get_instance().sqlite_db
 
         self.book_dict = SqliteDict(self.__db__, Book, 'index')
         self.book_map_dict = SqliteDict(self.__db__, BookMap, 'raw_book_id')

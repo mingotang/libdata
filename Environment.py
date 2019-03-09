@@ -48,12 +48,31 @@ class Environment(object):
     @property
     def data_proxy(self):
         from modules.DataProxy import DataProxy
-        data_proxy = self.__data__.get('data_proxy')
+        data_proxy = self.__data__.get('data_proxy', None)
         if data_proxy is None:
             data_proxy = DataProxy(data_path=self.data_path)
             self.__data__.__setitem__('data_proxy', data_proxy)
         assert isinstance(data_proxy, DataProxy), 'set DataProxy before using.'
         return data_proxy
+
+    @property
+    def sqlite_db(self):
+        from extended import SqliteWrapper
+        sqlite_db = self.__data__.get('sqlite_db', None)
+        if sqlite_db is None:
+            from structures import Book, BookMap, Event, Reader, ReaderLibClassAccessDay, RecommendListObject, SumBook
+            sqlite_db = SqliteWrapper(db_path=os.path.join(self.data_path, 'libdata.db'))
+            sqlite_db.map(Book, Book.define_table(sqlite_db.metadata))
+            sqlite_db.map(BookMap, BookMap.define_table(sqlite_db.metadata))
+            sqlite_db.map(Event, Event.define_table(sqlite_db.metadata))
+            sqlite_db.map(Reader, Reader.define_table(sqlite_db.metadata))
+            sqlite_db.map(ReaderLibClassAccessDay, ReaderLibClassAccessDay.define_table(sqlite_db.metadata))
+            sqlite_db.map(RecommendListObject, RecommendListObject.define_table(sqlite_db.metadata))
+            sqlite_db.map(SumBook, SumBook.define_table(sqlite_db.metadata))
+            sqlite_db.metadata.create_all(checkfirst=True)
+            self.__data__.__setitem__('sqlite_db', sqlite_db)
+        assert isinstance(sqlite_db, SqliteWrapper)
+        return sqlite_db
 
     # @property
     # def book_lib_index_code_name_map(self):

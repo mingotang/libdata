@@ -1,7 +1,7 @@
 # -*- encoding: UTF-8 -*-
 import datetime
 
-from Interface import AbstractDataObject
+from Interface import AbstractDataObject, AbstractEnvObject
 from utils import attributes_repr
 from utils.Constants import (
     GRADUATE_TYPES, UNDER_GRADUATE_TYPES, STUDENT_TYPES,
@@ -13,7 +13,7 @@ from utils.Constants import (
 TODAY = datetime.datetime.now().date()
 
 
-class Reader(AbstractDataObject):
+class Reader(AbstractDataObject, AbstractEnvObject):
     __attributes__ = ('index', 'rtype', 'college', 'op_dt')
     __repr__ = attributes_repr
 
@@ -32,6 +32,18 @@ class Reader(AbstractDataObject):
     def update_date(self):
         """check the update date of reader info which is derived from events list"""
         return datetime.datetime.strptime(self.op_dt, '%Y%m%d').date()
+
+    def first_access_to_sub_lib_class(self, sub_lib_class: str):
+        from sqlalchemy.orm.exc import NoResultFound
+        from structures import ReaderLibClassAccessDay
+        try:
+            obj = self.env.sqlite_db.session.query(ReaderLibClassAccessDay).filter_by(
+                reader_id=self.index, lib_sub_class=sub_lib_class,
+            ).one()
+            assert isinstance(obj, ReaderLibClassAccessDay)
+        except NoResultFound:
+            return None
+        return obj.date
 
     def update_from(self, value):
         if isinstance(value, type(self)):
