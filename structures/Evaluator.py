@@ -37,7 +37,7 @@ class Evaluator(object):
             for tag in ac_list:
                 data_set.add(tag)
 
-        return len(recommend_set) / len(data_set)
+        return len(recommend_set) / (len(data_set) + len(recommend_set))
 
     def f_value(self):
         precision = self.precision_accuracy()
