@@ -99,7 +99,7 @@ class RuleGenBN(RuleGenerator):
             #     line_list.append(increasing_important_dict[tag])
             #     line_list.extend(keyword_rank_dict[tag])
             #     csv_out.append(line_list)
-                # print(tag, increasing_important_dict[tag], keyword_rank_dict[tag])
+            #     print(tag, increasing_important_dict[tag], keyword_rank_dict[tag])
 
             json_dump(
                 decreasing_important_dict,

@@ -2,7 +2,6 @@
 import datetime
 
 from extended import DataDict, CountingDict
-from algorithm.CollaborativeFiltering import CF_NeighborType, CF_SimilarityType, SparseVectorCollector
 from modules.RuleGen import RuleGenerator
 from structures import Book, Event, Reader
 from structures import RecommendResult, SparseVector
@@ -15,7 +14,7 @@ class RuleGenCF(RuleGenerator):
         RuleGenerator.__init__(self)
 
     def apply_collaborative_filtering(self, time_range):
-        from algorithm.CollaborativeFiltering import CollaborativeFiltering
+        # from algorithm.CollaborativeFiltering import CollaborativeFiltering
         assert isinstance(time_range, StandardTimeRange)
 
         # 获取用户群体范围
