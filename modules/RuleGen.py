@@ -229,7 +229,8 @@ class RuleGenerator(AbstractEnvObject):
         #     if tag.startswith('.'):
         #         continue
         #     self.log.debug_running('collecting ReaderLibClassAccessDay', tag)
-        #     event_dict = TextObjDict(path.join(self.env.data_path, 'lib_sub_class_events', tag), Event).to_object_dict()
+        #     event_dict = TextObjDict(path.join(
+        #         self.env.data_path, 'lib_sub_class_events', tag), Event).to_object_dict()
         #
         #     for reader_id, sub_event_dict in event_dict.group_by_attr('reader_id').items():
         #         assert isinstance(sub_event_dict, ObjectDict)
@@ -434,6 +435,27 @@ class RuleGenerator(AbstractEnvObject):
                         evaluator.front_i_top_n_accuracy(top_n, top_n)])
         return eva_res
 
+    def fetch_actual_data(self, time_range, user_set: set):
+        from collections import defaultdict
+        from structures import TimeRange
+        assert isinstance(time_range, TimeRange)
+        actual_data = defaultdict(list)
+        now_date = time_range.end_time.date()
+        while now_date <= time_range.end_time.date() + datetime.timedelta(days=90):
+            for event in self.env.data_proxy.event_dict.query(Event).filter_by(
+                    event_date=now_date.strftime('%Y%m%d')
+            ).all():
+                assert isinstance(event, Event)
+                if event.event_type == '61':
+                    continue
+                if event.reader_id not in user_set:
+                    continue
+                if event.correspond_book_lib_index_sub_class != 'TP':
+                    continue
+                actual_data[event.reader_id].append(event.book_id)
+            now_date = now_date + datetime.timedelta(days=1)
+        return actual_data
+
     def evaluate_result_similarity(self, result_01, result_02, top_n: int = 10, descrip: str = ''):
         from structures import Evaluator
         from utils import save_csv
@@ -503,8 +525,47 @@ class RuleGenerator(AbstractEnvObject):
             des_tag = 'Evaluation result with top {}'.format(top_n)
         eva_res.insert(0, [des_tag, ])
 
-        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(
-            des_tag, datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')))
+        # # 寻找匹配程度最高的用户
+        # def calculate_match_percentage(l01: list, l02: list):
+        #     from math import sqrt
+        #     if len(l02) == 0 or len(l01) == 0:
+        #         return 0.0
+        #     else:
+        #         # count = 0
+        #         # for i in l01:
+        #         #     if i in l02:
+        #         #         count += 1
+        #         # return count
+        #         return len(set(l01).intersection(set(l02))) / (sqrt(len(l01)) * sqrt(len(l02)))
+        #
+        # from extended import CountingDict
+        # best_matcher = CountingDict()
+        # users = self.env.data_proxy.reader_dict.to_data_dict()
+        # for user_id in result.keys():
+        #     if user_id not in actual_data:
+        #         continue
+        #     user = users[user_id]
+        #     assert isinstance(user, Reader)
+        #     if user.register_year != 2013:
+        #         continue
+        #     match_percentage = calculate_match_percentage(result[user_id], actual_data[user_id])
+        #     if match_percentage > 0:
+        #         best_matcher.set(user_id, match_percentage)
+        # best_match_user = best_matcher.sort(reverse=True)[0]
+        #
+        # best_match_user = '5130209132'
+        # books = self.env.data_proxy.book_dict.to_data_dict()
+        # print(best_match_user)
+        # print([books[var].name for var in actual_data[best_match_user]])
+        # print([books[var].name for var in result[best_match_user]])
+
+        # 5130209132
+
+        for item in eva_res:
+            print(item)
+
+        # save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(
+        #     des_tag, datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')))
 
     def merge_result(self, result_01, result_02, top_n: int = 10):
         """把两个结果合并在一起"""
@@ -539,19 +600,61 @@ if __name__ == '__main__':
     rule_generator = RuleGenerator()
     rule_generator.log.initiate_time_counter()
 
+
+    def calculate_match_percentage(l01: list, l02: list):
+        from math import sqrt
+        if len(l02) == 0 or len(l01) == 0:
+            return 0.0
+        else:
+            count = 0
+            for i in l01:
+                if i in l02:
+                    count += 1
+            return count
+            # return len(set(l01).intersection(set(l02))) / (sqrt(len(l01)) * sqrt(len(l02)))
+
     try:
         # rule_generator.statistic()
         from os import path
         from structures import StandardTimeRange, RecommendResult
-        this_time_range = StandardTimeRange(start_time=datetime.date(2014, 1, 1), end_time=datetime.date(2014, 12, 31))
+        this_time_range = StandardTimeRange(start_time=datetime.date(2015, 1, 1), end_time=datetime.date(2015, 3, 31))
+        # this_time_range = StandardTimeRange(start_time=datetime.date(2014, 1, 1), end_time=datetime.date(2014, 12, 31))
+        normal_result = RecommendResult.load_csv(path.join(
+            env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_000752.csv'
+        )).derive_top(10)
         this_result = RecommendResult.load_csv(path.join(
-            env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_003430.csv'
-        ))
-        rule_generator.evaluate_single_result(
-            result_data=this_result,
-            time_range=this_time_range,
-            top_n=10,
-        )
+            env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_001857.csv'
+        )).derive_top(10)
+        user_set = set(normal_result.keys())
+        user_set.update(this_result.keys())
+        # rule_generator.evaluate_single_result(
+        #     result_data=normal_result,
+        #     time_range=this_time_range,
+        #     top_n=10,
+        # )
+        books = env_inst.data_proxy.book_dict.to_data_dict()
+        actual_result = rule_generator.fetch_actual_data(time_range=this_time_range, user_set=user_set)
+        for user_id in user_set:
+            assert isinstance(user_id, str)
+            user_id = user_id.replace('\n', '')
+            if user_id not in normal_result:
+                continue
+            if user_id not in this_result:
+                continue
+            if user_id not in actual_result:
+                continue
+            normal_match = calculate_match_percentage(actual_result[user_id], normal_result[user_id])
+            this_match = calculate_match_percentage(
+                actual_result[user_id], this_result[user_id],
+            )
+            if normal_match < this_match:
+                try:
+                    print(user_id, normal_match, this_match)
+                    print([books[var].name for var in actual_result[user_id]])
+                    print([books[var].name for var in normal_result[user_id]])
+                    print([books[var].name for var in this_result[user_id]])
+                except KeyError:
+                    continue
 
     except KeyboardInterrupt:
         env_inst.exit()

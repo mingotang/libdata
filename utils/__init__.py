@@ -28,7 +28,8 @@ def load_yaml(path: str):
     import codecs
     import yaml
     with codecs.open(path, encoding='utf-8') as y_f:
-        return yaml.load(y_f)
+        # return yaml.SafeLoader(y_f).get_single_data()
+        return yaml.load(y_f, Loader=yaml.SafeLoader)
 
 
 def __check_type__(file_path: str, file_type: str):

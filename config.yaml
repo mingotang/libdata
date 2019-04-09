@@ -2,8 +2,12 @@
 
 # data path settings
 Resources:
-  LibDataPath: "C:\Users\Mingo\Documents\libdata.db"
-  RawDataPath: "/Users/mingo/WeiYun/胡代平/persisted_libdata/raw_data"
+  Windows:
+    DataBasePath: 'C:\Users\Mingo\Documents\libdata.db'
+    DataPath: 'C:\Users\Mingo\Documents\MyCloud\学术\persisted_libdata'
+  MacOS:
+  LibDataPath:
+  RawDataPath: '/Users/mingo/WeiYun/胡代平/persisted_libdata/raw_data'
   RawDataList:
     - "2016-11-16-guanyuan2013.txt"
     - "2016-11-16-guanyuan2014.txt"

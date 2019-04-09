@@ -20,6 +20,12 @@ class Environment(object):
 
         # public
         self.config = load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'config.yaml'))
+        if platform.system() == 'Darwin':
+            self.config['Resources'] = self.config.get('Resources', dict()).get('MacOS')
+        elif platform.system() == 'Windows':
+            self.config['Resources'] = self.config.get('Resources', dict()).get('Windows')
+        else:
+            raise NotImplementedError(platform.system())
         self.log = get_logger(self.__class__.__name__)
 
         # private
@@ -37,10 +43,7 @@ class Environment(object):
 
     @property
     def data_path(self):
-        if platform.system() == 'Darwin':
-            d_path = os.path.expanduser(self.config.get('Resources', dict()).get('MacDataPath'))
-        else:
-            raise NotImplementedError(platform.system())
+        d_path = self.config.get('Resources', dict()).get('DataPath')
         if not os.path.exists(d_path):
             os.makedirs(d_path)
         return d_path
@@ -61,7 +64,7 @@ class Environment(object):
         sqlite_db = self.__data__.get('sqlite_db', None)
         if sqlite_db is None:
             from structures import Book, BookMap, Event, Reader, ReaderLibClassAccessDay, RecommendListObject, SumBook
-            sqlite_db = SqliteWrapper(self.config.get('Resources', dict()).get('LibDataPath'))
+            sqlite_db = SqliteWrapper(self.config.get('Resources', dict()).get('DataBasePath'))
             sqlite_db.map(Book, Book.define_table(sqlite_db.metadata))
             sqlite_db.map(BookMap, BookMap.define_table(sqlite_db.metadata))
             sqlite_db.map(Event, Event.define_table(sqlite_db.metadata))
