@@ -621,10 +621,10 @@ if __name__ == '__main__':
         # this_time_range = StandardTimeRange(start_time=datetime.date(2014, 1, 1), end_time=datetime.date(2014, 12, 31))
         normal_result = RecommendResult.load_csv(path.join(
             env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_000752.csv'
-        )).derive_top(10)
+        )).derive_top(12)
         this_result = RecommendResult.load_csv(path.join(
             env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_001857.csv'
-        )).derive_top(10)
+        )).derive_top(12)
         user_set = set(normal_result.keys())
         user_set.update(this_result.keys())
         # rule_generator.evaluate_single_result(
