@@ -4,7 +4,7 @@
 Resources:
   Windows:
     DataBasePath: 'C:\Users\Mingo\Documents\libdata.db'
-    DataPath: 'C:\Users\Mingo\Documents\MyCloud\学术\persisted_libdata'
+    DataPath: 'C:\NutStore\MyCloud\学术\persisted_libdata'
   MacOS:
   LibDataPath:
   RawDataPath: '/Users/mingo/WeiYun/胡代平/persisted_libdata/raw_data'

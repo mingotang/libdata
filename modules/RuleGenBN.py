@@ -108,6 +108,7 @@ class RuleGenBN(RuleGenerator):
                     'sub_lib_index_class_decreasing_importance_dicts',
                     '{}.json'.format(lib_index_tag),
                 ), mode='w'))
+
             # csv_out = list()
             # decreasing_important_list = decreasing_important_dict.sort(reverse=True)
             # print(decreasing_important_list)
