@@ -561,11 +561,11 @@ class RuleGenerator(AbstractEnvObject):
 
         # 5130209132
 
-        for item in eva_res:
-            print(item)
+        # for item in eva_res:
+        #     print(item)
 
-        # save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(
-        #     des_tag, datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')))
+        save_csv(eva_res, self.__operation_path__, '..', '{} - {}.csv'.format(
+            des_tag, datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')))
 
     def merge_result(self, result_01, result_02, top_n: int = 10):
         """把两个结果合并在一起"""
@@ -619,42 +619,45 @@ if __name__ == '__main__':
         from structures import StandardTimeRange, RecommendResult
         this_time_range = StandardTimeRange(start_time=datetime.date(2015, 1, 1), end_time=datetime.date(2015, 3, 31))
         # this_time_range = StandardTimeRange(start_time=datetime.date(2014, 1, 1), end_time=datetime.date(2014, 12, 31))
-        normal_result = RecommendResult.load_csv(path.join(
-            env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_000752.csv'
-        )).derive_top(12)
         this_result = RecommendResult.load_csv(path.join(
-            env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_001857.csv'
-        )).derive_top(12)
-        this_user_set = set(normal_result.keys())
-        this_user_set.update(this_result.keys())
-        # rule_generator.evaluate_single_result(
-        #     result_data=normal_result,
-        #     time_range=this_time_range,
-        #     top_n=10,
-        # )
-        books = env_inst.data_proxy.book_dict.to_data_dict()
-        actual_result = rule_generator.fetch_actual_data(time_range=this_time_range, user_set=this_user_set)
-        for user_id in this_user_set:
-            assert isinstance(user_id, str)
-            user_id = user_id.replace('\n', '')
-            if user_id not in normal_result:
-                continue
-            if user_id not in this_result:
-                continue
-            if user_id not in actual_result:
-                continue
-            normal_match = calculate_match_percentage(actual_result[user_id], normal_result[user_id])
-            this_match = calculate_match_percentage(
-                actual_result[user_id], this_result[user_id],
-            )
-            if normal_match < this_match:
-                try:
-                    print(user_id, normal_match, this_match)
-                    print([books[var].name for var in actual_result[user_id]])
-                    print([books[var].name for var in normal_result[user_id]])
-                    print([books[var].name for var in this_result[user_id]])
-                except KeyError:
-                    continue
+            env_inst.data_path, 'CF_RecoBook', 'cf_result_20190414_150101.csv'
+        ))
+        rule_generator.evaluate_single_result(
+            result_data=this_result,
+            time_range=this_time_range,
+            top_n=10,
+        )
+        # normal_result = RecommendResult.load_csv(path.join(
+        #     env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_000752.csv'
+        # )).derive_top(12)
+        # this_result = RecommendResult.load_csv(path.join(
+        #     env_inst.data_path, 'CF_RecoBook', 'cf_result_20190309_001857.csv'
+        # )).derive_top(12)
+        # this_user_set = set(normal_result.keys())
+        # this_user_set.update(this_result.keys())
+        # books = env_inst.data_proxy.book_dict.to_data_dict()
+        # actual_result = rule_generator.fetch_actual_data(time_range=this_time_range, user_set=this_user_set)
+        # for user_id in this_user_set:
+        #     assert isinstance(user_id, str)
+        #     user_id = user_id.replace('\n', '')
+        #     if user_id not in normal_result:
+        #         continue
+        #     if user_id not in this_result:
+        #         continue
+        #     if user_id not in actual_result:
+        #         continue
+        #     normal_match = calculate_match_percentage(actual_result[user_id], normal_result[user_id])
+        #     this_match = calculate_match_percentage(
+        #         actual_result[user_id], this_result[user_id],
+        #     )
+        #     if normal_match < this_match:
+        #         try:
+        #             print(user_id, normal_match, this_match)
+        #             print([books[var].name for var in actual_result[user_id]])
+        #             print([books[var].name for var in normal_result[user_id]])
+        #             print([books[var].name for var in this_result[user_id]])
+        #         except KeyError:
+        #             continue
 
     except KeyboardInterrupt:
         env_inst.exit()

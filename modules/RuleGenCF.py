@@ -150,6 +150,8 @@ class RuleGenCF(RuleGenerator):
                                             continue
                                         if tag in this_change_dict:
                                             book_weight = sqrt(abs(1 - len(tag) * sqrt(abs(this_change_dict[tag])))) * book_weight
+                                if book_lib_index.sub_class not in increasing_class_keywords_dict and book_lib_index.sub_class not in decreasing_class_keywords_dict:
+                                    book_weight = 0.0
                         book_count_dict.count(book_id, simi_dict[simi_reader_id] * book_weight)
             recommend_result.add_list(reader_id, book_count_dict.sort(reverse=True))
 

@@ -64,7 +64,7 @@ class Environment(object):
         sqlite_db = self.__data__.get('sqlite_db', None)
         if sqlite_db is None:
             from structures import Book, BookMap, Event, Reader, ReaderLibClassAccessDay, RecommendListObject, SumBook
-            sqlite_db = SqliteWrapper(self.config.get('Resources', dict()).get('DataBasePath'))
+            sqlite_db = SqliteWrapper(os.path.expanduser(self.config.get('Resources', dict()).get('DataBasePath')))
             sqlite_db.map(Book, Book.define_table(sqlite_db.metadata))
             sqlite_db.map(BookMap, BookMap.define_table(sqlite_db.metadata))
             sqlite_db.map(Event, Event.define_table(sqlite_db.metadata))

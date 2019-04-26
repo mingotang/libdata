@@ -3,7 +3,7 @@
 # data path settings
 Resources:
   Windows:
-    DataBasePath: 'C:\Users\Mingo\Documents\libdata.db'
+    DataBasePath: '~\Documents\libdata.db'
     DataPath: 'C:\NutStore\MyCloud\学术\persisted_libdata'
   MacOS:
   LibDataPath:
